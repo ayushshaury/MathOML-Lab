@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
+import { InteractiveBackground } from "@/components/ui/InteractiveBackground";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,15 +16,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MathLab — The Digital Mathematics Laboratory",
+  title: "MathOML — The Interactive Digital Mathematics Laboratory",
   description:
-    "Solve almost any mathematical problem with full step-by-step explanations: algebra, calculus, matrices, differential equations, statistics, graphing and more. Real computation engines, interactive 2D/3D graphs.",
+    "Next-generation mathematics studio: live 3D surface shaders, interactive 2D curve tracing, multi-question photo OCR queue, and exact step-by-step computer algebra systems.",
   keywords: [
-    "math solver", "equation solver", "derivative calculator", "integral calculator",
-    "matrix calculator", "statistics", "graphing calculator", "step by step math",
-    "differential equations", "eigenvalues", "limits", "taylor series",
+    "math solver", "3d graphing", "step by step calculus", "matrix algebra", "latex ocr", "interactive mathematics",
+    "eigenvalues", "multivariate surface", "mathoml", "derivatives", "integrals"
   ],
-  icons: { icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg" },
+  icons: { icon: "/logo.svg" },
 };
 
 export default function RootLayout({
@@ -33,9 +33,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
-          {children}
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground min-h-screen selection:bg-emerald-500/30 selection:text-emerald-300`}>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
+          <InteractiveBackground />
+          <div className="relative z-10 flex min-h-screen flex-col">
+            {children}
+          </div>
           <Toaster />
         </ThemeProvider>
       </body>
