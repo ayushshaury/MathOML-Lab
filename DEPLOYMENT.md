@@ -74,7 +74,7 @@ This guide explains how to deploy **MathOML** in production using a decoupled ar
 3. Import your GitHub repository: `https://github.com/ayushshaury/MathOML-Lab`.
 4. Configure the project:
    - **Framework Preset**: `Next.js`
-   - **Root Directory**: `./` (leave default repository root)
+   - **Root Directory**: `frontend`  ⚠️ *(Click "Edit" and choose the `frontend` folder!)*
    - **Build Command**: `npm run build`
    - **Output Directory**: `.next`
 5. **Environment Variables**:
