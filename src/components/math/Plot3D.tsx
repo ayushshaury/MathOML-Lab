@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import {
   ZoomIn, ZoomOut, RotateCcw, Pause, Play, Camera, Maximize2, Minimize2,
-  Layers, Palette, Compass, Sliders
+  Layers, Palette, Compass, Sliders, Grid3x3, Gauge
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -26,8 +26,8 @@ interface Cam {
   zoom: number;
 }
 
-type PaletteName = "synthwave" | "viridis" | "sunset" | "emerald" | "ice";
-type RenderMode = "solid" | "wireframe" | "contours";
+type PaletteName = "synthwave" | "viridis" | "sunset" | "plasma" | "cyberpunk" | "coolwarm" | "emerald" | "ice";
+type RenderMode = "solid" | "wireframe" | "contours" | "points";
 
 const PALETTES: Record<PaletteName, { name: string; stops: [number, number, number][] }> = {
   synthwave: {
@@ -40,7 +40,7 @@ const PALETTES: Record<PaletteName, { name: string; stops: [number, number, numb
     ],
   },
   viridis: {
-    name: "Viridis",
+    name: "Viridis Perceptual",
     stops: [
       [68, 1, 84],    // Deep indigo
       [49, 104, 142], // Teal
@@ -55,6 +55,33 @@ const PALETTES: Record<PaletteName, { name: string; stops: [number, number, numb
       [159, 18, 57],  // Crimson
       [245, 158, 11], // Amber
       [254, 240, 138],// Golden yellow
+    ],
+  },
+  plasma: {
+    name: "Fiery Plasma",
+    stops: [
+      [13, 8, 135],   // Deep navy blue
+      [156, 23, 158], // Magenta violet
+      [237, 121, 83], // Fiery coral
+      [240, 249, 33], // Neon yellow
+    ],
+  },
+  cyberpunk: {
+    name: "Cyber Neon Matrix",
+    stops: [
+      [10, 15, 30],   // Cyber black
+      [14, 165, 233], // Electric cyan
+      [236, 72, 153], // Hot neon pink
+      [52, 211, 153], // Lime emerald
+    ],
+  },
+  coolwarm: {
+    name: "Cool-Warm Divergent",
+    stops: [
+      [59, 130, 246], // Cool cobalt blue
+      [241, 245, 249],// Pure neutral white
+      [239, 68, 68],  // Warm fiery crimson
+      [185, 28, 28],  // Deep red
     ],
   },
   emerald: {
@@ -109,6 +136,8 @@ export function Plot3D({ expr, className, height = 480 }: Plot3DProps) {
   // Aesthetic settings
   const [palette, setPalette] = useState<PaletteName>("synthwave");
   const [renderMode, setRenderMode] = useState<RenderMode>("solid");
+  const [meshRes, setMeshRes] = useState<number>(48);
+  const [showZeroPlane, setShowZeroPlane] = useState<boolean>(false);
 
   // Check if expression contains parameter `a`
   const hasParamA = useMemo(() => {
@@ -230,7 +259,7 @@ export function Plot3D({ expr, className, height = 480 }: Plot3DProps) {
       return;
     }
 
-    const N = 48; // Mesh resolution
+    const N = meshRes; // Mesh resolution
     const [lo, hi] = range;
 
     // Sample height grid
@@ -315,6 +344,30 @@ export function Plot3D({ expr, className, height = 480 }: Plot3DProps) {
       ctx.font = "11px ui-monospace, monospace";
       ctx.fillText(ax.label, p2[0] + 6, p2[1]);
     });
+
+    // Optional z=0 reference water plane
+    if (showZeroPlane) {
+      const z0Norm = (0 - zMid) * zRatio;
+      ctx.strokeStyle = dark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)";
+      ctx.lineWidth = 1;
+      const planeDivs = 8;
+      for (let s = 0; s <= planeDivs; s++) {
+        const u = lo + (span * s) / planeDivs;
+        const pA = project(u, lo, z0Norm);
+        const pB = project(u, hi, z0Norm);
+        ctx.beginPath();
+        ctx.moveTo(pA[0], pA[1]);
+        ctx.lineTo(pB[0], pB[1]);
+        ctx.stroke();
+
+        const pC = project(lo, u, z0Norm);
+        const pD = project(hi, u, z0Norm);
+        ctx.beginPath();
+        ctx.moveTo(pC[0], pC[1]);
+        ctx.lineTo(pD[0], pD[1]);
+        ctx.stroke();
+      }
+    }
 
     // Mesh Quads with Painter's Algorithm & Real Directional Shading
     interface Quad {
@@ -404,16 +457,24 @@ export function Plot3D({ expr, className, height = 480 }: Plot3DProps) {
           ctx.lineWidth = 1.2;
           ctx.stroke();
         }
+      } else if (renderMode === "points") {
+        // Sci-Fi Hologram Point Cloud Matrix
+        ctx.fillStyle = q.wireColor;
+        for (let k = 0; k < 4; k++) {
+          ctx.beginPath();
+          ctx.arc(q.pts[k][0], q.pts[k][1], 1.6, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
     });
 
     // Clean HUD Info Badge
-    ctx.fillStyle = dark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.6)";
+    ctx.fillStyle = dark ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.7)";
     ctx.font = "11px ui-monospace, SFMono-Regular, monospace";
     ctx.textAlign = "left";
-    ctx.fillText(`z ∈ [${zLo.toFixed(2)}, ${(zLo + zSpan).toFixed(2)}]`, 14, size.h - 14);
-    ctx.fillText(`Domain: [${lo}, ${hi}]²`, 14, size.h - 28);
-  }, [size, cam, compiled, range, palette, renderMode]);
+    ctx.fillText(`z ∈ [${zLo.toFixed(2)}, ${(zLo + zSpan).toFixed(2)}]  (Δz = ${zSpan.toFixed(2)})`, 14, size.h - 14);
+    ctx.fillText(`Domain: [${lo}, ${hi}]²  •  Mesh: ${N}×${N} (${N * N} nodes)`, 14, size.h - 28);
+  }, [size, cam, compiled, range, palette, renderMode, meshRes, showZeroPlane]);
 
   /* Pointer interactions for free 3D rotation */
   const onPointerDown = (e: React.PointerEvent) => {
@@ -590,8 +651,34 @@ export function Plot3D({ expr, className, height = 480 }: Plot3DProps) {
             <DropdownMenuItem onClick={() => setRenderMode("solid")}>Solid Surface</DropdownMenuItem>
             <DropdownMenuItem onClick={() => setRenderMode("wireframe")}>Wireframe Mesh</DropdownMenuItem>
             <DropdownMenuItem onClick={() => setRenderMode("contours")}>Contour Lines</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setRenderMode("points")}>Hologram Point Matrix</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Mesh Density / Resolution Dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted" title="Mesh Quality & Density">
+              <Gauge className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setMeshRes(32)}>Fast / Draft (32×32)</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setMeshRes(48)}>Balanced (48×48)</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setMeshRes(64)}>Ultra HD (64×64)</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Reference Waterplane Toggle */}
+        <Button
+          variant={showZeroPlane ? "secondary" : "ghost"}
+          size="icon"
+          className={cn("h-8 w-8", showZeroPlane && "text-cyan-500 font-bold bg-cyan-500/10")}
+          title={showZeroPlane ? "Hide z=0 reference plane" : "Show z=0 reference grid"}
+          onClick={() => setShowZeroPlane(!showZeroPlane)}
+        >
+          <Grid3x3 className="h-4 w-4" />
+        </Button>
 
         <Button
           variant="ghost"

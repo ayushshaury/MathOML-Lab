@@ -287,7 +287,7 @@ function HeroPlayground({ onOpenTool }: { onOpenTool: (id: string) => void }) {
   const [tab, setTab] = useState<"3d" | "2d" | "solver" | "calc">("3d");
 
   // 3D preset state
-  const [expr3d, setExpr3d] = useState("sin(sqrt(x^2 + y^2)) / (sqrt(x^2 + y^2) + 0.1)");
+  const [expr3d, setExpr3d] = useState("(1 - (x^2 + y^2)/4) * exp(-(x^2 + y^2)/4)");
   // 2D preset state
   const [expr2d, setExpr2d] = useState("sin(x) + cos(2*x)/2");
   // Solver preset state
@@ -393,10 +393,14 @@ function HeroPlayground({ onOpenTool }: { onOpenTool: (id: string) => void }) {
             <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
               <span className="text-xs font-bold text-muted-foreground shrink-0">1-Click Topology:</span>
               {[
+                { name: "Sombrero / Higgs", expr: "(1 - (x^2 + y^2)/4) * exp(-(x^2 + y^2)/4)" },
                 { name: "Ripple Wave", expr: "sin(sqrt(x^2 + y^2)) / (sqrt(x^2 + y^2) + 0.1)" },
-                { name: "Egg Crate", expr: "sin(x)*cos(y)" },
+                { name: "Quantum Wavepacket", expr: "4 * x^2 * y^2 * exp(-(x^2 + y^2))" },
+                { name: "Rosenbrock Banana", expr: "log(1 + (1 - x)^2 + 10*(y - x^2)^2) / 3" },
+                { name: "Scherk Minimal", expr: "log(cos(x) / cos(y))" },
+                { name: "Ackley Multimodal", expr: "-10*exp(-0.2*sqrt(0.5*(x^2 + y^2))) - 0.5*(cos(2*pi*x) + cos(2*pi*y)) + 10" },
+                { name: "Vortex Spiral", expr: "sin(3*atan2(y, x) + sqrt(x^2 + y^2))" },
                 { name: "Monkey Saddle", expr: "x^3 - 3*x*y^2" },
-                { name: "Gaussian Peak", expr: "4*exp(-(x^2 + y^2)/4)" },
               ].map((p) => (
                 <button
                   key={p.name}
