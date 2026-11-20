@@ -778,7 +778,7 @@ export function DynamicModelCanvas({
     { id: "12", x: 1.1, y: -0.8, label: 0 },
   ]);
 
-  // Point placement tool: 0 (Amber) or 1 (Cyan)
+  // Point placement tool: 0 (Soft Ivory #FAF6F3) or 1 (Neon Lime Green #CDF22B)
   const [activeLabel, setActiveLabel] = useState<0 | 1>(1);
 
   // Probe Reticle for KNN
@@ -917,11 +917,11 @@ export function DynamicModelCanvas({
     const scale = Math.min(w, h) / 10.5;
 
     // Tactical Chassis Background
-    ctx.fillStyle = "#090c12";
+    ctx.fillStyle = "#08090B";
     ctx.fillRect(0, 0, w, h);
 
     // Instrument Grid
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.04)";
+    ctx.strokeStyle = "rgba(250, 246, 243, 0.05)";
     ctx.lineWidth = 1;
     for (let x = -5; x <= 5; x += 1) {
       ctx.beginPath();
@@ -937,7 +937,7 @@ export function DynamicModelCanvas({
     }
 
     // Origin Axes
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.18)";
+    ctx.strokeStyle = "rgba(250, 246, 243, 0.22)";
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(0, cy);
@@ -958,8 +958,8 @@ export function DynamicModelCanvas({
       const wobble = isParallelRunning ? Math.sin(animTime * 2) * 0.08 : 0;
       const activeSlope = slope + wobble;
 
-      // Draw Residuals (Red dashed bars from each user point)
-      ctx.strokeStyle = "rgba(244, 63, 94, 0.75)";
+      // Draw Residuals (Neon Lime dashed bars from each user point)
+      ctx.strokeStyle = "rgba(205, 242, 43, 0.4)";
       ctx.lineWidth = 1.6;
       ctx.setLineDash([3, 3]);
       let totalMse = 0;
@@ -974,10 +974,10 @@ export function DynamicModelCanvas({
       ctx.setLineDash([]);
       const mse = points.length ? totalMse / points.length : 0;
 
-      // Draw Optimal Line
-      ctx.strokeStyle = "#10b981";
+      // Draw Optimal Line (Neon Lime Green #CDF22B)
+      ctx.strokeStyle = "#CDF22B";
       ctx.lineWidth = 3.5;
-      ctx.shadowColor = "#10b981";
+      ctx.shadowColor = "#CDF22B";
       ctx.shadowBlur = 12;
       ctx.beginPath();
       const x1 = -5, y1 = activeSlope * x1 + intercept;
@@ -1002,10 +1002,10 @@ export function DynamicModelCanvas({
       const coeffs = fitPolynomial(points, degree);
       const isOverfit = degree >= 5;
 
-      ctx.strokeStyle = isOverfit ? "#f43f5e" : "#06b6d4";
+      ctx.strokeStyle = isOverfit ? "rgba(250, 246, 243, 0.55)" : "#CDF22B";
       ctx.lineWidth = 3.5;
-      ctx.shadowColor = ctx.strokeStyle;
-      ctx.shadowBlur = 10;
+      ctx.shadowColor = isOverfit ? "rgba(250, 246, 243, 0.3)" : "#CDF22B";
+      ctx.shadowBlur = 12;
       ctx.beginPath();
       let totalErr = 0;
 
@@ -1036,9 +1036,9 @@ export function DynamicModelCanvas({
     // 3. RIDGE & LASSO (Shrinkage on User Points)
     // ----------------------------------------------------------------
     } else if (topic.id === "ridge-lasso") {
-      // Unconstrained OLS Line (white dashed)
+      // Unconstrained OLS Line (Soft Ivory dashed)
       const olsCoeffs = fitPolynomial(points, 1, 0);
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+      ctx.strokeStyle = "rgba(250, 246, 243, 0.25)";
       ctx.lineWidth = 1.5;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
@@ -1047,12 +1047,12 @@ export function DynamicModelCanvas({
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Ridge Regularized Line
+      // Ridge Regularized Line (#CDF22B Neon Lime or #FAF6F3 Soft Ivory for zeroed)
       const ridgeCoeffs = fitPolynomial(points, 1, l2Reg * 5);
       const isLassoZero = l2Reg > 5.5;
       const displaySlope = isLassoZero ? 0 : ridgeCoeffs[1];
 
-      ctx.strokeStyle = isLassoZero ? "#ec4899" : "#8b5cf6";
+      ctx.strokeStyle = isLassoZero ? "#FAF6F3" : "#CDF22B";
       ctx.lineWidth = 3.5;
       ctx.shadowColor = ctx.strokeStyle;
       ctx.shadowBlur = 12;
@@ -1077,9 +1077,9 @@ export function DynamicModelCanvas({
       const { w1, w2, b } = fitLogisticRegression(points);
 
       // Decision boundary where w1*x + w2*y + b = 0 => y = -(w1*x + b)/w2
-      ctx.strokeStyle = "#06b6d4";
+      ctx.strokeStyle = "#CDF22B";
       ctx.lineWidth = 3.5;
-      ctx.shadowColor = "#06b6d4";
+      ctx.shadowColor = "#CDF22B";
       ctx.shadowBlur = 12;
       ctx.beginPath();
       if (Math.abs(w2) > 1e-4) {
@@ -1121,9 +1121,9 @@ export function DynamicModelCanvas({
       const marginPx = (1.0 / normW) * scale;
 
       // Hyperplane
-      ctx.strokeStyle = "#8b5cf6";
+      ctx.strokeStyle = "#CDF22B";
       ctx.lineWidth = 3.5;
-      ctx.shadowColor = "#8b5cf6";
+      ctx.shadowColor = "#CDF22B";
       ctx.shadowBlur = 12;
       ctx.beginPath();
       if (Math.abs(w2) > 1e-4) {
@@ -1133,8 +1133,8 @@ export function DynamicModelCanvas({
       ctx.stroke();
       ctx.shadowBlur = 0;
 
-      // Margin Gutters
-      ctx.strokeStyle = "rgba(139, 92, 246, 0.4)";
+      // Margin Gutters (Neon Lime tint)
+      ctx.strokeStyle = "rgba(205, 242, 43, 0.35)";
       ctx.lineWidth = 1.5;
       ctx.setLineDash([4, 4]);
       if (Math.abs(w2) > 1e-4) {
@@ -1154,7 +1154,7 @@ export function DynamicModelCanvas({
         const functionalMargin = ySigned * (w1 * p.x + w2 * p.y + b);
         if (functionalMargin <= 1.2) {
           svCount++;
-          ctx.strokeStyle = "#c084fc";
+          ctx.strokeStyle = "#CDF22B";
           ctx.lineWidth = 2.5;
           ctx.beginPath();
           ctx.arc(cx + p.x * scale, cy - p.y * scale, 12 + Math.sin(animTime * 3) * 2, 0, Math.PI * 2);
@@ -1176,9 +1176,9 @@ export function DynamicModelCanvas({
     } else if (topic.id === "decision-tree") {
       const { axis, threshold, giniGain } = findBestSplit(points);
 
-      ctx.strokeStyle = "#f59e0b";
+      ctx.strokeStyle = "#CDF22B";
       ctx.lineWidth = 3.5;
-      ctx.shadowColor = "#f59e0b";
+      ctx.shadowColor = "#CDF22B";
       ctx.shadowBlur = 12;
       ctx.beginPath();
       if (axis === "x") {
@@ -1214,7 +1214,7 @@ export function DynamicModelCanvas({
       const maxKDist = kNearest[kNearest.length - 1]?.dist || 1;
 
       // Pulsing radar circle
-      ctx.strokeStyle = "rgba(6, 182, 212, 0.45)";
+      ctx.strokeStyle = "rgba(205, 242, 43, 0.4)";
       ctx.lineWidth = 1.5;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
@@ -1224,7 +1224,7 @@ export function DynamicModelCanvas({
 
       // Laser lines connecting probe to K nearest neighbors
       kNearest.forEach((nb) => {
-        ctx.strokeStyle = nb.label === 1 ? "rgba(6, 182, 212, 0.85)" : "rgba(245, 158, 11, 0.85)";
+        ctx.strokeStyle = nb.label === 1 ? "rgba(205, 242, 43, 0.85)" : "rgba(250, 246, 243, 0.85)";
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(probePx, probePy);
@@ -1233,11 +1233,11 @@ export function DynamicModelCanvas({
       });
 
       // Probe Target Crosshair
-      ctx.fillStyle = "#ffffff";
+      ctx.fillStyle = "#CDF22B";
       ctx.beginPath();
       ctx.arc(probePx, probePy, 7, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = "#00d2ff";
+      ctx.strokeStyle = "#FAF6F3";
       ctx.lineWidth = 2.5;
       ctx.stroke();
 
@@ -1246,7 +1246,7 @@ export function DynamicModelCanvas({
       const pred = vote1 >= vote0 ? 1 : 0;
 
       setTelemetry({
-        metricA: `Class ${pred} (${pred === 1 ? "Cyan" : "Amber"})`,
+        metricA: `Class ${pred} (${pred === 1 ? "Neon Lime" : "Soft Ivory"})`,
         nameA: "Majority Vote Output",
         metricB: `Votes: [0: ${vote0}, 1: ${vote1}] | K = ${knnK}`,
         nameB: "Neighbor Tally",
@@ -1257,8 +1257,8 @@ export function DynamicModelCanvas({
     // 8. K-MEANS CLUSTERING (Real Lloyd's on User Points)
     // ----------------------------------------------------------------
     } else if (topic.id === "kmeans") {
-      // Divide points into K groups by angle or position
-      const colors = ["#10b981", "#06b6d4", "#8b5cf6", "#f59e0b"];
+      // Divide points into K groups with Neon Lime & Soft Ivory anchors
+      const colors = ["#CDF22B", "#FAF6F3", "rgba(205, 242, 43, 0.75)", "rgba(250, 246, 243, 0.75)"];
       const centroids: Array<{ x: number; y: number; count: number }> = Array.from({ length: kmeansK }, (_, i) => ({
         x: Math.cos((i * 2 * Math.PI) / kmeansK) * 2,
         y: Math.sin((i * 2 * Math.PI) / kmeansK) * 2,
@@ -1298,7 +1298,7 @@ export function DynamicModelCanvas({
         ctx.beginPath();
         ctx.arc(cx + c.x * scale, cy - c.y * scale, 10, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = "#ffffff";
+        ctx.strokeStyle = "#08090B";
         ctx.lineWidth = 2.5;
         ctx.stroke();
 
@@ -1323,10 +1323,10 @@ export function DynamicModelCanvas({
     } else if (topic.id === "pca") {
       const { meanX, meanY, v1, v2, varRatio } = compute2DPCA(points);
 
-      // Primary Eigenvector PC1 (Green)
-      ctx.strokeStyle = "#10b981";
+      // Primary Eigenvector PC1 (Neon Lime Green #CDF22B)
+      ctx.strokeStyle = "#CDF22B";
       ctx.lineWidth = 3.5;
-      ctx.shadowColor = "#10b981";
+      ctx.shadowColor = "#CDF22B";
       ctx.shadowBlur = 12;
       ctx.beginPath();
       ctx.moveTo(cx + (meanX - v1[0] * 5) * scale, cy - (meanY - v1[1] * 5) * scale);
@@ -1334,8 +1334,8 @@ export function DynamicModelCanvas({
       ctx.stroke();
       ctx.shadowBlur = 0;
 
-      // Secondary Eigenvector PC2 (Cyan dashed)
-      ctx.strokeStyle = "rgba(6, 182, 212, 0.6)";
+      // Secondary Eigenvector PC2 (Soft Ivory #FAF6F3 dashed)
+      ctx.strokeStyle = "rgba(250, 246, 243, 0.6)";
       ctx.lineWidth = 2;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
@@ -1345,7 +1345,7 @@ export function DynamicModelCanvas({
       ctx.setLineDash([]);
 
       // Perpendicular Projection drops
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+      ctx.strokeStyle = "rgba(205, 242, 43, 0.25)";
       ctx.lineWidth = 1.2;
       points.forEach((p) => {
         const dx = p.x - meanX;
@@ -1368,14 +1368,14 @@ export function DynamicModelCanvas({
       });
     }
 
-    // Render Data Points on top
+    // Render Data Points on top (Class 1: Neon Lime Green, Class 0: Soft Ivory)
     points.forEach((p) => {
-      ctx.fillStyle = p.label === 1 ? "#06b6d4" : "#f59e0b";
+      ctx.fillStyle = p.label === 1 ? "#CDF22B" : "#FAF6F3";
       ctx.beginPath();
       ctx.arc(cx + p.x * scale, cy - p.y * scale, 6, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = 1.8;
+      ctx.strokeStyle = "#08090B";
+      ctx.lineWidth = 2;
       ctx.stroke();
     });
 
@@ -1387,40 +1387,40 @@ export function DynamicModelCanvas({
   return (
     <div className="space-y-4">
       {/* ⚡ High-Precision Telemetry Diode Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-2xl bg-[#0b0e17] border border-white/10 font-mono text-xs">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-2xl bg-[#08090B] border border-[#1E2227] font-mono text-xs">
         <div>
-          <span className="text-[10px] text-zinc-500 uppercase tracking-wider block">{telemetry.nameA}</span>
-          <span className="font-bold text-emerald-400 text-sm tracking-tight">{telemetry.metricA}</span>
+          <span className="text-[10px] text-[#FAF6F3]/50 uppercase tracking-wider block">{telemetry.nameA}</span>
+          <span className="font-bold text-[#CDF22B] text-sm tracking-tight">{telemetry.metricA}</span>
         </div>
         <div>
-          <span className="text-[10px] text-zinc-500 uppercase tracking-wider block">{telemetry.nameB}</span>
-          <span className="font-bold text-zinc-200 text-xs truncate block">{telemetry.metricB}</span>
+          <span className="text-[10px] text-[#FAF6F3]/50 uppercase tracking-wider block">{telemetry.nameB}</span>
+          <span className="font-bold text-[#FAF6F3] text-xs truncate block">{telemetry.metricB}</span>
         </div>
         <div>
-          <span className="text-[10px] text-zinc-500 uppercase tracking-wider block">Total Samples</span>
-          <span className="font-bold text-cyan-400 text-sm">{points.length} points</span>
+          <span className="text-[10px] text-[#FAF6F3]/50 uppercase tracking-wider block">Total Samples</span>
+          <span className="font-bold text-[#CDF22B] text-sm">{points.length} points</span>
         </div>
         <div>
-          <span className="text-[10px] text-zinc-500 uppercase tracking-wider block">Engine State</span>
-          <span className="font-bold text-amber-400 text-xs flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-[10px] text-[#FAF6F3]/50 uppercase tracking-wider block">Engine State</span>
+          <span className="font-bold text-[#FAF6F3] text-xs flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#CDF22B] animate-pulse shadow-[0_0_8px_#CDF22B]" />
             {telemetry.status}
           </span>
         </div>
       </div>
 
       {/* 🎬 Parallel Pipeline Stepper (Auto-Updating Narrative) */}
-      <div className="rounded-3xl border border-white/10 bg-[#0c101c]/90 p-5 shadow-2xl space-y-3 relative overflow-hidden backdrop-blur-2xl">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
+      <div className="rounded-3xl border border-[#1E2227] bg-[#0C0E12] p-5 shadow-2xl space-y-3 relative overflow-hidden backdrop-blur-2xl">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1E2227] pb-3">
           <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-indigo-500/20 text-indigo-400 font-mono text-xs font-bold border border-indigo-500/40">
+            <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#CDF22B] text-[#08090B] font-mono text-xs font-black shadow-[0_0_10px_rgba(205,242,43,0.3)]">
               {activeStage.step}
             </span>
             <div>
-              <span className="text-xs font-mono font-bold text-indigo-400 uppercase tracking-wider mr-2">
+              <span className="text-xs font-mono font-bold text-[#CDF22B] uppercase tracking-wider mr-2">
                 Phase {activeStage.step} of {topic.pipelineStages.length}: {activeStage.phase}
               </span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#14171A] border border-[#1E2227] text-[#FAF6F3]/70">
                 {activeStage.badge}
               </span>
             </div>
@@ -1432,7 +1432,7 @@ export function DynamicModelCanvas({
               variant="outline"
               disabled={activePipelineStep === 0}
               onClick={() => onStepChange(Math.max(0, activePipelineStep - 1))}
-              className="h-7 px-2.5 text-xs font-mono rounded-xl border-zinc-700 bg-zinc-900"
+              className="h-7 px-2.5 text-xs font-mono rounded-xl border-[#1E2227] bg-[#14171A] text-[#FAF6F3] hover:bg-[#1E2227]"
             >
               <ChevronLeft className="h-3 w-3" /> Prev
             </Button>
@@ -1440,7 +1440,7 @@ export function DynamicModelCanvas({
               size="sm"
               disabled={activePipelineStep >= topic.pipelineStages.length - 1}
               onClick={() => onStepChange(Math.min(topic.pipelineStages.length - 1, activePipelineStep + 1))}
-              className="h-7 px-3 text-xs font-mono rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold"
+              className="h-7 px-3 text-xs font-mono rounded-xl bg-[#CDF22B] hover:bg-[#bde024] text-[#08090B] font-bold shadow-[0_0_15px_rgba(205,242,43,0.3)]"
             >
               Next <ChevronRight className="h-3 w-3" />
             </Button>
@@ -1448,17 +1448,17 @@ export function DynamicModelCanvas({
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <p className="text-xs text-zinc-300 font-sans leading-relaxed">
+          <p className="text-xs text-[#FAF6F3]/85 font-sans leading-relaxed">
             {activeStage.insight}
           </p>
-          <div className="p-2 rounded-xl bg-black/70 border border-white/10 font-mono text-xs text-cyan-300 shrink-0">
+          <div className="p-2 rounded-xl bg-[#040506] border border-[#1E2227] font-mono text-xs text-[#CDF22B] shrink-0">
             <MathText tex={activeStage.mathExpression} />
           </div>
         </div>
       </div>
 
       {/* Canvas Viewport with Presets and Point Placing Tools */}
-      <div className="relative rounded-3xl border border-white/15 bg-black overflow-hidden shadow-2xl">
+      <div className="relative rounded-3xl border border-[#1E2227] bg-[#08090B] overflow-hidden shadow-2xl">
         <canvas
           ref={canvasRef}
           onMouseDown={handleCanvasMouseDown}
@@ -1468,36 +1468,40 @@ export function DynamicModelCanvas({
         />
 
         {/* Top Floating Point Palette */}
-        <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5 p-1 rounded-2xl bg-black/80 border border-white/15 backdrop-blur-md text-[11px] font-mono">
-          <span className="px-2 text-zinc-400 font-semibold">Click to Add:</span>
+        <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5 p-1 rounded-2xl bg-[#08090B]/90 border border-[#1E2227] backdrop-blur-md text-[11px] font-mono">
+          <span className="px-2 text-[#FAF6F3]/60 font-semibold">Click to Add:</span>
           <button
             onClick={() => setActiveLabel(1)}
             className={cn(
               "px-2.5 py-1 rounded-xl transition-all flex items-center gap-1.5",
-              activeLabel === 1 ? "bg-cyan-500/30 text-cyan-300 border border-cyan-400 font-bold" : "text-zinc-400 hover:text-white"
+              activeLabel === 1
+                ? "bg-[#CDF22B] text-[#08090B] font-bold shadow-[0_0_12px_rgba(205,242,43,0.3)]"
+                : "text-[#FAF6F3]/70 hover:text-[#FAF6F3]"
             )}
           >
-            <span className="h-2 w-2 rounded-full bg-cyan-400" /> Class 1
+            <span className={cn("h-2 w-2 rounded-full", activeLabel === 1 ? "bg-[#08090B]" : "bg-[#CDF22B]")} /> Class 1
           </button>
           <button
             onClick={() => setActiveLabel(0)}
             className={cn(
               "px-2.5 py-1 rounded-xl transition-all flex items-center gap-1.5",
-              activeLabel === 0 ? "bg-amber-500/30 text-amber-300 border border-amber-400 font-bold" : "text-zinc-400 hover:text-white"
+              activeLabel === 0
+                ? "bg-[#FAF6F3] text-[#08090B] font-bold shadow-[0_0_12px_rgba(250,246,243,0.2)]"
+                : "text-[#FAF6F3]/70 hover:text-[#FAF6F3]"
             )}
           >
-            <span className="h-2 w-2 rounded-full bg-amber-400" /> Class 0
+            <span className={cn("h-2 w-2 rounded-full", activeLabel === 0 ? "bg-[#08090B]" : "bg-[#FAF6F3]")} /> Class 0
           </button>
         </div>
 
         {/* Preset Shapes Trigger Bar */}
-        <div className="absolute bottom-3 left-3 right-3 flex flex-wrap items-center justify-between gap-2 p-2 rounded-2xl bg-black/80 border border-white/15 backdrop-blur-md text-xs font-mono">
+        <div className="absolute bottom-3 left-3 right-3 flex flex-wrap items-center justify-between gap-2 p-2 rounded-2xl bg-[#08090B]/90 border border-[#1E2227] backdrop-blur-md text-xs font-mono">
           <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-            <span className="text-[10px] text-zinc-500 uppercase px-1">Presets:</span>
-            <button onClick={() => applyPreset("linear")} className="px-2 py-0.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px]">Linear</button>
-            <button onClick={() => applyPreset("curved")} className="px-2 py-0.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px]">Curved</button>
-            <button onClick={() => applyPreset("clusters")} className="px-2 py-0.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px]">Clusters</button>
-            <button onClick={() => applyPreset("clear")} className="px-2 py-0.5 rounded-lg bg-red-950/60 hover:bg-red-900/60 text-red-300 text-[11px] flex items-center gap-1">
+            <span className="text-[10px] text-[#FAF6F3]/50 uppercase px-1">Presets:</span>
+            <button onClick={() => applyPreset("linear")} className="px-2 py-0.5 rounded-lg bg-[#14171A] border border-[#1E2227] hover:border-[#CDF22B]/40 hover:text-[#CDF22B] text-[#FAF6F3]/80 text-[11px]">Linear</button>
+            <button onClick={() => applyPreset("curved")} className="px-2 py-0.5 rounded-lg bg-[#14171A] border border-[#1E2227] hover:border-[#CDF22B]/40 hover:text-[#CDF22B] text-[#FAF6F3]/80 text-[11px]">Curved</button>
+            <button onClick={() => applyPreset("clusters")} className="px-2 py-0.5 rounded-lg bg-[#14171A] border border-[#1E2227] hover:border-[#CDF22B]/40 hover:text-[#CDF22B] text-[#FAF6F3]/80 text-[11px]">Clusters</button>
+            <button onClick={() => applyPreset("clear")} className="px-2 py-0.5 rounded-lg bg-[#1A1214] border border-[#3A1E24] hover:bg-[#2A161B] text-[#F87171] text-[11px] flex items-center gap-1">
               <Trash2 className="h-2.5 w-2.5" /> Clear
             </button>
           </div>
@@ -1505,7 +1509,7 @@ export function DynamicModelCanvas({
           <div className="flex items-center gap-2 ml-auto">
             <button
               onClick={() => setIsParallelRunning(!isParallelRunning)}
-              className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] flex items-center gap-1.5 shadow-sm"
+              className="px-2.5 py-1 rounded-lg bg-[#CDF22B] hover:bg-[#bde024] text-[#08090B] font-bold text-[11px] flex items-center gap-1.5 shadow-[0_0_12px_rgba(205,242,43,0.3)] transition-all"
             >
               {isParallelRunning ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
               {isParallelRunning ? "Pause Parallel Sim" : "Run Parallel Sim"}
@@ -1515,50 +1519,50 @@ export function DynamicModelCanvas({
       </div>
 
       {/* Model-Specific Hyperparameter Tuning Dials */}
-      <div className="p-3.5 rounded-2xl bg-[#0c101c] border border-white/10 text-xs font-mono space-y-2">
+      <div className="p-3.5 rounded-2xl bg-[#08090B] border border-[#1E2227] text-xs font-mono space-y-2">
         {topic.id === "polynomial-regression" && (
           <div className="flex items-center gap-3">
-            <span className="text-zinc-400 font-semibold">Degree (d = {degree}):</span>
+            <span className="text-[#FAF6F3] font-semibold">Degree (d = {degree}):</span>
             <div className="w-48">
               <Slider value={[degree]} min={1} max={6} step={1} onValueChange={([v]) => setDegree(v)} />
             </div>
-            <span className="text-zinc-500 text-[11px]">Dynamically inverting Vandermonde matrix on user points.</span>
+            <span className="text-[#FAF6F3]/50 text-[11px]">Dynamically inverting Vandermonde matrix on user points.</span>
           </div>
         )}
         {topic.id === "ridge-lasso" && (
           <div className="flex items-center gap-3">
-            <span className="text-zinc-400 font-semibold">Regularization (λ = {l2Reg.toFixed(1)}):</span>
+            <span className="text-[#FAF6F3] font-semibold">Regularization (λ = {l2Reg.toFixed(1)}):</span>
             <div className="w-48">
               <Slider value={[l2Reg]} min={0} max={10} step={0.2} onValueChange={([v]) => setL2Reg(v)} />
             </div>
-            <span className="text-zinc-500 text-[11px]">Adjusts diagonal Tikhonov shrinkage term in real time.</span>
+            <span className="text-[#FAF6F3]/50 text-[11px]">Adjusts diagonal Tikhonov shrinkage term in real time.</span>
           </div>
         )}
         {topic.id === "svm" && (
           <div className="flex items-center gap-3">
-            <span className="text-zinc-400 font-semibold">Slack Penalty (C = {svmC.toFixed(1)}):</span>
+            <span className="text-[#FAF6F3] font-semibold">Slack Penalty (C = {svmC.toFixed(1)}):</span>
             <div className="w-48">
               <Slider value={[svmC]} min={0.2} max={15} step={0.5} onValueChange={([v]) => setSvmC(v)} />
             </div>
-            <span className="text-zinc-500 text-[11px]">Recomputes hinge margin boundaries on user coordinates.</span>
+            <span className="text-[#FAF6F3]/50 text-[11px]">Recomputes hinge margin boundaries on user coordinates.</span>
           </div>
         )}
         {topic.id === "knn" && (
           <div className="flex items-center gap-3">
-            <span className="text-zinc-400 font-semibold">Neighbors (K = {knnK}):</span>
+            <span className="text-[#FAF6F3] font-semibold">Neighbors (K = {knnK}):</span>
             <div className="w-48">
               <Slider value={[knnK]} min={1} max={7} step={2} onValueChange={([v]) => setKnnK(v)} />
             </div>
-            <span className="text-cyan-400 text-[11px]">(Click &amp; drag target probe on canvas)</span>
+            <span className="text-[#CDF22B] text-[11px]">(Click &amp; drag target probe on canvas)</span>
           </div>
         )}
         {topic.id === "kmeans" && (
           <div className="flex items-center gap-3">
-            <span className="text-zinc-400 font-semibold">Partitions (K = {kmeansK}):</span>
+            <span className="text-[#FAF6F3] font-semibold">Partitions (K = {kmeansK}):</span>
             <div className="w-48">
               <Slider value={[kmeansK]} min={2} max={4} step={1} onValueChange={([v]) => setKmeansK(v)} />
             </div>
-            <span className="text-zinc-500 text-[11px]">Recalculates centroids dynamically as points move.</span>
+            <span className="text-[#FAF6F3]/50 text-[11px]">Recalculates centroids dynamically as points move.</span>
           </div>
         )}
       </div>
@@ -1595,10 +1599,10 @@ export function OptimizationLossLab() {
   const [stepCount, setStepCount] = useState<number>(0);
 
   const [particles, setParticles] = useState<OptimizerParticle[]>([
-    { name: "SGD", color: "#ef4444", x: -1.5, y: 1.5, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [] },
-    { name: "Momentum", color: "#eab308", x: -1.5, y: 1.5, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [] },
-    { name: "RMSProp", color: "#3b82f6", x: -1.5, y: 1.5, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [] },
-    { name: "Adam", color: "#10b981", x: -1.5, y: 1.5, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [] },
+    { name: "SGD", color: "rgba(205, 242, 43, 0.5)", x: -1.5, y: 1.5, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [] },
+    { name: "Momentum", color: "rgba(250, 246, 243, 0.65)", x: -1.5, y: 1.5, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [] },
+    { name: "RMSProp", color: "#FAF6F3", x: -1.5, y: 1.5, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [] },
+    { name: "Adam", color: "#CDF22B", x: -1.5, y: 1.5, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [] },
   ]);
 
   const computeLossAndGrad = useCallback((x: number, y: number) => {
@@ -1626,10 +1630,10 @@ export function OptimizationLossLab() {
     const startY = lossFunc === "rosenbrock" ? 1.5 : 2;
     setStepCount(0);
     setParticles([
-      { name: "SGD", color: "#ef4444", x: startX, y: startY, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [{ x: startX, y: startY }] },
-      { name: "Momentum", color: "#eab308", x: startX, y: startY, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [{ x: startX, y: startY }] },
-      { name: "RMSProp", color: "#3b82f6", x: startX, y: startY, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [{ x: startX, y: startY }] },
-      { name: "Adam", color: "#10b981", x: startX, y: startY, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [{ x: startX, y: startY }] },
+      { name: "SGD", color: "rgba(205, 242, 43, 0.5)", x: startX, y: startY, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [{ x: startX, y: startY }] },
+      { name: "Momentum", color: "rgba(250, 246, 243, 0.65)", x: startX, y: startY, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [{ x: startX, y: startY }] },
+      { name: "RMSProp", color: "#FAF6F3", x: startX, y: startY, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [{ x: startX, y: startY }] },
+      { name: "Adam", color: "#CDF22B", x: startX, y: startY, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [{ x: startX, y: startY }] },
     ]);
   }, [lossFunc]);
 
@@ -1725,12 +1729,12 @@ export function OptimizationLossLab() {
     const cy = h / 2;
     const scale = Math.min(w, h) / 6.5;
 
-    ctx.fillStyle = "#090c12";
+    ctx.fillStyle = "#08090B";
     ctx.fillRect(0, 0, w, h);
 
     const levels = [0.1, 0.4, 1.0, 2.5, 5.0, 10.0, 20.0, 40.0];
     levels.forEach((lvl, idx) => {
-      ctx.strokeStyle = `rgba(6, 182, 212, ${0.12 + idx * 0.04})`;
+      ctx.strokeStyle = `rgba(250, 246, 243, ${0.04 + idx * 0.02})`;
       ctx.beginPath();
       for (let angle = 0; angle <= Math.PI * 2; angle += 0.05) {
         const r = Math.sqrt(lvl) * 0.7;
@@ -1745,17 +1749,20 @@ export function OptimizationLossLab() {
 
     const targetX = lossFunc === "rosenbrock" ? 1 : 0;
     const targetY = lossFunc === "rosenbrock" ? 1 : 0;
-    ctx.fillStyle = "#10b981";
+    ctx.fillStyle = "#CDF22B";
     ctx.beginPath();
     ctx.arc(cx + targetX * scale, cy - targetY * scale, 6, 0, Math.PI * 2);
     ctx.fill();
+    ctx.strokeStyle = "#08090B";
+    ctx.lineWidth = 2;
+    ctx.stroke();
 
     particles.forEach((p) => {
       if (p.path.length < 2) return;
       ctx.strokeStyle = p.color;
       ctx.lineWidth = 2.5;
-      ctx.shadowColor = p.color;
-      ctx.shadowBlur = 8;
+      ctx.shadowColor = p.name === "Adam" ? "#CDF22B" : "transparent";
+      ctx.shadowBlur = p.name === "Adam" ? 10 : 0;
       ctx.beginPath();
       p.path.forEach((pt, idx) => {
         const px = cx + pt.x * scale;
@@ -1778,9 +1785,9 @@ export function OptimizationLossLab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-zinc-950/70 border border-white/10 text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-[#08090B] border border-[#1E2227] text-xs">
         <div className="flex items-center gap-2">
-          <span className="font-mono text-zinc-400 font-semibold">Landscape:</span>
+          <span className="font-mono text-[#FAF6F3]/50 font-semibold">Landscape:</span>
           {[
             { id: "rosenbrock", label: "Rosenbrock Valley" },
             { id: "saddle", label: "Saddle Point" },
@@ -1793,8 +1800,8 @@ export function OptimizationLossLab() {
               className={cn(
                 "px-2.5 py-1 rounded-xl font-mono text-xs transition-all",
                 lossFunc === l.id
-                  ? "bg-indigo-600 text-white font-bold shadow-xs"
-                  : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800"
+                  ? "bg-[#CDF22B] text-[#08090B] font-bold shadow-[0_0_12px_rgba(205,242,43,0.3)]"
+                  : "bg-[#14171A] border border-[#1E2227] text-[#FAF6F3]/70 hover:text-[#FAF6F3]"
               )}
             >
               {l.label}
@@ -1806,21 +1813,21 @@ export function OptimizationLossLab() {
           <Button
             size="sm"
             variant="outline"
-            className="h-8 text-xs gap-1.5 font-mono border-zinc-700 bg-zinc-900"
+            className="h-8 text-xs gap-1.5 font-mono border-[#1E2227] bg-[#CDF22B] hover:bg-[#bde024] text-[#08090B] font-bold shadow-[0_0_12px_rgba(205,242,43,0.3)]"
             onClick={() => setIsRacing(!isRacing)}
           >
-            {isRacing ? <Pause className="h-3 w-3 text-amber-400" /> : <Play className="h-3 w-3 text-emerald-400" />}
+            {isRacing ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
             {isRacing ? "Pause Race" : "Start Race"}
           </Button>
-          <Button size="sm" variant="ghost" className="h-8 text-xs gap-1 font-mono text-zinc-400" onClick={resetRace}>
+          <Button size="sm" variant="ghost" className="h-8 text-xs gap-1 font-mono text-[#FAF6F3]/70 hover:text-[#FAF6F3] border border-[#1E2227] bg-[#14171A]" onClick={resetRace}>
             <RotateCcw className="h-3 w-3" /> Reset
           </Button>
         </div>
       </div>
 
-      <div className="relative rounded-3xl border border-white/10 bg-black overflow-hidden shadow-2xl">
+      <div className="relative rounded-3xl border border-[#1E2227] bg-[#08090B] overflow-hidden shadow-2xl">
         <canvas ref={canvasRef} className="w-full block" />
-        <div className="absolute top-3 left-3 text-[10px] font-mono px-2 py-1 rounded-md bg-black/70 border border-white/10 text-zinc-400">
+        <div className="absolute top-3 left-3 text-[10px] font-mono px-2 py-1 rounded-md bg-[#08090B]/90 border border-[#1E2227] text-[#FAF6F3]/70">
           Step: {stepCount} • Target: 🎯 (Global Minimum)
         </div>
       </div>
@@ -1831,19 +1838,19 @@ export function OptimizationLossLab() {
           return (
             <div
               key={p.name}
-              className="p-3 rounded-2xl border border-white/10 bg-[#0c101c] flex flex-col gap-1"
+              className="p-3 rounded-2xl border border-[#1E2227] bg-[#0C0E12] flex flex-col gap-1"
             >
               <div className="flex items-center justify-between">
-                <span className="font-bold flex items-center gap-1.5" style={{ color: p.color }}>
+                <span className="font-bold flex items-center gap-1.5" style={{ color: p.name === "SGD" ? "#CDF22B" : p.name === "Momentum" ? "#FAF6F3" : p.color }}>
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: p.color }} />
                   {p.name}
                 </span>
-                <span className="text-[10px] text-zinc-500">t = {p.t}</span>
+                <span className="text-[10px] text-[#FAF6F3]/40">t = {p.t}</span>
               </div>
-              <div className="text-[11px] text-zinc-400">
-                Loss: <span className="text-zinc-100 font-bold">{loss.toFixed(4)}</span>
+              <div className="text-[11px] text-[#FAF6F3]/70">
+                Loss: <span className="text-[#FAF6F3] font-bold">{loss.toFixed(4)}</span>
               </div>
-              <div className="text-[10px] text-zinc-500 truncate">
+              <div className="text-[10px] text-[#FAF6F3]/50 truncate">
                 Pos: ({p.x.toFixed(2)}, {p.y.toFixed(2)})
               </div>
             </div>
@@ -1929,26 +1936,26 @@ export function QLearningGridworld() {
     <div className="space-y-4">
       <div className="flex items-center justify-between text-xs font-mono">
         <div className="flex items-center gap-3">
-          <span className="text-cyan-400 font-bold">Episodes: {episodes}</span>
-          <span className="text-zinc-500">• Cumulative Reward: {totalReward.toFixed(1)}</span>
+          <span className="text-[#CDF22B] font-bold">Episodes: {episodes}</span>
+          <span className="text-[#FAF6F3]/60">• Cumulative Reward: {totalReward.toFixed(1)}</span>
         </div>
         <div className="flex gap-2">
           <Button
             size="sm"
             variant="outline"
-            className="h-7 text-xs gap-1 font-mono border-zinc-700 bg-zinc-900"
+            className="h-7 text-xs gap-1 font-mono border-[#1E2227] bg-[#CDF22B] hover:bg-[#bde024] text-[#08090B] font-bold shadow-[0_0_12px_rgba(205,242,43,0.3)]"
             onClick={() => setIsRunning(!isRunning)}
           >
-            {isRunning ? <Pause className="h-3 w-3 text-amber-400" /> : <Play className="h-3 w-3 text-emerald-400" />}
+            {isRunning ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
             {isRunning ? "Pause" : "Auto-Explore"}
           </Button>
-          <Button size="sm" variant="ghost" className="h-7 text-xs font-mono text-zinc-400" onClick={stepAgent}>
+          <Button size="sm" variant="ghost" className="h-7 text-xs font-mono text-[#FAF6F3]/70 hover:text-[#FAF6F3] border border-[#1E2227] bg-[#14171A]" onClick={stepAgent}>
             Step
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-5 gap-2 p-4 rounded-3xl border border-white/10 bg-black max-w-md mx-auto shadow-2xl">
+      <div className="grid grid-cols-5 gap-2 p-4 rounded-3xl border border-[#1E2227] bg-[#08090B] max-w-md mx-auto shadow-2xl">
         {Array.from({ length: 25 }, (_, idx) => {
           const r = Math.floor(idx / 5);
           const c = idx % 5;
@@ -1966,15 +1973,15 @@ export function QLearningGridworld() {
             <div
               key={idx}
               className={cn(
-                "h-16 rounded-2xl flex flex-col items-center justify-center font-mono text-xs border border-white/10 transition-all relative overflow-hidden",
-                isGoal && "bg-emerald-500/30 border-emerald-500 text-emerald-400 font-bold",
-                isTrap && "bg-rose-500/30 border-rose-500 text-rose-400",
-                !isGoal && !isTrap && "bg-white/5"
+                "h-16 rounded-2xl flex flex-col items-center justify-center font-mono text-xs border border-[#1E2227] transition-all relative overflow-hidden",
+                isGoal && "bg-[#CDF22B]/20 border-[#CDF22B] text-[#CDF22B] font-bold",
+                isTrap && "bg-[#1A1D24] border-[#3A404D] text-[#FAF6F3]/50",
+                !isGoal && !isTrap && "bg-[#14171A]/40"
               )}
-              style={!isGoal && !isTrap ? { backgroundColor: `rgba(6, 182, 212, ${intensity * 0.35})` } : {}}
+              style={!isGoal && !isTrap ? { backgroundColor: `rgba(205, 242, 43, ${intensity * 0.35})` } : {}}
             >
               {isAgent && (
-                <div className="h-6 w-6 rounded-full bg-cyan-400 animate-pulse shadow-lg flex items-center justify-center text-slate-950 font-black text-[10px]">
+                <div className="h-6 w-6 rounded-full bg-[#CDF22B] animate-pulse shadow-[0_0_16px_rgba(205,242,43,0.5)] flex items-center justify-center text-[#08090B] font-black text-[10px]">
                   AI
                 </div>
               )}
@@ -1982,20 +1989,20 @@ export function QLearningGridworld() {
               {isTrap && <span className="text-lg">🔥</span>}
 
               {!isGoal && !isTrap && !isAgent && (
-                <span className="text-xs font-bold text-cyan-300 opacity-80">
+                <span className="text-xs font-bold text-[#CDF22B] opacity-90">
                   {actionArrows[bestAction]}
                 </span>
               )}
 
-              <span className="absolute bottom-1 right-1 text-[8px] opacity-50 font-mono">
+              <span className="absolute bottom-1 right-1 text-[8px] text-[#FAF6F3]/50 font-mono">
                 {maxQ.toFixed(1)}
               </span>
             </div>
           );
         })}
       </div>
-      <p className="text-[11px] font-mono text-zinc-500 text-center">
-        Tile vectors indicate greedy action argmax Q(s, a). Cyan glow represents state return confidence.
+      <p className="text-[11px] font-mono text-[#FAF6F3]/50 text-center">
+        Tile vectors indicate greedy action argmax Q(s, a). Neon lime glow represents state return confidence.
       </p>
     </div>
   );
@@ -2041,27 +2048,27 @@ export function MLArenaTool() {
   return (
     <div className="w-full space-y-6">
       {/* 🚀 Master Instrument Navigation Bar */}
-      <div className="rounded-[32px] bg-[#080b12] border border-white/10 p-5 sm:p-7 shadow-2xl relative overflow-hidden backdrop-blur-2xl">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-5">
+      <div className="rounded-[32px] bg-[#08090B] border border-[#1E2227] p-5 sm:p-7 shadow-2xl relative overflow-hidden backdrop-blur-2xl">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#1E2227] pb-5">
           <div className="flex items-center gap-3.5">
-            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 text-white shadow-xl shadow-indigo-500/20">
-              <Brain className="h-6 w-6" />
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#CDF22B] text-[#08090B] shadow-[0_0_20px_rgba(205,242,43,0.35)]">
+              <Brain className="h-6 w-6 stroke-[2.5]" />
             </span>
             <div>
               <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[10px] font-mono tracking-widest text-emerald-400 uppercase font-bold">
-                  HIGH-PRECISION CAS ENGINE • DYNAMIC USER DATA SOLVER
+                <span className="h-2 w-2 rounded-full bg-[#CDF22B] animate-pulse shadow-[0_0_8px_#CDF22B]" />
+                <span className="text-[10px] font-mono tracking-widest text-[#CDF22B] uppercase font-bold">
+                  HIGH-PRECISION CAS ENGINE • DYNAMIC REAL-TIME SOLVERS
                 </span>
               </div>
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight mt-0.5 text-white">
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight mt-0.5 text-[#FAF6F3]">
                 Machine Learning Arena
               </h1>
             </div>
           </div>
 
           {/* 5 Disciplines Segment Selector */}
-          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-zinc-900/80 border border-white/10 overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#0C0E12] border border-[#1E2227] overflow-x-auto scrollbar-none">
             {[
               { id: "regression", label: "Regression", icon: TrendingUp },
               { id: "classification", label: "Classification", icon: Target },
@@ -2076,8 +2083,8 @@ export function MLArenaTool() {
                 className={cn(
                   "flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shrink-0 active:scale-95",
                   activeParadigm === p.id
-                    ? "bg-indigo-600 text-white shadow-md font-bold"
-                    : "text-zinc-400 hover:text-white hover:bg-zinc-800"
+                    ? "bg-[#CDF22B] text-[#08090B] shadow-[0_0_15px_rgba(205,242,43,0.3)] font-bold"
+                    : "text-[#FAF6F3]/70 hover:text-[#FAF6F3] hover:bg-[#14171A]"
                 )}
               >
                 <p.icon className="h-3.5 w-3.5" />
@@ -2089,7 +2096,7 @@ export function MLArenaTool() {
 
         {/* Tactical Model Pills */}
         <div className="flex items-center gap-2 pt-4 overflow-x-auto scrollbar-none">
-          <span className="text-xs font-mono font-bold text-zinc-500 uppercase shrink-0 mr-1">
+          <span className="text-xs font-mono font-bold text-[#FAF6F3]/50 uppercase shrink-0 mr-1">
             Algorithm:
           </span>
           {availableTopics.map((topic) => (
@@ -2100,8 +2107,8 @@ export function MLArenaTool() {
               className={cn(
                 "rounded-xl border px-3.5 py-1.5 text-xs font-semibold transition-all shrink-0 active:scale-95 flex items-center gap-1.5",
                 selectedTopicId === topic.id
-                  ? "border-indigo-500 bg-indigo-500/20 text-indigo-300 font-bold shadow-xs"
-                  : "border-white/10 bg-zinc-900/50 hover:bg-zinc-800 text-zinc-400 hover:text-white"
+                  ? "border-[#CDF22B] bg-[#CDF22B]/15 text-[#CDF22B] font-bold shadow-[0_0_10px_rgba(205,242,43,0.2)]"
+                  : "border-[#1E2227] bg-[#0E1116] hover:bg-[#14171A] text-[#FAF6F3]/60 hover:text-[#FAF6F3] hover:border-[#CDF22B]/30"
               )}
             >
               <span>{topic.name}</span>
@@ -2114,20 +2121,20 @@ export function MLArenaTool() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Stage: 60% Width Responsive Visualizer */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="rounded-3xl bg-[#080b12] border border-white/10 p-5 sm:p-6 shadow-2xl space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
-              <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-zinc-900/80 border border-white/10">
+          <div className="rounded-3xl bg-[#08090B] border border-[#1E2227] p-5 sm:p-6 shadow-2xl space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1E2227] pb-3">
+              <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#0C0E12] border border-[#1E2227]">
                 <button
                   type="button"
                   onClick={() => setStudioMode("dynamic-canvas")}
                   className={cn(
                     "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all",
                     studioMode === "dynamic-canvas"
-                      ? "bg-indigo-600 text-white font-bold shadow-md"
-                      : "text-zinc-400 hover:text-white"
+                      ? "bg-[#CDF22B] text-[#08090B] font-bold shadow-[0_0_15px_rgba(205,242,43,0.3)]"
+                      : "text-[#FAF6F3]/60 hover:text-[#FAF6F3]"
                   )}
                 >
-                  <Activity className="h-3.5 w-3.5 text-cyan-400" />
+                  <Activity className="h-3.5 w-3.5" />
                   <span>Dynamic Live Canvas</span>
                 </button>
                 <button
@@ -2136,11 +2143,11 @@ export function MLArenaTool() {
                   className={cn(
                     "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all",
                     studioMode === "race"
-                      ? "bg-indigo-600 text-white font-bold shadow-md"
-                      : "text-zinc-400 hover:text-white"
+                      ? "bg-[#CDF22B] text-[#08090B] font-bold shadow-[0_0_15px_rgba(205,242,43,0.3)]"
+                      : "text-[#FAF6F3]/60 hover:text-[#FAF6F3]"
                   )}
                 >
-                  <Trophy className="h-3.5 w-3.5 text-amber-400" />
+                  <Trophy className="h-3.5 w-3.5" />
                   <span>4-Way Optimizer Race</span>
                 </button>
                 <button
@@ -2149,16 +2156,16 @@ export function MLArenaTool() {
                   className={cn(
                     "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all",
                     studioMode === "3d"
-                      ? "bg-indigo-600 text-white font-bold shadow-md"
-                      : "text-zinc-400 hover:text-white"
+                      ? "bg-[#CDF22B] text-[#08090B] font-bold shadow-[0_0_15px_rgba(205,242,43,0.3)]"
+                      : "text-[#FAF6F3]/60 hover:text-[#FAF6F3]"
                   )}
                 >
-                  <Compass className="h-3.5 w-3.5 text-emerald-400" />
+                  <Compass className="h-3.5 w-3.5" />
                   <span>3D Loss Surface</span>
                 </button>
               </div>
 
-              <span className="text-xs font-mono px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 font-bold">
+              <span className="text-xs font-mono px-3 py-1 rounded-full bg-[#CDF22B]/10 border border-[#CDF22B]/30 text-[#CDF22B] font-bold">
                 {activeTopic.name}
               </span>
             </div>
@@ -2181,23 +2188,23 @@ export function MLArenaTool() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="text-sm font-bold text-white">
+                    <h4 className="text-sm font-bold text-[#FAF6F3]">
                       {activeTopic.lossSurfaceName || "Optimization Loss Surface"}
                     </h4>
-                    <p className="text-xs font-mono text-cyan-400 mt-0.5">
+                    <p className="text-xs font-mono text-[#CDF22B] mt-0.5">
                       z = {activeTopic.lossSurface3d || "x^2 + y^2"}
                     </p>
                   </div>
-                  <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+                  <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-[#CDF22B]/10 border border-[#CDF22B]/30 text-[#CDF22B]">
                     DIRECTIONAL SHADERS
                   </span>
                 </div>
-                <div className="rounded-2xl overflow-hidden border border-white/10 bg-black shadow-inner">
+                <div className="rounded-2xl overflow-hidden border border-[#1E2227] bg-[#08090B] shadow-inner">
                   <Plot3D expr={activeTopic.lossSurface3d || "x^2 + y^2"} height={390} />
                 </div>
-                <div className="flex items-center justify-between text-[11px] text-zinc-500 font-mono">
+                <div className="flex items-center justify-between text-[11px] text-[#FAF6F3]/50 font-mono">
                   <span>• DRAG TO ORBIT • SCROLL TO SCALE • INSPECT CONVEXITY</span>
-                  <span className="text-cyan-400 font-semibold">60 FPS WEBGL SHADERS</span>
+                  <span className="text-[#CDF22B] font-semibold">60 FPS WEBGL SHADERS</span>
                 </div>
               </div>
             )}
@@ -2206,9 +2213,9 @@ export function MLArenaTool() {
 
         {/* Right Stage: 40% Width Mathematical Knowledge Base */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="rounded-3xl bg-[#080b12] border border-white/10 p-5 sm:p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <div className="flex items-center gap-1 p-1 rounded-2xl bg-zinc-900/80 border border-white/10">
+          <div className="rounded-3xl bg-[#08090B] border border-[#1E2227] p-5 sm:p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-[#1E2227] pb-3">
+              <div className="flex items-center gap-1 p-1 rounded-2xl bg-[#0C0E12] border border-[#1E2227]">
                 {[
                   { id: "math", label: "Derivations", icon: BookOpen },
                   { id: "code", label: "NumPy Code", icon: Code2 },
@@ -2220,8 +2227,8 @@ export function MLArenaTool() {
                     className={cn(
                       "flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all",
                       infoTab === t.id
-                        ? "bg-white text-black font-bold shadow-sm"
-                        : "text-zinc-400 hover:text-white"
+                        ? "bg-[#CDF22B] text-[#08090B] font-bold shadow-[0_0_12px_rgba(205,242,43,0.3)]"
+                        : "text-[#FAF6F3]/60 hover:text-[#FAF6F3]"
                     )}
                   >
                     <t.icon className="h-3.5 w-3.5" />
@@ -2235,9 +2242,9 @@ export function MLArenaTool() {
                   size="sm"
                   variant="outline"
                   onClick={copyCode}
-                  className="h-7 text-xs gap-1.5 font-mono rounded-xl border-zinc-700 bg-zinc-900"
+                  className="h-7 text-xs gap-1.5 font-mono rounded-xl border-[#1E2227] bg-[#14171A] text-[#FAF6F3] hover:border-[#CDF22B]/40 hover:text-[#CDF22B]"
                 >
-                  {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                  {copied ? <Check className="h-3 w-3 text-[#CDF22B]" /> : <Copy className="h-3 w-3" />}
                   <span>{copied ? "Copied" : "Copy"}</span>
                 </Button>
               )}
@@ -2246,36 +2253,36 @@ export function MLArenaTool() {
             {infoTab === "math" && (
               <div className="space-y-4 text-left">
                 <div className="space-y-1.5">
-                  <span className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-indigo-400" /> 1. Objective Loss Formulation:
+                  <span className="text-xs font-bold text-[#FAF6F3] flex items-center gap-1.5">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-[#CDF22B]" /> 1. Objective Loss Formulation:
                   </span>
-                  <div className="p-3.5 rounded-2xl bg-black border border-white/10 overflow-x-auto text-sm text-cyan-300">
+                  <div className="p-3.5 rounded-2xl bg-[#040506] border border-[#1E2227] overflow-x-auto text-sm text-[#FAF6F3]">
                     <MathText tex={activeTopic.math.objective} display />
                   </div>
-                  <p className="text-xs text-zinc-400 leading-relaxed">{activeTopic.math.objectiveExpl}</p>
+                  <p className="text-xs text-[#FAF6F3]/75 leading-relaxed">{activeTopic.math.objectiveExpl}</p>
                 </div>
 
                 {activeTopic.math.gradient && (
                   <div className="space-y-1.5">
-                    <span className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-amber-400" /> 2. Analytical Gradient Vector:
+                    <span className="text-xs font-bold text-[#FAF6F3] flex items-center gap-1.5">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-[#CDF22B]" /> 2. Analytical Gradient Vector:
                     </span>
-                    <div className="p-3.5 rounded-2xl bg-black border border-white/10 overflow-x-auto text-sm text-amber-300">
+                    <div className="p-3.5 rounded-2xl bg-[#040506] border border-[#1E2227] overflow-x-auto text-sm text-[#FAF6F3]">
                       <MathText tex={activeTopic.math.gradient} display />
                     </div>
-                    <p className="text-xs text-zinc-400 leading-relaxed">{activeTopic.math.gradientExpl}</p>
+                    <p className="text-xs text-[#FAF6F3]/75 leading-relaxed">{activeTopic.math.gradientExpl}</p>
                   </div>
                 )}
 
                 {activeTopic.math.closedForm && (
                   <div className="space-y-1.5">
-                    <span className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" /> 3. Closed-Form / Analytical Optimum:
+                    <span className="text-xs font-bold text-[#FAF6F3] flex items-center gap-1.5">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-[#CDF22B]" /> 3. Closed-Form / Analytical Optimum:
                     </span>
-                    <div className="p-3.5 rounded-2xl bg-black border border-white/10 overflow-x-auto text-sm text-emerald-300">
+                    <div className="p-3.5 rounded-2xl bg-[#040506] border border-[#1E2227] overflow-x-auto text-sm text-[#FAF6F3]">
                       <MathText tex={activeTopic.math.closedForm} display />
                     </div>
-                    <p className="text-xs text-zinc-400 leading-relaxed">{activeTopic.math.closedFormExpl}</p>
+                    <p className="text-xs text-[#FAF6F3]/75 leading-relaxed">{activeTopic.math.closedFormExpl}</p>
                   </div>
                 )}
               </div>
@@ -2283,11 +2290,11 @@ export function MLArenaTool() {
 
             {infoTab === "code" && (
               <div className="space-y-3">
-                <div className="flex items-center justify-between text-xs text-zinc-400 font-mono">
+                <div className="flex items-center justify-between text-xs text-[#FAF6F3]/60 font-mono">
                   <span>Pure NumPy • Vectorized</span>
-                  <span className="text-emerald-400 font-bold">No Black Box sklearn</span>
+                  <span className="text-[#CDF22B] font-bold">No Black Box sklearn</span>
                 </div>
-                <pre className="p-4 rounded-2xl border border-white/10 bg-black font-mono text-xs overflow-x-auto text-emerald-400 leading-relaxed max-h-[460px] shadow-inner text-left">
+                <pre className="p-4 rounded-2xl border border-[#1E2227] bg-[#040506] font-mono text-xs overflow-x-auto text-[#CDF22B] leading-relaxed max-h-[460px] shadow-inner text-left">
                   <code>{activeTopic.pythonCode}</code>
                 </pre>
               </div>
@@ -2295,13 +2302,13 @@ export function MLArenaTool() {
 
             {infoTab === "insights" && (
               <div className="space-y-3 text-left">
-                <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">
+                <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-[#FAF6F3]/50">
                   Mathematical Guarantees &amp; Assumptions:
                 </h4>
                 <ul className="space-y-2.5">
                   {activeTopic.math.keyPoints.map((pt, idx) => (
-                    <li key={idx} className="flex items-start gap-2.5 text-xs text-zinc-400 leading-relaxed">
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-lg bg-indigo-500/20 text-indigo-400 font-mono text-[10px] font-bold border border-indigo-500/30">
+                    <li key={idx} className="flex items-start gap-2.5 text-xs text-[#FAF6F3]/80 leading-relaxed">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-lg bg-[#CDF22B]/15 text-[#CDF22B] font-mono text-[10px] font-bold border border-[#CDF22B]/30">
                         {idx + 1}
                       </span>
                       <span>{pt}</span>
