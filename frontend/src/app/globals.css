@@ -169,6 +169,14 @@
   box-shadow: 0 0 25px -4px rgba(245, 158, 11, 0.35);
 }
 
+.glow-indigo {
+  box-shadow: 0 0 25px -4px rgba(99, 102, 241, 0.35);
+}
+
+.glow-rose {
+  box-shadow: 0 0 25px -4px rgba(244, 63, 94, 0.35);
+}
+
 /* Animated gradient text */
 .text-shimmer {
   background: linear-gradient(

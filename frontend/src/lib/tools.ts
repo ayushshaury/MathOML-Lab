@@ -2,7 +2,7 @@
  * Registry of every tool in the maths laboratory — drives navigation,
  * search and the home page.
  */
-export type CategoryId = "algebra" | "calculus" | "linear" | "odes" | "vector" | "trig" | "geometry" | "stats" | "graphing" | "utilities";
+export type CategoryId = "algebra" | "calculus" | "linear" | "odes" | "vector" | "trig" | "geometry" | "stats" | "graphing" | "utilities" | "ml";
 
 export interface Category {
   id: CategoryId;
@@ -32,6 +32,7 @@ export const CATEGORIES: Category[] = [
   { id: "stats", name: "Statistics & Probability", description: "Data, distributions, regression", icon: "BarChart3", color: "sky" },
   { id: "graphing", name: "Graphing", description: "2D and 3D visual calculators", icon: "LineChart", color: "teal" },
   { id: "utilities", name: "Utilities", description: "Calculator, image-to-equation", icon: "Calculator", color: "slate" },
+  { id: "ml", name: "Machine Learning Arena", description: "Regression, classification, optimizers, unsupervised & RL", icon: "Brain", color: "indigo" },
 ];
 
 export const TOOLS: Tool[] = [
@@ -69,6 +70,8 @@ export const TOOLS: Tool[] = [
   // Utilities
   { id: "calculator", name: "Scientific Calculator", category: "utilities", description: "Evaluate any expression with constants and functions.", keywords: ["calculator", "evaluate", "compute", "scientific"], icon: "Calculator" },
   { id: "image-to-equation", name: "Image to Equation", category: "utilities", description: "Upload a photo of a problem and get an editable equation.", keywords: ["image", "photo", "ocr", "picture", "scan", "upload", "recognize"], icon: "ScanLine" },
+  // Machine Learning Arena
+  { id: "ml-arena", name: "Machine Learning Arena", category: "ml", description: "Interactive 3D/2D visual laboratory, mathematical derivations & from-scratch Python/NumPy code for Regression, Classification, Optimization, Unsupervised Learning & RL.", keywords: ["machine learning", "ml", "ai", "regression", "svm", "classification", "gradient descent", "adam", "kmeans", "pca", "q-learning", "reinforcement learning", "neural network"], icon: "Brain" },
 ];
 
 export function getTool(id: string): Tool | undefined {
@@ -127,4 +130,5 @@ export const EXAMPLES: Record<string, string[]> = {
   "graph-3d": ["sin(x)*cos(y)", "x^2 - y^2", "exp(-(x^2+y^2)/4)"],
   calculator: ["2^(10)", "sqrt(144) + 3^3", "log(1000)", "sin(pi/6)"],
   "image-to-equation": [],
+  "ml-arena": ["Linear Regression OLS", "Logistic Regression Sigmoid", "Support Vector Machines (SVM)", "Adam Optimizer", "K-Means Clustering", "Q-Learning Gridworld"],
 };

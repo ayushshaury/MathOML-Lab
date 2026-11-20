@@ -7,7 +7,7 @@ import {
   Equal, Shuffle, Layers, TrendingUp, SquareStack, MoveRight, GitBranch, Infinity as InfinityIcon,
   ListOrdered, Grid3x3, SquareDashed, Waves, Compass, Triangle, Shapes, BarChart3, Dice5,
   LineChart, Mountain, Calculator, ScanLine, FlaskRound, BookOpen, ExternalLink, Play, Github,
-  Terminal, Zap, CheckCircle2, Cpu
+  Terminal, Zap, CheckCircle2, Cpu, Brain
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +33,7 @@ import { cn } from "@/lib/utils";
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Sigma, Equal, Shuffle, Layers, TrendingUp, SquareStack, MoveRight, GitBranch,
   Infinity: InfinityIcon, ListOrdered, Grid3x3, SquareDashed, Waves, Compass,
-  Triangle, Shapes, BarChart3, Dice5, LineChart, Mountain, Calculator, ScanLine,
+  Triangle, Shapes, BarChart3, Dice5, LineChart, Mountain, Calculator, ScanLine, Brain,
 };
 
 function CatIcon({ name, className }: { name: string; className?: string }) {
@@ -52,6 +52,7 @@ const CAT_STYLES: Record<string, { bg: string; text: string; border: string; glo
   lime: { bg: "bg-lime-500", text: "text-lime-500 dark:text-lime-400", border: "hover:border-lime-500/50", glow: "glow-lime", gradient: "from-lime-500/20 via-transparent to-transparent" },
   sky: { bg: "bg-sky-500", text: "text-sky-500 dark:text-sky-400", border: "hover:border-sky-500/50", glow: "glow-sky", gradient: "from-sky-500/20 via-transparent to-transparent" },
   teal: { bg: "bg-teal-500", text: "text-teal-500 dark:text-teal-400", border: "hover:border-teal-500/50", glow: "glow-teal", gradient: "from-teal-500/20 via-transparent to-transparent" },
+  indigo: { bg: "bg-indigo-500", text: "text-indigo-500 dark:text-indigo-400", border: "hover:border-indigo-500/50", glow: "glow-indigo", gradient: "from-indigo-500/20 via-transparent to-transparent" },
   slate: { bg: "bg-slate-500", text: "text-slate-500 dark:text-slate-400", border: "hover:border-slate-500/50", glow: "glow-slate", gradient: "from-slate-500/20 via-transparent to-transparent" },
 };
 
@@ -94,6 +95,7 @@ const TOOL_COMPONENTS: Record<string, React.ComponentType> = {
   "graph-2d": dynamic(() => import("@/components/tools/graph-tools").then((m) => m.Graph2DTool), { loading }),
   "graph-3d": dynamic(() => import("@/components/tools/graph-tools").then((m) => m.Graph3DTool), { loading }),
   "image-to-equation": dynamic(() => import("@/components/tools/image-tool").then((m) => m.ImageToEquationTool), { loading }),
+  "ml-arena": dynamic(() => import("@/components/tools/ml-arena-tool").then((m) => m.MLArenaTool), { loading }),
 };
 
 /* ------------------------------------------------------------------ */
@@ -196,12 +198,13 @@ function Header() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
           </span>
-          <span>CAS 24/24 ONLINE • 0ms DELAY</span>
+          <span>CAS &amp; ML 25/25 ONLINE • 0ms DELAY</span>
         </div>
 
         {/* Top Flagship Quick Switcher */}
         <div className="hidden lg:flex items-center gap-1.5 ml-3 border-l border-border/50 pl-3">
           {[
+            { id: "ml-arena", label: "ML Arena", icon: Brain, color: "text-indigo-400" },
             { id: "graph-3d", label: "3D Surface", icon: Mountain, color: "text-cyan-400" },
             { id: "graph-2d", label: "2D Grapher", icon: LineChart, color: "text-emerald-400" },
             { id: "image-to-equation", label: "Photo OCR", icon: ScanLine, color: "text-violet-400" },
@@ -231,7 +234,7 @@ function Header() {
           onClick={() => setSearchOpen(true)}
         >
           <Search className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-emerald-500 transition-colors" />
-          <span className="truncate text-xs sm:text-sm">Search 24 math instruments…</span>
+          <span className="truncate text-xs sm:text-sm">Search 25 math &amp; ML instruments…</span>
           <kbd className="pointer-events-none hidden sm:inline-flex h-5 select-none items-center gap-1 rounded-lg border bg-background/80 px-1.5 font-mono text-[10px] font-semibold text-muted-foreground ml-auto">
             ⌘K
           </kbd>
@@ -724,6 +727,7 @@ function HomeView() {
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2">
               {[
+                { label: "🤖 ML Arena (RL & 3D Loss)", tool: "ml-arena", color: "hover:border-indigo-500/50 hover:bg-indigo-500/10 hover:text-indigo-400 font-bold" },
                 { label: "🌊 Ripple Wave 3D", tool: "graph-3d", color: "hover:border-cyan-500/50 hover:bg-cyan-500/10 hover:text-cyan-400" },
                 { label: "📈 Harmonic Wave 2D", tool: "graph-2d", color: "hover:border-emerald-500/50 hover:bg-emerald-500/10 hover:text-emerald-400" },
                 { label: "⚡ Derivative Steps", tool: "derivative", color: "hover:border-amber-500/50 hover:bg-amber-500/10 hover:text-amber-400" },
@@ -754,10 +758,59 @@ function HomeView() {
       {/* Flagship Instruments Showcase */}
       <section className="space-y-6">
         <div className="text-center max-w-2xl mx-auto">
-          <h2 className="text-2xl sm:text-4xl font-black tracking-tight">Four Flagship Instruments</h2>
+          <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs font-mono font-bold text-indigo-400 mb-2">
+            <Brain className="h-3.5 w-3.5 animate-pulse" />
+            <span>CORE SUITE &amp; ML LABORATORY</span>
+          </div>
+          <h2 className="text-2xl sm:text-4xl font-black tracking-tight">Flagship Intelligence Instruments</h2>
           <p className="text-xs sm:text-sm text-muted-foreground mt-2">
-            Engineered from scratch for deep mathematical intuition and research-grade rigor.
+            Engineered from scratch for deep intuition, rigorous mathematics, and real-time visualization.
           </p>
+        </div>
+
+        {/* Hero Flagship Banner: Machine Learning Arena */}
+        <div
+          onClick={() => openTool("ml-arena")}
+          className="group relative cursor-pointer overflow-hidden rounded-[32px] glass-panel p-6 sm:p-8 border border-indigo-500/40 shadow-2xl transition-all duration-300 hover:shadow-indigo-500/10 hover:border-indigo-500/70 hover:-translate-y-1"
+        >
+          <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl group-hover:scale-125 transition-transform duration-700" aria-hidden />
+          <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+            <div className="space-y-3 max-w-2xl">
+              <div className="flex items-center gap-3">
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/30">
+                  <Brain className="h-6 w-6" />
+                </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full bg-indigo-500/10 border border-indigo-500/30 px-2.5 py-0.5 text-[10px] font-mono font-bold text-indigo-400 uppercase">
+                      New • Flagship Suite
+                    </span>
+                    <span className="text-xs font-mono text-emerald-400 font-semibold">• 5 ML Paradigms</span>
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-black tracking-tight mt-1">Machine Learning Arena</h3>
+                </div>
+              </div>
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                Explore Regression (OLS, Ridge, Lasso, SVR), Classification (Logistic, SVM, Decision Trees, KNN), Optimization (Adam, RMSProp, 3D loss surfaces), Unsupervised (K-Means, PCA), and Tabular Q-Learning Reinforcement Learning in an interactive 5x5 Gridworld with Bellman derivations and from-scratch NumPy code.
+              </p>
+              <div className="flex flex-wrap gap-2 pt-1">
+                {["Interactive 2D Curves", "3D Loss Landscapes", "Live Q-Learning Gridworld", "LaTeX Equations", "From-Scratch Python Code"].map((tag) => (
+                  <span key={tag} className="rounded-lg bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 text-[11px] font-mono font-semibold text-indigo-300">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex sm:flex-col items-center sm:items-end gap-3 shrink-0 w-full sm:w-auto justify-between sm:justify-start">
+              <Button className="w-full sm:w-auto gap-2 rounded-2xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-xl shadow-indigo-950/30 px-6 h-12">
+                Launch ML Arena <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              </Button>
+              <span className="text-[11px] font-mono text-muted-foreground hidden sm:block">
+                All 5 ML Branches • Pure Client-Side
+              </span>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -859,11 +912,11 @@ function HomeView() {
         </div>
       </section>
 
-      {/* Complete 24-Tool Laboratory Matrix */}
+      {/* Complete 25-Tool Laboratory Matrix */}
       <section className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/50 pb-5">
           <div>
-            <h2 className="text-xl sm:text-3xl font-black tracking-tight">The 24 Instruments</h2>
+            <h2 className="text-xl sm:text-3xl font-black tracking-tight">The 25 Instruments</h2>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">Select a discipline or explore the complete suite.</p>
           </div>
 
