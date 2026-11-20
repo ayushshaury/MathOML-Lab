@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useMathLab } from "@/lib/store";
+import { getApiEndpoint } from "@/lib/api-client";
 import type { Solution } from "@/lib/math/core";
 import { solveEquation } from "@/lib/math/equations";
 import { differentiateSteps } from "@/lib/math/differentiate";
@@ -100,7 +101,7 @@ export function ImageToEquationTool() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 12000);
 
-      const res = await fetch("/api/ocr", {
+      const res = await fetch(getApiEndpoint("/api/ocr"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image: dataUrl }),
