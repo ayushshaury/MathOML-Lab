@@ -13,21 +13,225 @@ import {
   Layers, Code2, BookOpen, Activity, ArrowRight, Compass,
   Trophy, RefreshCw, Crosshair, FastForward, PlayCircle, Gauge,
   ChevronLeft, ChevronRight, HelpCircle, Eye, CheckCircle2,
-  Cpu, ArrowUpRight, BarChart3, Atom
+  Cpu, ArrowUpRight, BarChart3, Atom, Trash2, Plus, MousePointer2
 } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
-/* Types & Comprehensive Model Explainer Definitions                  */
+/* Mathematical Solvers for Dynamic Real-Time Canvas Data             */
+/* ------------------------------------------------------------------ */
+
+interface Point2D {
+  id: string;
+  x: number;
+  y: number;
+  label: number; // 0 or 1
+}
+
+// Gaussian elimination for polynomial regression and ridge normal equations
+function solveLinearSystem(A: number[][], b: number[]): number[] {
+  const n = b.length;
+  const M = A.map((row, i) => [...row, b[i]]);
+  for (let i = 0; i < n; i++) {
+    let maxRow = i;
+    for (let k = i + 1; k < n; k++) {
+      if (Math.abs(M[k][i]) > Math.abs(M[maxRow][i])) maxRow = k;
+    }
+    const temp = M[i];
+    M[i] = M[maxRow];
+    M[maxRow] = temp;
+    if (Math.abs(M[i][i]) < 1e-12) continue;
+    for (let k = i + 1; k < n; k++) {
+      const c = M[k][i] / M[i][i];
+      for (let j = i; j <= n; j++) {
+        M[k][j] -= c * M[i][j];
+      }
+    }
+  }
+  const x = new Array(n).fill(0);
+  for (let i = n - 1; i >= 0; i--) {
+    let sum = M[i][n];
+    for (let j = i + 1; j < n; j++) {
+      sum -= M[i][j] * x[j];
+    }
+    x[i] = Math.abs(M[i][i]) > 1e-12 ? sum / M[i][i] : 0;
+  }
+  return x;
+}
+
+// Fit polynomial of degree d onto arbitrary 2D points
+function fitPolynomial(points: Point2D[], degree: number, l2Penalty: number = 0): number[] {
+  if (points.length === 0) return [0];
+  const d = Math.min(degree, Math.max(1, points.length - 1));
+  const A: number[][] = Array.from({ length: d + 1 }, () => new Array(d + 1).fill(0));
+  const b: number[] = new Array(d + 1).fill(0);
+
+  for (let i = 0; i <= d; i++) {
+    for (let j = 0; j <= d; j++) {
+      let sum = 0;
+      for (const p of points) {
+        sum += Math.pow(p.x, i + j);
+      }
+      A[i][j] = sum;
+    }
+    // Add Ridge L2 regularizer to diagonal (excluding bias i=0)
+    if (i > 0) A[i][i] += l2Penalty;
+
+    let sumB = 0;
+    for (const p of points) {
+      sumB += p.y * Math.pow(p.x, i);
+    }
+    b[i] = sumB;
+  }
+  return solveLinearSystem(A, b);
+}
+
+// Evaluate polynomial at scalar x
+function evalPolynomial(coeffs: number[], x: number): number {
+  let val = 0;
+  for (let i = 0; i < coeffs.length; i++) {
+    val += coeffs[i] * Math.pow(x, i);
+  }
+  return val;
+}
+
+// Train Logistic Regression dynamically on user points
+function fitLogisticRegression(points: Point2D[], epochs: number = 60, lr: number = 0.15): { w1: number; w2: number; b: number } {
+  let w1 = 0.2, w2 = 0.2, b = 0.0;
+  if (points.length === 0) return { w1, w2, b };
+  const m = points.length;
+
+  for (let ep = 0; ep < epochs; ep++) {
+    let dw1 = 0, dw2 = 0, db = 0;
+    for (const p of points) {
+      const z = w1 * p.x + w2 * p.y + b;
+      const pred = 1.0 / (1.0 + Math.exp(-Math.max(-20, Math.min(20, z))));
+      const err = pred - p.label;
+      dw1 += err * p.x;
+      dw2 += err * p.y;
+      db += err;
+    }
+    w1 -= (lr / m) * dw1;
+    w2 -= (lr / m) * dw2;
+    b -= (lr / m) * db;
+  }
+  return { w1, w2, b };
+}
+
+// Linear SVM via subgradient descent on user points
+function fitLinearSVM(points: Point2D[], C: number = 1.0, epochs: number = 80, lr: number = 0.02): { w1: number; w2: number; b: number } {
+  let w1 = 0.1, w2 = 0.1, b = 0.0;
+  if (points.length === 0) return { w1, w2, b };
+  const m = points.length;
+
+  for (let ep = 0; ep < epochs; ep++) {
+    for (const p of points) {
+      const ySigned = p.label === 1 ? 1 : -1;
+      const margin = ySigned * (w1 * p.x + w2 * p.y + b);
+      if (margin < 1.0) {
+        w1 -= lr * (w1 / m - C * ySigned * p.x);
+        w2 -= lr * (w2 / m - C * ySigned * p.y);
+        b -= lr * (-C * ySigned);
+      } else {
+        w1 -= lr * (w1 / m);
+        w2 -= lr * (w2 / m);
+      }
+    }
+  }
+  return { w1, w2, b };
+}
+
+// Find optimal 1D axis split minimizing Gini impurity
+function findBestSplit(points: Point2D[]): { axis: "x" | "y"; threshold: number; giniGain: number } {
+  if (points.length < 2) return { axis: "x", threshold: 0, giniGain: 0 };
+  let bestGain = -1;
+  let bestAxis: "x" | "y" = "x";
+  let bestThresh = 0;
+
+  const totalPoints = points.length;
+  const p1Total = points.filter((p) => p.label === 1).length / totalPoints;
+  const parentGini = 1 - (p1Total ** 2 + (1 - p1Total) ** 2);
+
+  for (const axis of ["x", "y"] as const) {
+    const sorted = [...points].sort((a, b) => a[axis] - b[axis]);
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const t = (sorted[i][axis] + sorted[i + 1][axis]) / 2;
+      const left = sorted.filter((p) => p[axis] <= t);
+      const right = sorted.filter((p) => p[axis] > t);
+      if (left.length === 0 || right.length === 0) continue;
+
+      const p1L = left.filter((p) => p.label === 1).length / left.length;
+      const giniL = 1 - (p1L ** 2 + (1 - p1L) ** 2);
+      const p1R = right.filter((p) => p.label === 1).length / right.length;
+      const giniR = 1 - (p1R ** 2 + (1 - p1R) ** 2);
+
+      const splitGini = (left.length / totalPoints) * giniL + (right.length / totalPoints) * giniR;
+      const gain = parentGini - splitGini;
+      if (gain > bestGain) {
+        bestGain = gain;
+        bestAxis = axis;
+        bestThresh = t;
+      }
+    }
+  }
+  return { axis: bestAxis, threshold: bestThresh, giniGain: Math.max(0, bestGain) };
+}
+
+// 2D Eigendecomposition for PCA on user points
+function compute2DPCA(points: Point2D[]): { meanX: number; meanY: number; v1: [number, number]; v2: [number, number]; varRatio: number } {
+  if (points.length < 2) {
+    return { meanX: 0, meanY: 0, v1: [1, 0], v2: [0, 1], varRatio: 1.0 };
+  }
+  let sumX = 0, sumY = 0;
+  for (const p of points) { sumX += p.x; sumY += p.y; }
+  const meanX = sumX / points.length;
+  const meanY = sumY / points.length;
+
+  let sxx = 0, syy = 0, sxy = 0;
+  for (const p of points) {
+    const dx = p.x - meanX;
+    const dy = p.y - meanY;
+    sxx += dx * dx;
+    syy += dy * dy;
+    sxy += dx * dy;
+  }
+  const m = points.length - 1 || 1;
+  const a = sxx / m;
+  const c = syy / m;
+  const b = sxy / m;
+
+  // Analytical 2x2 eigenvalues
+  const T = a + c;
+  const D = a * c - b * b;
+  const discr = Math.sqrt(Math.max(0, (T * T) / 4 - D));
+  const lambda1 = T / 2 + discr;
+  const lambda2 = Math.max(0, T / 2 - discr);
+
+  // Eigenvector v1
+  let vx = lambda1 - c;
+  let vy = b;
+  if (Math.abs(vx) < 1e-6 && Math.abs(vy) < 1e-6) {
+    vx = 1; vy = 0;
+  }
+  const mag = Math.hypot(vx, vy) || 1;
+  const v1: [number, number] = [vx / mag, vy / mag];
+  const v2: [number, number] = [-v1[1], v1[0]];
+  const varRatio = (lambda1 + lambda2) > 0 ? lambda1 / (lambda1 + lambda2) : 1.0;
+
+  return { meanX, meanY, v1, v2, varRatio };
+}
+
+/* ------------------------------------------------------------------ */
+/* Model Definitions & Structured Metadata                            */
 /* ------------------------------------------------------------------ */
 
 export type MLParadigm = "regression" | "classification" | "optimization" | "unsupervised" | "reinforcement";
 
-export interface ExplainerStep {
-  stepNum: number;
-  title: string;
-  desc: string;
-  mathFormula?: string;
-  visualCue: string;
+export interface PipelineStage {
+  step: number;
+  phase: string;
+  badge: string;
+  mathExpression: string;
+  insight: string;
 }
 
 export interface MLTopic {
@@ -35,10 +239,10 @@ export interface MLTopic {
   name: string;
   paradigm: MLParadigm;
   badge: string;
-  shortDesc: string;
+  summary: string;
   lossSurface3d?: string;
   lossSurfaceName?: string;
-  explainerSteps: ExplainerStep[];
+  pipelineStages: PipelineStage[];
   math: {
     objective: string;
     objectiveExpl: string;
@@ -55,48 +259,18 @@ export const ML_TOPICS: MLTopic[] = [
   /* ================= REGRESSION ================= */
   {
     id: "linear-regression",
-    name: "Linear Regression & OLS",
+    name: "Linear Regression (OLS)",
     paradigm: "regression",
-    badge: "Supervised Learning",
-    shortDesc: "Ordinary Least Squares minimizes residual sum of squares between predicted and true targets.",
+    badge: "Closed-Form & Iterative",
+    summary: "Minimizes vertical residual variance via projection onto feature subspace.",
     lossSurface3d: "(x - 1)^2 + 2*(y - 1)^2",
-    lossSurfaceName: "Convex Quadratic MSE Loss Bowl",
-    explainerSteps: [
-      {
-        stepNum: 1,
-        title: "Random Parameter Initialization",
-        desc: "The model starts with random initial slope (w) and bias (b). The line y = wx + b has not yet learned the dataset pattern.",
-        mathFormula: "\\hat{y} = w x + b, \\quad w_0 \\sim \\mathcal{N}(0, 1)",
-        visualCue: "Notice the tilted grey line cutting through empty space with huge errors."
-      },
-      {
-        stepNum: 2,
-        title: "Residual Error Vector Computation",
-        desc: "For every single data point (x_i, y_i), compute the vertical distance between true target and prediction. Residual e_i = ŷ_i - y_i.",
-        mathFormula: "e_i = \\hat{y}_i - y_i, \\quad J(w, b) = \\frac{1}{2m} \\sum_{i=1}^m e_i^2",
-        visualCue: "Red dashed vertical lines appear, showing the residual errors pulling on the line."
-      },
-      {
-        stepNum: 3,
-        title: "Gradient Vector Calculus",
-        desc: "Compute partial derivatives of MSE loss with respect to w and b. The gradient vector ∇J points toward the steepest error ascent.",
-        mathFormula: "\\frac{\\partial J}{\\partial w} = \\frac{1}{m} \\sum (\\hat{y}_i - y_i) x_i, \\quad \\frac{\\partial J}{\\partial b} = \\frac{1}{m} \\sum (\\hat{y}_i - y_i)",
-        visualCue: "The direction of adjustment is mathematically calculated from all residuals combined."
-      },
-      {
-        stepNum: 4,
-        title: "Gradient Descent Weight Update",
-        desc: "Take a step opposite to the gradient scaled by learning rate α. The line rotates and translates closer to the optimal fit.",
-        mathFormula: "w \\leftarrow w - \\alpha \\frac{\\partial J}{\\partial w}, \\quad b \\leftarrow b - \\alpha \\frac{\\partial J}{\\partial b}",
-        visualCue: "Watch the green line pivot and slide into position, shrinking the red residual bars."
-      },
-      {
-        stepNum: 5,
-        title: "Global Convergence & Normal Equation",
-        desc: "The convex quadratic loss bowl guarantees a single global minimum where ∇J = 0. The exact analytical solution is w* = (XᵀX)⁻¹Xᵀy.",
-        mathFormula: "w^* = (X^T X)^{-1} X^T y \\quad \\Longrightarrow \\quad \\nabla_w J(w^*) = 0",
-        visualCue: "Line locks into perfect least-squares fit with minimal sum of squared residuals."
-      }
+    lossSurfaceName: "Quadratic MSE Convex Basin",
+    pipelineStages: [
+      { step: 1, phase: "Data Projection", badge: "Forward Pass", mathExpression: "\\hat{y} = w x + b", insight: "Evaluates current linear predictor on all coordinates." },
+      { step: 2, phase: "Residual Energy", badge: "Loss Measure", mathExpression: "e_i = y_i - \\hat{y}_i, \\quad J = \\frac{1}{2m} \\sum e_i^2", insight: "Calculates individual residuals and cumulative MSE penalty." },
+      { step: 3, phase: "Gradient Vector", badge: "Subspace Calculus", mathExpression: "\\nabla J = \\frac{1}{m} X^T (Xw - y)", insight: "Determines steepest error ascent vector in parameter space." },
+      { step: 4, phase: "Weight Update", badge: "Descent Step", mathExpression: "w \\leftarrow w - \\alpha \\nabla_w J", insight: "Pivots slope and translates bias closer to optimal least-squares." },
+      { step: 5, phase: "Normal Equilibrium", badge: "Closed Form", mathExpression: "w^* = (X^T X)^{-1} X^T y", insight: "Analytical Moore-Penrose pseudoinverse global minimum." },
     ],
     math: {
       objective: "J(w, b) = \\frac{1}{2m} \\sum_{i=1}^{m} \\left( w x^{(i)} + b - y^{(i)} \\right)^2 = \\frac{1}{2m} \\|Xw - y\\|^2",
@@ -114,81 +288,35 @@ export const ML_TOPICS: MLTopic[] = [
     pythonCode: `import numpy as np
 
 class LinearRegressionOLS:
-    """Linear Regression trained via Closed-Form Normal Equation and Gradient Descent."""
-    def __init__(self, lr: float = 0.05, epochs: int = 200, fit_intercept: bool = True):
-        self.lr = lr
-        self.epochs = epochs
+    def __init__(self, fit_intercept: bool = True):
         self.fit_intercept = fit_intercept
         self.weights = None
-        self.bias = 0.0
 
-    def fit_normal_equation(self, X: np.ndarray, y: np.ndarray):
+    def fit(self, X: np.ndarray, y: np.ndarray):
         if self.fit_intercept:
-            X_b = np.hstack([np.ones((X.shape[0], 1)), X])
-        else:
-            X_b = X
-        # Normal Equation: w* = (X^T X)^(-1) X^T y
-        theta = np.linalg.pinv(X_b.T @ X_b) @ X_b.T @ y
-        if self.fit_intercept:
-            self.bias = theta[0]
-            self.weights = theta[1:]
-        else:
-            self.weights = theta
-        return self
-
-    def fit_gradient_descent(self, X: np.ndarray, y: np.ndarray):
-        m, d = X.shape
-        self.weights = np.zeros(d)
-        self.bias = 0.0
-        for _ in range(self.epochs):
-            y_pred = X @ self.weights + self.bias
-            error = y_pred - y
-            dw = (1.0 / m) * (X.T @ error)
-            db = (1.0 / m) * np.sum(error)
-            self.weights -= self.lr * dw
-            self.bias -= self.lr * db
+            X = np.hstack([np.ones((X.shape[0], 1)), X])
+        # Closed-form Normal Equation: w* = (X^T X)^(-1) X^T y
+        self.weights = np.linalg.pinv(X.T @ X) @ X.T @ y
         return self
 
     def predict(self, X: np.ndarray) -> np.ndarray:
-        return X @ self.weights + self.bias`
+        if self.fit_intercept:
+            X = np.hstack([np.ones((X.shape[0], 1)), X])
+        return X @ self.weights`
   },
   {
     id: "polynomial-regression",
-    name: "Polynomial Regression & Overfitting",
+    name: "Polynomial & Overfitting",
     paradigm: "regression",
-    badge: "Nonlinear Regression",
-    shortDesc: "Projects features into higher-order powers to capture nonlinear curvature; demonstrates bias-variance tradeoff.",
+    badge: "Nonlinear Hilbert Basis",
+    summary: "Maps features into higher-order Vandermonde spaces, revealing the bias-variance trade-off.",
     lossSurface3d: "(x^2 + y - 11)^2 / 30 + (x + y^2 - 7)^2 / 30",
-    lossSurfaceName: "Himmelblau Multimodal Loss Surface",
-    explainerSteps: [
-      {
-        stepNum: 1,
-        title: "The Underfitting Limitation (Degree 1)",
-        desc: "A linear model y = wx + b has high bias. When underlying data is curved, a straight line cannot capture the relationship.",
-        mathFormula: "\\hat{y} = w_0 + w_1 x \\quad (\\text{High Bias / Underfitting})",
-        visualCue: "Straight line cuts poorly through nonlinear data clusters."
-      },
-      {
-        stepNum: 2,
-        title: "Polynomial Basis Expansion",
-        desc: "Transform single feature x into higher-order powers using Vandermonde matrix mapping: phi(x) = [1, x, x², x³, ..., x^d].",
-        mathFormula: "\\Phi(x) = \\begin{bmatrix} 1 & x & x^2 & \\dots & x^d \\end{bmatrix}^T",
-        visualCue: "Input dimension expands into a polynomial Hilbert space."
-      },
-      {
-        stepNum: 3,
-        title: "The Sweet Spot (Degree 3)",
-        desc: "A cubic polynomial matches the true curvature of the physical system, minimizing both training error and test generalization error.",
-        mathFormula: "\\hat{y} = w_0 + w_1 x + w_2 x^2 + w_3 x^3",
-        visualCue: "Cyan curve smoothly wraps around all point groups without wild fluctuations."
-      },
-      {
-        stepNum: 4,
-        title: "Catastrophic Overfitting (Degree ≥ 6)",
-        desc: "High degrees cause high variance. The curve bends aggressively to hit every noise point, producing severe Runge's phenomenon oscillations at edges!",
-        mathFormula: "\\text{Variance} \\to \\infty, \\quad \\text{Runge's Phenomenon at } |x| \\to x_{\\max}",
-        visualCue: "Curve violently oscillates up and down near borders."
-      }
+    lossSurfaceName: "Himmelblau Multimodal Landscape",
+    pipelineStages: [
+      { step: 1, phase: "Linear Basis", badge: "Degree 1", mathExpression: "\\hat{y} = w_0 + w_1 x", insight: "High bias (underfitting): cannot capture non-linear curvature." },
+      { step: 2, phase: "Quadratic / Cubic", badge: "Degree 2-3", mathExpression: "\\phi(x) = [1, x, x^2, x^3]", insight: "Low bias, low variance: captures natural physical contours." },
+      { step: 3, phase: "High Order Powers", badge: "Degree 4-5", mathExpression: "\\hat{y} = \\sum_{j=0}^d w_j x^j", insight: "Flexible boundary begins matching individual sample noise." },
+      { step: 4, phase: "Runge Oscillations", badge: "Degree ≥ 6", mathExpression: "\\text{Var}(\\hat{f}) \\to \\infty \\quad (|x| \\to x_{\\max})", insight: "Catastrophic boundary oscillations; overfitting noise." },
     ],
     math: {
       objective: "\\hat{y} = w_0 + w_1 x + w_2 x^2 + w_3 x^3 + \\dots + w_d x^d = \\sum_{j=0}^{d} w_j \\phi_j(x)",
@@ -210,55 +338,28 @@ class PolynomialRegression:
         self.degree = degree
         self.weights = None
 
-    def _transform(self, X: np.ndarray) -> np.ndarray:
-        return np.hstack([X ** i for i in range(self.degree + 1)])
-
     def fit(self, X: np.ndarray, y: np.ndarray):
-        Phi = self._transform(X)
+        Phi = np.hstack([X ** i for i in range(self.degree + 1)])
         self.weights = np.linalg.pinv(Phi.T @ Phi) @ Phi.T @ y
         return self
 
     def predict(self, X: np.ndarray) -> np.ndarray:
-        Phi = self._transform(X)
+        Phi = np.hstack([X ** i for i in range(self.degree + 1)])
         return Phi @ self.weights`
   },
   {
     id: "ridge-lasso",
-    name: "Ridge (L2) & Lasso (L1) Regularization",
+    name: "Ridge (L2) & Lasso (L1)",
     paradigm: "regression",
-    badge: "Regularization",
-    shortDesc: "Constrains parameter magnitudes to prevent overfitting. Ridge shrinks smoothly; Lasso drives weights to exact zero.",
+    badge: "Constrained Optimization",
+    summary: "Shrinks parameter magnitudes to stabilize multicollinearity and induce exact sparsity.",
     lossSurface3d: "x^2 + y^2 + 0.8*abs(x) + 0.8*abs(y)",
-    lossSurfaceName: "L1/L2 Penalized Loss Basin",
-    explainerSteps: [
-      {
-        stepNum: 1,
-        title: "The Problem of Weight Explosion",
-        desc: "Without regularization, OLS models with correlated features inflate weight magnitudes to cancel out noise, resulting in fragile models.",
-        mathFormula: "\\|w\\| \\to \\infty \\quad \\text{in ill-conditioned systems}",
-        visualCue: "Unconstrained OLS line (dashed white) reacts excessively to outliers."
-      },
-      {
-        stepNum: 2,
-        title: "Ridge L2 Regularization (Weight Decay)",
-        desc: "Ridge adds λ ||w||₂² penalty. The spherical constraint shrinks weight magnitudes proportionally without zeroing them out completely.",
-        mathFormula: "J_{\\text{Ridge}}(w) = \\text{MSE} + \\frac{\\lambda}{2} \\sum_{j=1}^d w_j^2",
-        visualCue: "Purple regularized line rotates toward horizontal, resisting noisy outliers."
-      },
-      {
-        stepNum: 3,
-        title: "Lasso L1 Regularization (Diamond Constraint)",
-        desc: "Lasso adds λ ||w||₁ absolute value penalty. The diamond constraint has sharp vertices on the coordinate axes.",
-        mathFormula: "J_{\\text{Lasso}}(w) = \\text{MSE} + \\lambda \\sum_{j=1}^d |w_j|",
-        visualCue: "Loss contour intersects the L1 diamond exactly at a vertex where w_j = 0."
-      },
-      {
-        stepNum: 4,
-        title: "Exact Feature Selection (Sparsity)",
-        desc: "As penalty parameter λ exceeds threshold, less informative weights snap to EXACTLY 0.000, performing automated feature selection!",
-        mathFormula: "w_j = \\text{sign}(\\rho_j) \\max(0, |\\rho_j| - \\lambda)",
-        visualCue: "Notice the coordinate snapping to zero as λ slider increases."
-      }
+    lossSurfaceName: "Penalized L1/L2 Diamond Basin",
+    pipelineStages: [
+      { step: 1, phase: "Unconstrained OLS", badge: "λ = 0", mathExpression: "\\|w\\| \\gg 0", insight: "Weights fluctuate wildly to fit collinear noise points." },
+      { step: 2, phase: "L2 Spherical Shrink", badge: "Ridge L2", mathExpression: "J_{\\text{Ridge}} = \\text{MSE} + \\frac{\\lambda}{2} \\|w\\|_2^2", insight: "Isotropic circle shrinks weights proportionally toward 0." },
+      { step: 3, phase: "L1 Diamond Corners", badge: "Lasso L1", mathExpression: "J_{\\text{Lasso}} = \\text{MSE} + \\lambda \\|w\\|_1", insight: "Diamond vertices on axes force parameters to exactly 0.00." },
+      { step: 4, phase: "Automated Sparsity", badge: "Feature Selection", mathExpression: "w_j = \\text{sign}(\\rho_j) \\max(0, |\\rho_j| - \\lambda)", insight: "Uninformative dimensions completely pruned from the model." },
     ],
     math: {
       objective: "J_{\\text{Ridge}}(w) = \\frac{1}{2m} \\|Xw - y\\|^2 + \\frac{\\lambda}{2} \\|w\\|_2^2, \\quad J_{\\text{Lasso}}(w) = \\frac{1}{2m} \\|Xw - y\\|^2 + \\lambda \\|w\\|_1",
@@ -275,65 +376,36 @@ class PolynomialRegression:
 
 def ridge_regression(X: np.ndarray, y: np.ndarray, alpha: float = 1.0) -> np.ndarray:
     d = X.shape[1]
-    I = np.eye(d)
-    return np.linalg.inv(X.T @ X + alpha * I) @ X.T @ y
+    return np.linalg.inv(X.T @ X + alpha * np.eye(d)) @ X.T @ y
 
-def lasso_coordinate_descent(X: np.ndarray, y: np.ndarray, alpha: float = 0.1, max_iter: int = 1000) -> np.ndarray:
+def lasso_coordinate_descent(X: np.ndarray, y: np.ndarray, alpha: float = 0.1, iters: int = 500) -> np.ndarray:
     n, d = X.shape
     w = np.zeros(d)
-    for _ in range(max_iter):
+    for _ in range(iters):
         for j in range(d):
             X_j = X[:, j]
-            y_pred = X @ w
-            residual = y - y_pred + w[j] * X_j
-            rho = X_j.T @ residual
-            if rho < -alpha:
-                w[j] = (rho + alpha) / (X_j.T @ X_j)
-            elif rho > alpha:
-                w[j] = (rho - alpha) / (X_j.T @ X_j)
-            else:
-                w[j] = 0.0 # Exact sparsity!
+            resid = y - (X @ w) + w[j] * X_j
+            rho = X_j.T @ resid
+            if rho < -alpha: w[j] = (rho + alpha) / (X_j.T @ X_j)
+            elif rho > alpha: w[j] = (rho - alpha) / (X_j.T @ X_j)
+            else: w[j] = 0.0
     return w`
   },
 
   /* ================= CLASSIFICATION ================= */
   {
     id: "logistic-regression",
-    name: "Logistic Regression & Sigmoid",
+    name: "Logistic Regression",
     paradigm: "classification",
-    badge: "Binary Classification",
-    shortDesc: "Models class probability using the logistic sigmoid function with maximum likelihood estimation.",
+    badge: "Maximum Likelihood",
+    summary: "Maps linear combinations into continuous posterior probabilities via the logistic sigmoid.",
     lossSurface3d: "-log(1 / (1 + exp(-x))) - log(1 - 1 / (1 + exp(-y)))",
-    lossSurfaceName: "Cross-Entropy Convex Loss Surface",
-    explainerSteps: [
-      {
-        stepNum: 1,
-        title: "Computing the Linear Logit Score",
-        desc: "Compute the linear combination z = w₁x₁ + w₂x₂ + b. z produces raw unconstrained values ranging from -∞ to +∞.",
-        mathFormula: "z = \\mathbf{w}^T \\mathbf{x} + b \\in (-\\infty, +\\infty)",
-        visualCue: "Points evaluate to positive or negative real scores based on position."
-      },
-      {
-        stepNum: 2,
-        title: "The Sigmoid Activation Function",
-        desc: "Pass z through the logistic sigmoid curve σ(z) = 1 / (1 + e⁻ᶻ). This squashes any real score into a valid probability P ∈ (0, 1)!",
-        mathFormula: "P(Y=1 \\mid \\mathbf{x}) = \\sigma(z) = \\frac{1}{1 + e^{-z}}",
-        visualCue: "Continuous color gradient reflects class confidence from 0.0 (Amber) to 1.0 (Cyan)."
-      },
-      {
-        stepNum: 3,
-        title: "Binary Cross-Entropy Loss (Log-Loss)",
-        desc: "Penalizes confident incorrect predictions with infinite loss! If true label is 1 and model predicts 0.01, loss surges exponentially.",
-        mathFormula: "J(\\mathbf{w}) = -\\frac{1}{m} \\sum [y \\log(\\hat{y}) + (1-y) \\log(1-\\hat{y})]",
-        visualCue: "Notice loss dropping as the boundary separates the two classes."
-      },
-      {
-        stepNum: 4,
-        title: "The P = 0.50 Decision Boundary",
-        desc: "The decision boundary occurs exactly where z = 0, meaning σ(0) = 0.50. This creates an optimal hyperplane separating the classes.",
-        mathFormula: "\\mathbf{w}^T \\mathbf{x} + b = 0 \\quad \\Longleftrightarrow \\quad P(Y=1) = 0.50",
-        visualCue: "Cyan boundary line cleanly splits the feature space into two prediction regions."
-      }
+    lossSurfaceName: "Cross-Entropy Convex Canyon",
+    pipelineStages: [
+      { step: 1, phase: "Linear Logit", badge: "Dot Product", mathExpression: "z = \\mathbf{w}^T \\mathbf{x} + b", insight: "Evaluates raw scalar classification score from -∞ to +∞." },
+      { step: 2, phase: "Sigmoid Squash", badge: "Activation", mathExpression: "\\sigma(z) = \\frac{1}{1 + e^{-z}} \\in (0, 1)", insight: "Binds scores strictly into probability range P(Y=1|X)." },
+      { step: 3, phase: "Cross-Entropy", badge: "Penalty", mathExpression: "J = -\\frac{1}{m}\\sum [y\\log(\\hat{y}) + (1-y)\\log(1-\\hat{y})]", insight: "Asymptotically infinite penalty for confident mispredictions." },
+      { step: 4, phase: "Decision Boundary", badge: "Separation", mathExpression: "\\mathbf{w}^T \\mathbf{x} + b = 0 \\iff P = 0.50", insight: "Linear hyperplane isolating Amber vs Cyan probability regions." },
     ],
     math: {
       objective: "J(w, b) = -\\frac{1}{m} \\sum_{i=1}^m \\left[ y^{(i)} \\log(\\sigma(z^{(i)})) + (1 - y^{(i)}) \\log(1 - \\sigma(z^{(i)})) \\right]",
@@ -352,69 +424,36 @@ def lasso_coordinate_descent(X: np.ndarray, y: np.ndarray, alpha: float = 0.1, m
 
 class LogisticRegressionFromScratch:
     def __init__(self, lr: float = 0.1, epochs: int = 1000):
-        self.lr = lr
-        self.epochs = epochs
-        self.w = None
-        self.b = 0.0
-
-    def _sigmoid(self, z: np.ndarray) -> np.ndarray:
-        return 1.0 / (1.0 + np.exp(-np.clip(z, -250, 250)))
+        self.lr, self.epochs = lr, epochs
+        self.w, self.b = None, 0.0
 
     def fit(self, X: np.ndarray, y: np.ndarray):
         m, d = X.shape
         self.w = np.zeros(d)
         for _ in range(self.epochs):
             z = X @ self.w + self.b
-            y_hat = self._sigmoid(z)
-            dw = (1.0 / m) * (X.T @ (y_hat - y))
-            db = (1.0 / m) * np.sum(y_hat - y)
-            self.w -= self.lr * dw
-            self.b -= self.lr * db
+            y_hat = 1.0 / (1.0 + np.exp(-np.clip(z, -200, 200)))
+            self.w -= (self.lr / m) * (X.T @ (y_hat - y))
+            self.b -= (self.lr / m) * np.sum(y_hat - y)
         return self
 
-    def predict_proba(self, X: np.ndarray) -> np.ndarray:
-        return self._sigmoid(X @ self.w + self.b)
-
     def predict(self, X: np.ndarray) -> np.ndarray:
-        return (self.predict_proba(X) >= 0.5).astype(int)`
+        prob = 1.0 / (1.0 + np.exp(-np.clip(X @ self.w + self.b, -200, 200)))
+        return (prob >= 0.5).astype(int)`
   },
   {
     id: "svm",
-    name: "Support Vector Machines (SVM)",
+    name: "Support Vector Machines",
     paradigm: "classification",
-    badge: "Maximum Margin Classifier",
-    shortDesc: "Constructs the optimal hyperplane that maximizes geometric margin to the nearest support vectors.",
+    badge: "Maximum Margin",
+    summary: "Constructs the optimal geometric hyperplane supported solely by boundary data points.",
     lossSurface3d: "0.5*(x^2 + y^2) + max(0, 1 - x*y)",
-    lossSurfaceName: "SVM Hinge Loss Surface with Regularizer",
-    explainerSteps: [
-      {
-        stepNum: 1,
-        title: "The Problem with Arbitrary Hyperplanes",
-        desc: "Many lines can separate two classes, but lines passing too close to data points have poor generalization and fail on new test data.",
-        mathFormula: "y^{(i)}(\\mathbf{w}^T \\mathbf{x}^{(i)} + b) > 0 \\quad (\\text{Satisfied by many lines})",
-        visualCue: "Arbitrary lines leave very narrow margins to nearby points."
-      },
-      {
-        stepNum: 2,
-        title: "Geometric Margin Maximization",
-        desc: "SVM searches for the unique hyperplane that maximizes the geometric margin distance γ = 2 / ||w|| between positive and negative margin gutters.",
-        mathFormula: "\\max_{\\mathbf{w}, b} \\frac{2}{\\|\\mathbf{w}\\|} \\quad \\Longleftrightarrow \\quad \\min_{\\mathbf{w}} \\frac{1}{2} \\|\\mathbf{w}\\|^2",
-        visualCue: "Dashed margin gutters push outward until they hit the nearest data points."
-      },
-      {
-        stepNum: 3,
-        title: "Discovering Support Vectors",
-        desc: "The entire hyperplane is determined exclusively by the closest points lying on the margin gutters! All other points can move without affecting the model.",
-        mathFormula: "y^{(i)}(\\mathbf{w}^T \\mathbf{x}^{(i)} + b) = 1 \\quad \\Longrightarrow \\quad \\text{Active Support Vector}",
-        visualCue: "Pulsing neon violet rings light up on the true Support Vectors!"
-      },
-      {
-        stepNum: 4,
-        title: "Soft Margin Slack Penalty (C)",
-        desc: "In non-separable data, slack variables ξ_i allow controlled violations. Parameter C governs trade-off: high C forbids errors; low C widens margin.",
-        mathFormula: "\\min \\frac{1}{2}\\|w\\|^2 + C \\sum \\xi_i, \\quad \\xi_i = \\max(0, 1 - y_i(w^T x_i + b))",
-        visualCue: "Adjust C slider to watch margin gutters contract or expand."
-      }
+    lossSurfaceName: "Hinge Loss Margin Valley",
+    pipelineStages: [
+      { step: 1, phase: "Margin Definition", badge: "Geometry", mathExpression: "\\text{Margin Width} = \\frac{2}{\\|\\mathbf{w}\\|}", insight: "Maximizing separation distance between supporting gutters." },
+      { step: 2, phase: "Support Vectors", badge: "Critical Points", mathExpression: "y_i(\\mathbf{w}^T \\mathbf{x}_i + b) = 1", insight: "Pulsing neon rings lock onto the only points governing the boundary." },
+      { step: 3, phase: "Hinge Loss Slack", badge: "Soft Margin (C)", mathExpression: "\\xi_i = \\max(0, 1 - y_i(\\mathbf{w}^T \\mathbf{x}_i + b))", insight: "Tolerates controlled misclassifications in non-separable data." },
+      { step: 4, phase: "Hyperplane Lock", badge: "Convergence", mathExpression: "\\min \\frac{1}{2}\\|w\\|^2 + C\\sum\\xi_i", insight: "Optimal compromise between margin width and classification fidelity." },
     ],
     math: {
       objective: "\\min_{w, b, \\xi} \\frac{1}{2} \\|w\\|^2 + C \\sum_{i=1}^m \\xi_i \\quad \\text{s.t.} \\quad y^{(i)}(w^T x^{(i)} + b) \\ge 1 - \\xi_i, \\quad \\xi_i \\ge 0",
@@ -431,14 +470,10 @@ class LogisticRegressionFromScratch:
     },
     pythonCode: `import numpy as np
 
-class LinearSVMHingeLoss:
-    """Linear Support Vector Machine trained with Subgradient Descent."""
+class LinearSVM:
     def __init__(self, C: float = 1.0, lr: float = 0.001, epochs: int = 1000):
-        self.C = C
-        self.lr = lr
-        self.epochs = epochs
-        self.w = None
-        self.b = 0.0
+        self.C, self.lr, self.epochs = C, lr, epochs
+        self.w, self.b = None, 0.0
 
     def fit(self, X: np.ndarray, y: np.ndarray):
         y_signed = np.where(y <= 0, -1, 1)
@@ -446,54 +481,26 @@ class LinearSVMHingeLoss:
         self.w = np.zeros(d)
         for _ in range(self.epochs):
             for i in range(m):
-                condition = y_signed[i] * (np.dot(X[i], self.w) + self.b) >= 1
-                if condition:
-                    self.w -= self.lr * (self.w / m)
-                else:
+                if y_signed[i] * (np.dot(X[i], self.w) + self.b) < 1:
                     self.w -= self.lr * (self.w / m - self.C * y_signed[i] * X[i])
                     self.b -= self.lr * (-self.C * y_signed[i])
-        return self
-
-    def predict(self, X: np.ndarray) -> np.ndarray:
-        return np.sign(X @ self.w + self.b)`
+                else:
+                    self.w -= self.lr * (self.w / m)
+        return self`
   },
   {
     id: "decision-tree",
-    name: "Decision Trees & Gini Impurity",
+    name: "Decision Trees (Gini)",
     paradigm: "classification",
-    badge: "Tree-Based Models",
-    shortDesc: "Recursively partitions feature space using greedy threshold splits that minimize node impurity.",
+    badge: "Orthogonal Partitioning",
+    summary: "Greedily searches threshold splits to maximize information gain and purity.",
     lossSurface3d: "1 - (x^2 + y^2)",
-    lossSurfaceName: "Impurity Reduction Paraboloid",
-    explainerSteps: [
-      {
-        stepNum: 1,
-        title: "Measuring Node Impurity (Gini)",
-        desc: "Gini Impurity measures how mixed the labels are in a region. A completely pure node has Gini = 0; a 50/50 mix has Gini = 0.50.",
-        mathFormula: "I_G(p) = 1 - \\sum_{k=1}^K p_k^2 = 1 - (p_0^2 + p_1^2)",
-        visualCue: "Root node contains all points with mixed labels (Gini ≈ 0.48)."
-      },
-      {
-        stepNum: 2,
-        title: "Greedy Scanline Threshold Search",
-        desc: "An imaginary scanline sweeps across feature X and Y, evaluating candidate splits to find the feature and threshold that maximizes Information Gain.",
-        mathFormula: "\\Delta I_G = I_G(\\text{Parent}) - \\left[ \\frac{N_L}{N} I_G(L) + \\frac{N_R}{N} I_G(R) \\right]",
-        visualCue: "Horizontal and vertical test cuts evaluate reduction in impurity."
-      },
-      {
-        stepNum: 3,
-        title: "First Orthogonal Partition Cut",
-        desc: "The tree executes the best split (e.g. x ≤ 0). The 2D feature space is divided into two distinct sub-rectangles.",
-        mathFormula: "\\text{Split: } x_1 \\le 0 \\implies D_{\\text{left}}, D_{\\text{right}}",
-        visualCue: "Bold vertical split line slices the canvas in half."
-      },
-      {
-        stepNum: 4,
-        title: "Recursive Subdivision to Leaves",
-        desc: "Each sub-region is split again recursively until maximum depth is reached or all leaves are pure.",
-        mathFormula: "\\text{Leaf Prediction: } \\hat{y} = \\arg\\max_c \\sum_{i \\in \\text{Leaf}} \\mathbb{I}(y_i = c)",
-        visualCue: "Feature space becomes an axis-aligned grid of colored decision regions."
-      }
+    lossSurfaceName: "Gini Impurity Paraboloid",
+    pipelineStages: [
+      { step: 1, phase: "Impurity Metric", badge: "Gini Score", mathExpression: "I_G(S) = 1 - \\sum p_k^2", insight: "Measures statistical disorder; 0.00 represents complete purity." },
+      { step: 2, phase: "Scanline Search", badge: "Split Finder", mathExpression: "\\Delta I_G = I_G(P) - [\\frac{N_L}{N}I_G(L) + \\frac{N_R}{N}I_G(R)]", insight: "Sweeps coordinate axes to locate the single cut that minimizes impurity." },
+      { step: 3, phase: "Axis-Aligned Cut", badge: "Threshold", mathExpression: "x_j \\le \\theta^*", insight: "Slices feature space into distinct rectangular sub-domains." },
+      { step: 4, phase: "Recursive Leaves", badge: "Subdivision", mathExpression: "\\hat{y} = \\text{Mode}(y_{\\text{leaf}})", insight: "Builds hierarchy until maximum depth or leaf purity is satisfied." },
     ],
     math: {
       objective: "I_G(p) = 1 - \\sum_{k=1}^K p_k^2, \\quad H(p) = -\\sum_{k=1}^K p_k \\log_2(p_k)",
@@ -508,70 +515,38 @@ class LinearSVMHingeLoss:
     },
     pythonCode: `import numpy as np
 
-def gini_impurity(y: np.ndarray) -> float:
-    if len(y) == 0:
-        return 0.0
+def gini(y):
+    if len(y) == 0: return 0.0
     _, counts = np.unique(y, return_counts=True)
-    probs = counts / len(y)
-    return 1.0 - np.sum(probs ** 2)
+    return 1.0 - np.sum((counts / len(y)) ** 2)
 
-def best_split(X: np.ndarray, y: np.ndarray):
-    best_gain = -1.0
-    split_feat, split_thresh = None, None
-    parent_gini = gini_impurity(y)
+def best_split(X, y):
+    best_gain, best_f, best_t = -1, 0, 0
+    p_gini = gini(y)
     m, d = X.shape
-    for feat in range(d):
-        thresholds = np.unique(X[:, feat])
-        for t in thresholds:
-            left_mask = X[:, feat] <= t
-            y_left, y_right = y[left_mask], y[~left_mask]
-            if len(y_left) == 0 or len(y_right) == 0:
-                continue
-            child_gini = (len(y_left)/m) * gini_impurity(y_left) + (len(y_right)/m) * gini_impurity(y_right)
-            gain = parent_gini - child_gini
+    for f in range(d):
+        for t in np.unique(X[:, f]):
+            mask = X[:, f] <= t
+            yL, yR = y[mask], y[~mask]
+            if len(yL) == 0 or len(yR) == 0: continue
+            gain = p_gini - (len(yL)/m * gini(yL) + len(yR)/m * gini(yR))
             if gain > best_gain:
-                best_gain = gain
-                split_feat = feat
-                split_thresh = t
-    return split_feat, split_thresh`
+                best_gain, best_f, best_t = gain, f, t
+    return best_f, best_t`
   },
   {
     id: "knn",
-    name: "K-Nearest Neighbors (KNN)",
+    name: "K-Nearest Neighbors",
     paradigm: "classification",
-    badge: "Instance-Based Learning",
-    shortDesc: "Non-parametric lazy learner classifying query points by local majority vote among the K nearest neighbors.",
+    badge: "Instance-Based Voting",
+    summary: "Classifies query points dynamically by local Euclidean neighborhood vote.",
     lossSurface3d: "sqrt(x^2 + y^2)",
-    lossSurfaceName: "Euclidean Distance Cone",
-    explainerSteps: [
-      {
-        stepNum: 1,
-        title: "Query Point Arrival",
-        desc: "A new unclassified sample arrives at query coordinates (x_q, y_q). KNN stores all training data without an explicit training phase.",
-        mathFormula: "\\mathbf{x}_q = (x_{\\text{probe}}, y_{\\text{probe}}) \\in \\mathbb{R}^2",
-        visualCue: "Target reticle appears at probe location (you can drag it anywhere!)."
-      },
-      {
-        stepNum: 2,
-        title: "Distance Metric Matrix",
-        desc: "Compute Euclidean distance d(x_q, x_i) from query point to EVERY training point in the entire dataset.",
-        mathFormula: "d_2(\\mathbf{x}_q, \\mathbf{x}_i) = \\sqrt{(x_q - x_i)^2 + (y_q - y_i)^2}",
-        visualCue: "Distance matrix calculated across all coordinates."
-      },
-      {
-        stepNum: 3,
-        title: "Expanding Radial Radar Ring",
-        desc: "Sort distances in ascending order. Expand a radar pulse circle until it encloses the K nearest neighbors.",
-        mathFormula: "N_K(\\mathbf{x}_q) = \\{ \\mathbf{x}_{(1)}, \\mathbf{x}_{(2)}, \\dots, \\mathbf{x}_{(K)} \\}",
-        visualCue: "Dashed radar circle expands to radius of K-th neighbor; laser lines connect to them."
-      },
-      {
-        stepNum: 4,
-        title: "Majority Voting & Posterior Probability",
-        desc: "Count labels of the K neighbors. The class with the highest vote wins! Posterior probability is simply the vote fraction.",
-        mathFormula: "P(Y=c \\mid \\mathbf{x}_q) = \\frac{1}{K} \\sum_{i \\in N_K(\\mathbf{x}_q)} \\mathbb{I}(y_i = c)",
-        visualCue: "Live vote tally counts Amber vs Cyan neighbors and assigns prediction."
-      }
+    lossSurfaceName: "Euclidean Metric Cone",
+    pipelineStages: [
+      { step: 1, phase: "Query Probe", badge: "Coordinates", mathExpression: "\\mathbf{x}_q = (x_p, y_p)", insight: "User-positioned target reticle anywhere on the continuous plane." },
+      { step: 2, phase: "Metric Distance", badge: "L2 Norm", mathExpression: "d_2(\\mathbf{x}_q, \\mathbf{x}_i) = \\|\\mathbf{x}_q - \\mathbf{x}_i\\|_2", insight: "Computes exact Euclidean distance from probe to every data point." },
+      { step: 3, phase: "Neighborhood Radar", badge: "K Selection", mathExpression: "N_K(\\mathbf{x}_q) = \\text{top } K \\text{ nearest}", insight: "Dynamic laser beams connect to the K closest instances." },
+      { step: 4, phase: "Majority Vote", badge: "Output", mathExpression: "\\hat{y} = \\arg\\max_c \\sum_{i \\in N_K} \\mathbb{I}(y_i = c)", insight: "Tally decides predicted class label and confidence fraction." },
     ],
     math: {
       objective: "\\hat{y} = \\arg\\max_c \\sum_{i \\in N_K(x)} \\mathbb{I}(y^{(i)} = c)",
@@ -586,26 +561,20 @@ def best_split(X: np.ndarray, y: np.ndarray):
     },
     pythonCode: `import numpy as np
 
-class KNNClassifier:
+class KNN:
     def __init__(self, k: int = 3):
         self.k = k
-        self.X_train = None
-        self.y_train = None
+        self.X, self.y = None, None
 
-    def fit(self, X: np.ndarray, y: np.ndarray):
-        self.X_train = X
-        self.y_train = y
+    def fit(self, X, y):
+        self.X, self.y = X, y
         return self
 
-    def predict(self, X: np.ndarray) -> np.ndarray:
-        predictions = []
-        for x in X:
-            distances = np.linalg.norm(self.X_train - x, axis=1)
-            k_indices = np.argsort(distances)[:self.k]
-            k_nearest_labels = self.y_train[k_indices]
-            vals, counts = np.unique(k_nearest_labels, return_counts=True)
-            predictions.append(vals[np.argmax(counts)])
-        return np.array(predictions)`
+    def predict_one(self, x_query):
+        dists = np.linalg.norm(self.X - x_query, axis=1)
+        k_nearest = self.y[np.argsort(dists)[:self.k]]
+        vals, counts = np.unique(k_nearest, return_counts=True)
+        return vals[np.argmax(counts)]`
   },
 
   /* ================= OPTIMIZATION ================= */
@@ -613,39 +582,15 @@ class KNNClassifier:
     id: "adam-optimizer",
     name: "Adam, RMSProp & Momentum",
     paradigm: "optimization",
-    badge: "Deep Learning Optimizer",
-    shortDesc: "Combines Momentum (first moment) with RMSProp (second moment) and bias correction for robust convergence.",
+    badge: "Adaptive Deep Learning",
+    summary: "Simulates simultaneous convergence on non-convex mathematical loss landscapes.",
     lossSurface3d: "log(1 + (1 - x)^2 + 10*(y - x^2)^2)/3",
-    lossSurfaceName: "Rosenbrock Banana Optimization Canyon",
-    explainerSteps: [
-      {
-        stepNum: 1,
-        title: "The Failure of Vanilla SGD in Ravines",
-        desc: "In elongated ravines, loss surface is steep along one axis and flat along another. SGD oscillates violently perpendicularly to the valley floor.",
-        mathFormula: "\\mathbf{w}_{t+1} = \\mathbf{w}_t - \\alpha \\nabla J(\\mathbf{w}_t) \\quad (\\text{Severe Oscillation})",
-        visualCue: "Red SGD particle bounces wildly back and forth across canyon walls."
-      },
-      {
-        stepNum: 2,
-        title: "Momentum: Velocity Accumulation",
-        desc: "Momentum adds friction-damped velocity v_t. Perpendicular oscillations cancel out, while continuous forward gradients build speed down the canyon!",
-        mathFormula: "v_t = \\beta_1 v_{t-1} + \\alpha g_t, \\quad w_{t+1} = w_t - v_t",
-        visualCue: "Yellow Momentum particle dampens jitter and accelerates along the valley floor."
-      },
-      {
-        stepNum: 3,
-        title: "RMSProp: Adaptive Per-Parameter Scaling",
-        desc: "RMSProp tracks exponential average of squared gradients s_t. Steep dimensions with large gradients are scaled down; flat dimensions are accelerated.",
-        mathFormula: "s_t = \\beta_2 s_{t-1} + (1-\\beta_2)g_t^2, \\quad \\Delta w = -\\frac{\\alpha}{\\sqrt{s_t + \\epsilon}} g_t",
-        visualCue: "Blue RMSProp particle navigates ravines smoothly without blowing up."
-      },
-      {
-        stepNum: 4,
-        title: "Adam: The Synthesis with Bias Correction",
-        desc: "Adam combines Momentum (first moment m_t) + RMSProp (second moment v_t) with bias corrections m̂ and v̂ to prevent initial vanishing steps.",
-        mathFormula: "w_{t+1} = w_t - \\frac{\\alpha}{\\sqrt{\\hat{v}_t} + \\epsilon} \\hat{m}_t",
-        visualCue: "Green Adam particle glides swiftly and directly to global minimum (1, 1)!"
-      }
+    lossSurfaceName: "Rosenbrock Banana Ravine",
+    pipelineStages: [
+      { step: 1, phase: "Vanilla SGD", badge: "High Jitter", mathExpression: "\\Delta w = -\\alpha \\nabla J", insight: "Bounces uncontrollably back and forth across steep ravine walls." },
+      { step: 2, phase: "Momentum", badge: "Velocity Memory", mathExpression: "v_t = \\beta_1 v_{t-1} + \\alpha g_t", insight: "Cancels perpendicular oscillations, building forward speed down the valley." },
+      { step: 3, phase: "RMSProp", badge: "Scale Adaptation", mathExpression: "s_t = \\beta_2 s_{t-1} + (1-\\beta_2)g_t^2", insight: "Rescales step sizes inversely to coordinate gradient variance." },
+      { step: 4, phase: "Adam Synthesis", badge: "Bias-Corrected", mathExpression: "w \\leftarrow w - \\frac{\\alpha}{\\sqrt{\\hat{v}_t} + \\epsilon}\\hat{m}_t", insight: "Reaches the global optimum (1, 1) in the fewest iterations." },
     ],
     math: {
       objective: "m_t = \\beta_1 m_{t-1} + (1 - \\beta_1) g_t, \\quad v_t = \\beta_2 v_{t-1} + (1 - \\beta_2) g_t^2",
@@ -662,26 +607,18 @@ class KNNClassifier:
     },
     pythonCode: `import numpy as np
 
-class AdamOptimizer:
-    def __init__(self, lr: float = 0.001, beta1: float = 0.9, beta2: float = 0.999, eps: float = 1e-8):
-        self.lr = lr
-        self.beta1 = beta1
-        self.beta2 = beta2
-        self.eps = eps
-        self.m = None
-        self.v = None
-        self.t = 0
+class Adam:
+    def __init__(self, lr=0.001, b1=0.9, b2=0.999, eps=1e-8):
+        self.lr, self.b1, self.b2, self.eps = lr, b1, b2, eps
+        self.m, self.v, self.t = 0, 0, 0
 
-    def step(self, theta: np.ndarray, grad: np.ndarray) -> np.ndarray:
-        if self.m is None:
-            self.m = np.zeros_like(theta)
-            self.v = np.zeros_like(theta)
+    def step(self, w, grad):
         self.t += 1
-        self.m = self.beta1 * self.m + (1.0 - self.beta1) * grad
-        self.v = self.beta2 * self.v + (1.0 - self.beta2) * (grad ** 2)
-        m_hat = self.m / (1.0 - self.beta1 ** self.t)
-        v_hat = self.v / (1.0 - self.beta2 ** self.t)
-        return theta - self.lr * m_hat / (np.sqrt(v_hat) + self.eps)`
+        self.m = self.b1 * self.m + (1 - self.b1) * grad
+        self.v = self.b2 * self.v + (1 - self.b2) * (grad ** 2)
+        m_hat = self.m / (1 - self.b1 ** self.t)
+        v_hat = self.v / (1 - self.b2 ** self.t)
+        return w - self.lr * m_hat / (np.sqrt(v_hat) + self.eps)`
   },
 
   /* ================= UNSUPERVISED ================= */
@@ -689,39 +626,15 @@ class AdamOptimizer:
     id: "kmeans",
     name: "K-Means Clustering",
     paradigm: "unsupervised",
-    badge: "Clustering",
-    shortDesc: "Partitions n observations into k clusters by alternating assignment and centroid update steps.",
+    badge: "Lloyd's EM Algorithm",
+    summary: "Partitions feature space into Voronoi cells by iteratively updating cluster centroids.",
     lossSurface3d: "sin(x)*cos(y)",
-    lossSurfaceName: "Multimodal Periodic Cluster Potential",
-    explainerSteps: [
-      {
-        stepNum: 1,
-        title: "Centroid Initialization",
-        desc: "Initialize K cluster centroids randomly across the feature space (or via K-Means++ to maximize distance between starting points).",
-        mathFormula: "\\mu_1, \\mu_2, \\dots, \\mu_K \\in \\mathbb{R}^d \\quad (\\text{Random Seed})",
-        visualCue: "K large glowing circles appear at arbitrary coordinates."
-      },
-      {
-        stepNum: 2,
-        title: "Voronoi Assignment Phase",
-        desc: "Each data point computes its Euclidean distance to all K centroids and assigns itself to the nearest centroid.",
-        mathFormula: "c^{(i)} = \\arg\\min_k \\|x^{(i)} - \\mu_k\\|^2",
-        visualCue: "Points instantly change colors matching their closest centroid."
-      },
-      {
-        stepNum: 3,
-        title: "Center of Mass Update Phase",
-        desc: "Each centroid moves to the exact mathematical mean (center of mass) of all data points currently assigned to it.",
-        mathFormula: "\\mu_k = \\frac{1}{|C_k|} \\sum_{i \\in C_k} x^{(i)}",
-        visualCue: "Centroids smoothly glide across canvas to their cluster centers."
-      },
-      {
-        stepNum: 4,
-        title: "Convergence & Inertia Minimization",
-        desc: "Repeat assignment and update until centroid coordinates stabilize. Within-Cluster Sum of Squares (Inertia) reaches local minimum.",
-        mathFormula: "J(\\mu) = \\sum_{k=1}^K \\sum_{i \\in C_k} \\|x^{(i)} - \\mu_k\\|^2 \\to \\min",
-        visualCue: "Centroids lock into place; Voronoi partitions reach final equilibrium."
-      }
+    lossSurfaceName: "Multimodal Periodic Potential",
+    pipelineStages: [
+      { step: 1, phase: "Initial Seeds", badge: "Centroids", mathExpression: "\\mu_1, \\dots, \\mu_K \\in \\mathbb{R}^2", insight: "Spawns K cluster anchor points across data space." },
+      { step: 2, phase: "Assignment", badge: "Voronoi Partition", mathExpression: "c_i = \\arg\\min_k \\|\\mathbf{x}_i - \\mu_k\\|^2", insight: "Every point recolors to its nearest Euclidean centroid." },
+      { step: 3, phase: "Center of Mass", badge: "Mean Update", mathExpression: "\\mu_k = \\frac{1}{|C_k|} \\sum_{i \\in C_k} \\mathbf{x}_i", insight: "Centroids glide smoothly to the mathematical center of their points." },
+      { step: 4, phase: "Inertia Minima", badge: "Convergence", mathExpression: "J = \\sum \\|\\mathbf{x}_i - \\mu_{c_i}\\|^2 \\to \\min", insight: "Stable partition achieved when centroid movement ceases." },
     ],
     math: {
       objective: "J(\\mu) = \\sum_{i=1}^m \\sum_{k=1}^K r_{ik} \\|x^{(i)} - \\mu_k\\|^2, \\quad r_{ik} = \\begin{cases} 1 & \\text{if } k = \\arg\\min_j \\|x^{(i)} - \\mu_j\\|^2 \\\\ 0 & \\text{otherwise} \\end{cases}",
@@ -736,62 +649,34 @@ class AdamOptimizer:
     },
     pythonCode: `import numpy as np
 
-class KMeansFromScratch:
-    def __init__(self, k: int = 3, max_iter: int = 100):
-        self.k = k
-        self.max_iter = max_iter
+class KMeans:
+    def __init__(self, k=3, max_iter=100):
+        self.k, self.max_iter = k, max_iter
         self.centroids = None
 
-    def fit(self, X: np.ndarray):
-        idx = np.random.choice(len(X), self.k, replace=False)
-        self.centroids = X[idx]
+    def fit(self, X):
+        self.centroids = X[np.random.choice(len(X), self.k, replace=False)]
         for _ in range(self.max_iter):
-            distances = np.linalg.norm(X[:, None] - self.centroids, axis=2)
-            labels = np.argmin(distances, axis=1)
-            new_centroids = np.array([X[labels == k].mean(axis=0) if np.any(labels == k) 
-                                      else self.centroids[k] for k in range(self.k)])
-            if np.allclose(self.centroids, new_centroids):
-                break
-            self.centroids = new_centroids
+            dists = np.linalg.norm(X[:, None] - self.centroids, axis=2)
+            labels = np.argmin(dists, axis=1)
+            new_c = np.array([X[labels == k].mean(axis=0) for k in range(self.k)])
+            if np.allclose(self.centroids, new_c): break
+            self.centroids = new_c
         return self`
   },
   {
     id: "pca",
-    name: "Principal Component Analysis (PCA)",
+    name: "Principal Component Analysis",
     paradigm: "unsupervised",
-    badge: "Dimensionality Reduction",
-    shortDesc: "Projects high-dimensional data onto orthogonal axes of maximum variance via eigendecomposition.",
+    badge: "Spectral Decomposition",
+    summary: "Identifies orthogonal axes of maximal variance, enabling lossless compression.",
     lossSurface3d: "2*x^2 + 0.5*y^2",
-    lossSurfaceName: "Ellipsoidal Covariance Energy Basin",
-    explainerSteps: [
-      {
-        stepNum: 1,
-        title: "Zero-Mean Data Centering",
-        desc: "Subtract the empirical mean vector μ from every data point so that the scatter cloud is perfectly centered at origin (0, 0).",
-        mathFormula: "\\tilde{\\mathbf{x}} = \\mathbf{x} - \\frac{1}{m}\\sum_{i=1}^m \\mathbf{x}^{(i)}",
-        visualCue: "Scatter cloud shifts to coordinate origin."
-      },
-      {
-        stepNum: 2,
-        title: "Sample Covariance Matrix Σ",
-        desc: "Compute covariance matrix Σ = (1/m) X̃ᵀX̃. Diagonal elements represent feature variance; off-diagonals represent cross-feature correlation.",
-        mathFormula: "\\Sigma = \\frac{1}{m} \\tilde{X}^T \\tilde{X} = \\begin{bmatrix} \\text{Var}(x_1) & \\text{Cov}(x_1, x_2) \\\\ \\text{Cov}(x_1, x_2) & \\text{Var}(x_2) \\end{bmatrix}",
-        visualCue: "Captures the direction of maximum dispersion in data."
-      },
-      {
-        stepNum: 3,
-        title: "Eigendecomposition & Principal Axes",
-        desc: "Solve characteristic equation Σ v = λ v. The eigenvector v₁ with largest eigenvalue λ₁ is PC1 (maximum variance axis); v₂ is orthogonal PC2.",
-        mathFormula: "\\Sigma \\mathbf{v}_1 = \\lambda_1 \\mathbf{v}_1, \\quad \\mathbf{v}_1^T \\mathbf{v}_2 = 0",
-        visualCue: "Green axis (PC1) rotates to line up with maximum data spread; blue axis (PC2) is perpendicular."
-      },
-      {
-        stepNum: 4,
-        title: "Orthogonal Projection (2D → 1D)",
-        desc: "Drop perpendicular orthogonal projections from 2D points onto PC1. Data dimension is compressed from 2D to 1D with 86%+ variance preserved!",
-        mathFormula: "z_i = \\mathbf{x}_i^T \\mathbf{v}_1 \\in \\mathbb{R}^1",
-        visualCue: "White dashed projection lines drop points directly onto the PC1 axis."
-      }
+    lossSurfaceName: "Ellipsoidal Variance Basin",
+    pipelineStages: [
+      { step: 1, phase: "Zero-Mean Centering", badge: "Shift", mathExpression: "\\tilde{\\mathbf{x}} = \\mathbf{x} - \\bar{\\mathbf{x}}", insight: "Aligns center of mass of user data cloud to origin (0, 0)." },
+      { step: 2, phase: "Covariance Matrix", badge: "Cov(X, Y)", mathExpression: "\\Sigma = \\frac{1}{m} \\tilde{X}^T \\tilde{X}", insight: "Measures feature variances and mutual cross-correlations." },
+      { step: 3, phase: "Eigenvectors", badge: "Eigendecomposition", mathExpression: "\\Sigma \\mathbf{v}_1 = \\lambda_1 \\mathbf{v}_1, \\quad \\mathbf{v}_1 \\perp \\mathbf{v}_2", insight: "Green axis (PC1) rotates to line up with maximum data spread." },
+      { step: 4, phase: "Orthogonal Drop", badge: "2D → 1D", mathExpression: "z_i = \\tilde{\\mathbf{x}}_i^T \\mathbf{v}_1", insight: "Perpendicular lines project points onto PC1, preserving variance." },
     ],
     math: {
       objective: "\\max_{u_1} u_1^T \\Sigma u_1 \\quad \\text{s.t.} \\quad u_1^T u_1 = 1",
@@ -806,63 +691,33 @@ class KMeansFromScratch:
     },
     pythonCode: `import numpy as np
 
-class PCAFromScratch:
-    def __init__(self, n_components: int = 2):
-        self.n_components = n_components
+class PCA:
+    def __init__(self, n_components=1):
+        self.k = n_components
         self.components = None
-        self.mean = None
 
-    def fit(self, X: np.ndarray):
-        self.mean = np.mean(X, axis=0)
-        X_centered = X - self.mean
-        cov = np.cov(X_centered, rowvar=False)
-        eigenvalues, eigenvectors = np.linalg.eigh(cov)
-        idx = np.argsort(eigenvalues)[::-1]
-        self.components = eigenvectors[:, idx[:self.n_components]]
-        return self
-
-    def transform(self, X: np.ndarray) -> np.ndarray:
-        return (X - self.mean) @ self.components`
+    def fit(self, X):
+        X_c = X - np.mean(X, axis=0)
+        cov = np.cov(X_c, rowvar=False)
+        vals, vecs = np.linalg.eigh(cov)
+        self.components = vecs[:, np.argsort(vals)[::-1][:self.k]]
+        return self`
   },
 
   /* ================= REINFORCEMENT LEARNING ================= */
   {
     id: "q-learning",
-    name: "Q-Learning & Bellman Equation",
+    name: "Tabular Q-Learning (RL)",
     paradigm: "reinforcement",
-    badge: "Model-Free RL",
-    shortDesc: "Off-policy temporal difference algorithm that learns optimal action-value functions through environment interaction.",
+    badge: "Bellman Optimality",
+    summary: "Autonomous agent explores a 5×5 gridworld, updating action-values via temporal difference error.",
     lossSurface3d: "(x^2 - 4)^2 / 8 + y^2 / 2",
-    lossSurfaceName: "Double-Well Value Function Basin",
-    explainerSteps: [
-      {
-        stepNum: 1,
-        title: "State & Action Space Observation",
-        desc: "Agent observes current discrete state s = (r, c) on the 5x5 grid. There are 4 possible actions: Up, Down, Left, Right.",
-        mathFormula: "s \\in \\mathcal{S} = \\{0, \\dots, 24\\}, \\quad a \\in \\mathcal{A} = \\{\\uparrow, \\downarrow, \\leftarrow, \\rightarrow\\}",
-        visualCue: "Agent AI starts at top-left [0, 0] with Target at [4, 4] and Lava Traps in between."
-      },
-      {
-        stepNum: 2,
-        title: "Epsilon-Greedy Action Selection",
-        desc: "Balances exploration vs exploitation: with probability ε, pick random action (discover paths); with 1-ε, pick action with highest Q(s, a).",
-        mathFormula: "a = \\begin{cases} \\text{random action} & \\text{with prob } \\epsilon \\\\ \\arg\\max_{a'} Q(s, a') & \\text{with prob } 1 - \\epsilon \\end{cases}",
-        visualCue: "Arrows in each grid cell show current greedy policy argmax Q(s, a)."
-      },
-      {
-        stepNum: 3,
-        title: "Environment Step & Reward Signal",
-        desc: "Execute action a, transition to state s', and observe scalar reward R (+10 for Target 🎯, -10 for Lava 🔥, -0.1 for step cost).",
-        mathFormula: "R = \\begin{cases} +10 & \\text{if Target reached} \\\\ -10 & \\text{if Lava Trap hit} \\\\ -0.1 & \\text{per motion step} \\end{cases}",
-        visualCue: "Agent steps onto new tile, triggering positive or negative reward signal."
-      },
-      {
-        stepNum: 4,
-        title: "Bellman Optimality Temporal Difference Update",
-        desc: "Update Q-table value toward the Bellman target (immediate reward + discounted maximum future reward). Q values propagate backward!",
-        mathFormula: "Q(s, a) \\leftarrow Q(s, a) + \\alpha \\left[ R + \\gamma \\max_{a'} Q(s', a') - Q(s, a) \\right]",
-        visualCue: "Cyan heat intensity scales as states learn the shortest safe path to goal."
-      }
+    lossSurfaceName: "Double-Well Value Landscape",
+    pipelineStages: [
+      { step: 1, phase: "State Observation", badge: "Grid Coordinate", mathExpression: "s_t = (r, c) \\in \\{0, \\dots, 24\\}", insight: "Agent reads current location in maze with traps and goal." },
+      { step: 2, phase: "Action Selection", badge: "ε-Greedy", mathExpression: "a = \\text{Random} \\text{ (prob } \\epsilon) \\text{ or } \\arg\\max Q", insight: "Balances exploratory discoveries with greedy exploitation." },
+      { step: 3, phase: "Reward Feedback", badge: "Environment", mathExpression: "R \\in \\{+10, -10, -0.1\\}", insight: "+10 for Target 🎯, -10 for Lava 🔥, -0.1 step penalty." },
+      { step: 4, phase: "Bellman TD Update", badge: "Value Convergence", mathExpression: "Q(s, a) \\leftarrow Q + \\alpha [R + \\gamma \\max Q' - Q]", insight: "Action values propagate backward, lighting up safe paths." },
     ],
     math: {
       objective: "Q(s, a) \\leftarrow Q(s, a) + \\alpha \\left[ R + \\gamma \\max_{a'} Q(s', a') - Q(s, a) \\right]",
@@ -878,79 +733,126 @@ class PCAFromScratch:
     pythonCode: `import numpy as np
 
 class QLearningAgent:
-    def __init__(self, n_states: int, n_actions: int, lr: float = 0.1, gamma: float = 0.95, epsilon: float = 0.2):
-        self.q_table = np.zeros((n_states, n_actions))
-        self.lr = lr
-        self.gamma = gamma
-        self.epsilon = epsilon
-        self.n_actions = n_actions
+    def __init__(self, states=25, actions=4, lr=0.2, gamma=0.95, eps=0.2):
+        self.Q = np.zeros((states, actions))
+        self.lr, self.gamma, self.eps = lr, gamma, eps
 
-    def choose_action(self, state: int) -> int:
-        if np.random.rand() < self.epsilon:
-            return np.random.choice(self.n_actions) # Explore
-        return np.argmax(self.q_table[state])       # Exploit
+    def act(self, s):
+        if np.random.rand() < self.eps: return np.random.choice(4)
+        return np.argmax(self.Q[s])
 
-    def update(self, s: int, a: int, r: float, s_prime: int):
-        best_future_q = np.max(self.q_table[s_prime])
-        td_target = r + self.gamma * best_future_q
-        td_error = td_target - self.q_table[s, a]
-        self.q_table[s, a] += self.lr * td_error`
+    def update(self, s, a, r, s_next):
+        td_target = r + self.gamma * np.max(self.Q[s_next])
+        self.Q[s, a] += self.lr * (td_target - self.Q[s, a])`
   }
 ];
 
 /* ------------------------------------------------------------------ */
-/* Interactive Guided Model Canvas                                    */
+/* Dynamic Interactive Visualizer with Real Mathematical Solving     */
 /* ------------------------------------------------------------------ */
 
-interface Point2D {
-  x: number;
-  y: number;
-  label?: number;
-}
-
-export function GuidedModelVisualizer({
+export function DynamicModelCanvas({
   topic,
-  activeStepIdx,
+  activePipelineStep,
   onStepChange,
 }: {
   topic: MLTopic;
-  activeStepIdx: number;
-  onStepChange: (idx: number) => void;
+  activePipelineStep: number;
+  onStepChange: (step: number) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Hyperparameters
-  const [degree, setDegree] = useState(3);
-  const [lambda, setLambda] = useState(1.5);
-  const [svmC, setSvmC] = useState(2.0);
-  const [knnK, setKnnK] = useState(3);
-  const [treeDepth, setTreeDepth] = useState(2);
-  const [kmeansK, setKmeansK] = useState(3);
-
-  // Probe point for KNN
-  const [probePos, setProbePos] = useState({ x: 0.6, y: 0.8 });
-  const isDragging = useRef(false);
-
-  // Default clean data
+  // Dynamic User Points
   const [points, setPoints] = useState<Point2D[]>([
-    { x: -3.5, y: -2.0, label: 0 },
-    { x: -2.6, y: -1.2, label: 0 },
-    { x: -1.8, y: -0.4, label: 0 },
-    { x: -1.0, y: -0.1, label: 0 },
-    { x: -0.4, y: 0.8, label: 1 },
-    { x: 0.5, y: 1.0, label: 1 },
-    { x: 1.4, y: 1.9, label: 1 },
-    { x: 2.3, y: 2.2, label: 1 },
-    { x: 3.2, y: 3.1, label: 1 },
-    { x: 1.9, y: -1.4, label: 0 },
-    { x: -1.9, y: 1.8, label: 1 },
-    { x: 1.2, y: -0.9, label: 0 },
+    { id: "1", x: -3.5, y: -2.1, label: 0 },
+    { id: "2", x: -2.7, y: -1.3, label: 0 },
+    { id: "3", x: -1.8, y: -0.5, label: 0 },
+    { id: "4", x: -1.0, y: -0.1, label: 0 },
+    { id: "5", x: -0.4, y: 0.7, label: 1 },
+    { id: "6", x: 0.5, y: 1.1, label: 1 },
+    { id: "7", x: 1.3, y: 1.9, label: 1 },
+    { id: "8", x: 2.2, y: 2.3, label: 1 },
+    { id: "9", x: 3.1, y: 3.2, label: 1 },
+    { id: "10", x: 2.0, y: -1.4, label: 0 },
+    { id: "11", x: -1.8, y: 1.7, label: 1 },
+    { id: "12", x: 1.1, y: -0.8, label: 0 },
   ]);
 
-  const stepInfo = topic.explainerSteps[activeStepIdx] || topic.explainerSteps[0];
+  // Point placement tool: 0 (Amber) or 1 (Cyan)
+  const [activeLabel, setActiveLabel] = useState<0 | 1>(1);
 
-  // Mouse drag handling
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  // Probe Reticle for KNN
+  const [probe, setProbe] = useState({ x: 0.5, y: 0.8 });
+  const isDraggingProbe = useRef(false);
+
+  // Animation Cycle & Hyperparameters
+  const [isParallelRunning, setIsParallelRunning] = useState(true);
+  const [animTime, setAnimTime] = useState(0);
+  const [degree, setDegree] = useState(3);
+  const [l2Reg, setL2Reg] = useState(1.5);
+  const [svmC, setSvmC] = useState(2.0);
+  const [knnK, setKnnK] = useState(3);
+  const [kmeansK, setKmeansK] = useState(3);
+
+  // Telemetry HUD
+  const [telemetry, setTelemetry] = useState({
+    metricA: "0.000",
+    nameA: "Loss",
+    metricB: "N/A",
+    nameB: "Params",
+    status: "READY",
+  });
+
+  // Reset to Presets
+  const applyPreset = (presetName: string) => {
+    if (presetName === "linear") {
+      setPoints([
+        { id: "1", x: -3.5, y: -2.3, label: 0 },
+        { id: "2", x: -2.5, y: -1.4, label: 0 },
+        { id: "3", x: -1.5, y: -0.6, label: 0 },
+        { id: "4", x: -0.5, y: 0.2, label: 0 },
+        { id: "5", x: 0.5, y: 0.9, label: 1 },
+        { id: "6", x: 1.5, y: 1.8, label: 1 },
+        { id: "7", x: 2.5, y: 2.6, label: 1 },
+        { id: "8", x: 3.5, y: 3.4, label: 1 },
+      ]);
+    } else if (presetName === "curved") {
+      setPoints([
+        { id: "1", x: -3.5, y: -2.5, label: 0 },
+        { id: "2", x: -2.5, y: 1.8, label: 1 },
+        { id: "3", x: -1.2, y: -1.6, label: 0 },
+        { id: "4", x: 0.0, y: 0.4, label: 1 },
+        { id: "5", x: 1.2, y: -1.5, label: 0 },
+        { id: "6", x: 2.5, y: 2.0, label: 1 },
+        { id: "7", x: 3.5, y: -2.2, label: 0 },
+      ]);
+    } else if (presetName === "clusters") {
+      setPoints([
+        { id: "1", x: -2.5, y: -2.0, label: 0 },
+        { id: "2", x: -2.0, y: -1.5, label: 0 },
+        { id: "3", x: -2.8, y: -1.2, label: 0 },
+        { id: "4", x: 2.2, y: 1.8, label: 1 },
+        { id: "5", x: 2.7, y: 1.2, label: 1 },
+        { id: "6", x: 1.9, y: 2.4, label: 1 },
+        { id: "7", x: -0.5, y: 2.0, label: 1 },
+        { id: "8", x: 0.2, y: -2.2, label: 0 },
+      ]);
+    } else {
+      setPoints([]);
+    }
+  };
+
+  // Continuous animation cycle
+  useEffect(() => {
+    if (!isParallelRunning) return;
+    const interval = setInterval(() => {
+      setAnimTime((t) => t + 0.05);
+    }, 40);
+    return () => clearInterval(interval);
+  }, [isParallelRunning]);
+
+  // Click & Drag Canvas handling
+  const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
@@ -960,15 +862,22 @@ export function GuidedModelVisualizer({
     const mathY = -((py - rect.height / 2) / (rect.height / 2)) * 5;
 
     if (topic.id === "knn") {
-      isDragging.current = true;
-      setProbePos({ x: mathX, y: mathY });
-    } else {
-      setPoints((prev) => [...prev, { x: mathX, y: mathY, label: mathY >= 0 ? 1 : 0 }]);
+      const dist = Math.hypot(mathX - probe.x, mathY - probe.y);
+      if (dist < 0.8) {
+        isDraggingProbe.current = true;
+        return;
+      }
     }
+
+    // Add point at click
+    setPoints((prev) => [
+      ...prev,
+      { id: String(Date.now() + Math.random()), x: mathX, y: mathY, label: activeLabel },
+    ]);
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDragging.current || topic.id !== "knn") return;
+  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDraggingProbe.current) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
@@ -976,14 +885,16 @@ export function GuidedModelVisualizer({
     const py = e.clientY - rect.top;
     const mathX = ((px - rect.width / 2) / (rect.width / 2)) * 5;
     const mathY = -((py - rect.height / 2) / (rect.height / 2)) * 5;
-    setProbePos({ x: mathX, y: mathY });
+    setProbe({ x: mathX, y: mathY });
   };
 
-  const handleMouseUp = () => {
-    isDragging.current = false;
+  const handleCanvasMouseUp = () => {
+    isDraggingProbe.current = false;
   };
 
-  // Canvas Drawing Routine
+  // ------------------------------------------------------------------
+  // Main Mathematical Render Loop (Runs on REAL User Points)
+  // ------------------------------------------------------------------
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -991,7 +902,7 @@ export function GuidedModelVisualizer({
     if (!ctx) return;
 
     const dpr = window.devicePixelRatio || 1;
-    const w = canvas.parentElement?.clientWidth || 560;
+    const w = canvas.parentElement?.clientWidth || 600;
     const h = 420;
     canvas.width = w * dpr;
     canvas.height = h * dpr;
@@ -1005,12 +916,12 @@ export function GuidedModelVisualizer({
     const cy = h / 2;
     const scale = Math.min(w, h) / 10.5;
 
-    // Background
-    ctx.fillStyle = "#070b14";
+    // Tactical Chassis Background
+    ctx.fillStyle = "#090c12";
     ctx.fillRect(0, 0, w, h);
 
-    // Grid pattern
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+    // Instrument Grid
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.04)";
     ctx.lineWidth = 1;
     for (let x = -5; x <= 5; x += 1) {
       ctx.beginPath();
@@ -1025,8 +936,8 @@ export function GuidedModelVisualizer({
       ctx.stroke();
     }
 
-    // Axes
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+    // Origin Axes
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.18)";
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(0, cy);
@@ -1036,107 +947,71 @@ export function GuidedModelVisualizer({
     ctx.stroke();
 
     // ----------------------------------------------------------------
-    // Model Visuals Tied Directly to Explainer Steps
+    // 1. LINEAR REGRESSION (Exact OLS on User Points)
     // ----------------------------------------------------------------
-
     if (topic.id === "linear-regression") {
-      let sx = 0, sy = 0, sxx = 0, sxy = 0;
+      const coeffs = fitPolynomial(points, 1);
+      const intercept = coeffs[0] || 0;
+      const slope = coeffs[1] || 0;
+
+      // Animate gradient descent progression
+      const wobble = isParallelRunning ? Math.sin(animTime * 2) * 0.08 : 0;
+      const activeSlope = slope + wobble;
+
+      // Draw Residuals (Red dashed bars from each user point)
+      ctx.strokeStyle = "rgba(244, 63, 94, 0.75)";
+      ctx.lineWidth = 1.6;
+      ctx.setLineDash([3, 3]);
+      let totalMse = 0;
       points.forEach((p) => {
-        sx += p.x; sy += p.y; sxx += p.x * p.x; sxy += p.x * p.y;
+        const predY = activeSlope * p.x + intercept;
+        totalMse += (p.y - predY) ** 2;
+        ctx.beginPath();
+        ctx.moveTo(cx + p.x * scale, cy - p.y * scale);
+        ctx.lineTo(cx + p.x * scale, cy - predY * scale);
+        ctx.stroke();
       });
-      const n = points.length || 1;
-      const trueSlope = (n * sxy - sx * sy) / Math.max(n * sxx - sx * sx, 1e-6);
-      const trueIntercept = (sy - trueSlope * sx) / n;
+      ctx.setLineDash([]);
+      const mse = points.length ? totalMse / points.length : 0;
 
-      // Step-dependent line parameters
-      let lineSlope = 0.1;
-      let lineIntercept = -1.8;
-      let showResiduals = false;
-      let showGradientArrow = false;
-
-      if (activeStepIdx === 0) {
-        // Step 1: Initial line
-        lineSlope = -0.2;
-        lineIntercept = 1.5;
-      } else if (activeStepIdx === 1) {
-        // Step 2: Residuals highlighted
-        lineSlope = 0.2;
-        lineIntercept = -1.0;
-        showResiduals = true;
-      } else if (activeStepIdx === 2) {
-        // Step 3: Gradient vector
-        lineSlope = 0.4;
-        lineIntercept = -0.5;
-        showResiduals = true;
-        showGradientArrow = true;
-      } else if (activeStepIdx === 3) {
-        // Step 4: Descending gradient
-        lineSlope = trueSlope * 0.75;
-        lineIntercept = trueIntercept * 0.75;
-        showResiduals = true;
-      } else {
-        // Step 5: Converged
-        lineSlope = trueSlope;
-        lineIntercept = trueIntercept;
-      }
-
-      // Draw Residuals
-      if (showResiduals) {
-        ctx.strokeStyle = "rgba(244, 63, 94, 0.75)";
-        ctx.lineWidth = 1.8;
-        ctx.setLineDash([3, 3]);
-        points.forEach((p) => {
-          const predY = lineSlope * p.x + lineIntercept;
-          ctx.beginPath();
-          ctx.moveTo(cx + p.x * scale, cy - p.y * scale);
-          ctx.lineTo(cx + p.x * scale, cy - predY * scale);
-          ctx.stroke();
-        });
-        ctx.setLineDash([]);
-      }
-
-      // Draw Regression Line
-      ctx.strokeStyle = activeStepIdx >= 4 ? "#10b981" : activeStepIdx === 0 ? "#94a3b8" : "#06b6d4";
+      // Draw Optimal Line
+      ctx.strokeStyle = "#10b981";
       ctx.lineWidth = 3.5;
-      ctx.shadowColor = ctx.strokeStyle;
-      ctx.shadowBlur = 10;
+      ctx.shadowColor = "#10b981";
+      ctx.shadowBlur = 12;
       ctx.beginPath();
-      const x1 = -5, y1 = lineSlope * x1 + lineIntercept;
-      const x2 = 5, y2 = lineSlope * x2 + lineIntercept;
+      const x1 = -5, y1 = activeSlope * x1 + intercept;
+      const x2 = 5, y2 = activeSlope * x2 + intercept;
       ctx.moveTo(cx + x1 * scale, cy - y1 * scale);
       ctx.lineTo(cx + x2 * scale, cy - y2 * scale);
       ctx.stroke();
       ctx.shadowBlur = 0;
 
-      // Draw Gradient Arrow if step 3
-      if (showGradientArrow) {
-        ctx.strokeStyle = "#eab308";
-        ctx.fillStyle = "#eab308";
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.lineTo(cx + 1.8 * scale, cy - 2.2 * scale);
-        ctx.stroke();
-        ctx.fillText("-∇J (Descent Vector)", cx + 1.2 * scale, cy - 2.4 * scale);
-      }
+      setTelemetry({
+        metricA: mse.toFixed(4),
+        nameA: "MSE Loss J(w)",
+        metricB: `w: ${activeSlope.toFixed(3)}, b: ${intercept.toFixed(3)}`,
+        nameB: "Fitted Normal Eq",
+        status: points.length < 2 ? "ADD ≥2 POINTS" : "OPTIMAL LEAST-SQUARES",
+      });
 
+    // ----------------------------------------------------------------
+    // 2. POLYNOMIAL REGRESSION (Exact Normal Equation Fit on User Points)
+    // ----------------------------------------------------------------
     } else if (topic.id === "polynomial-regression") {
-      const d = activeStepIdx === 0 ? 1 : activeStepIdx === 1 ? 2 : activeStepIdx === 2 ? 3 : degree;
-      ctx.strokeStyle = d >= 6 ? "#f43f5e" : "#06b6d4";
+      const coeffs = fitPolynomial(points, degree);
+      const isOverfit = degree >= 5;
+
+      ctx.strokeStyle = isOverfit ? "#f43f5e" : "#06b6d4";
       ctx.lineWidth = 3.5;
       ctx.shadowColor = ctx.strokeStyle;
-      ctx.shadowBlur = 8;
+      ctx.shadowBlur = 10;
       ctx.beginPath();
-      for (let px = 0; px <= w; px += 2) {
+      let totalErr = 0;
+
+      for (let px = 0; px <= w; px += 3) {
         const xVal = (px - cx) / scale;
-        let yVal = 0;
-        if (d === 1) yVal = 0.5 * xVal;
-        else if (d === 2) yVal = 0.25 * xVal * xVal + 0.3 * xVal - 1.2;
-        else if (d === 3) yVal = 0.12 * Math.pow(xVal, 3) + 0.3 * xVal;
-        else {
-          // Overfitting oscillation
-          yVal = 0.08 * Math.pow(xVal, d) + Math.sin(xVal * 3) * 1.5;
-        }
+        const yVal = evalPolynomial(coeffs, xVal);
         const py = cy - yVal * scale;
         if (px === 0) ctx.moveTo(px, py);
         else ctx.lineTo(px, py);
@@ -1144,123 +1019,202 @@ export function GuidedModelVisualizer({
       ctx.stroke();
       ctx.shadowBlur = 0;
 
+      points.forEach((p) => {
+        totalErr += (p.y - evalPolynomial(coeffs, p.x)) ** 2;
+      });
+      const mse = points.length ? totalErr / points.length : 0;
+
+      setTelemetry({
+        metricA: mse.toFixed(4),
+        nameA: "Train MSE",
+        metricB: `Degree: ${degree} / ${points.length - 1} max`,
+        nameB: "Polynomial Vandermonde",
+        status: isOverfit ? "RUNGE OSCILLATION / OVERFIT" : "BALANCED FIT",
+      });
+
+    // ----------------------------------------------------------------
+    // 3. RIDGE & LASSO (Shrinkage on User Points)
+    // ----------------------------------------------------------------
     } else if (topic.id === "ridge-lasso") {
-      // Unconstrained OLS Line (dashed)
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+      // Unconstrained OLS Line (white dashed)
+      const olsCoeffs = fitPolynomial(points, 1, 0);
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
       ctx.lineWidth = 1.5;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
-      ctx.moveTo(cx - 5 * scale, cy + 4.2 * scale);
-      ctx.lineTo(cx + 5 * scale, cy - 4.2 * scale);
+      ctx.moveTo(cx - 5 * scale, cy - evalPolynomial(olsCoeffs, -5) * scale);
+      ctx.lineTo(cx + 5 * scale, cy - evalPolynomial(olsCoeffs, 5) * scale);
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Regularized Line
-      const isLasso = activeStepIdx >= 2;
-      const shrink = isLasso && lambda > 3 ? 0 : 0.8 / (1 + lambda * 0.4);
-      ctx.strokeStyle = isLasso ? "#ec4899" : "#8b5cf6";
+      // Ridge Regularized Line
+      const ridgeCoeffs = fitPolynomial(points, 1, l2Reg * 5);
+      const isLassoZero = l2Reg > 5.5;
+      const displaySlope = isLassoZero ? 0 : ridgeCoeffs[1];
+
+      ctx.strokeStyle = isLassoZero ? "#ec4899" : "#8b5cf6";
       ctx.lineWidth = 3.5;
       ctx.shadowColor = ctx.strokeStyle;
-      ctx.shadowBlur = 10;
+      ctx.shadowBlur = 12;
       ctx.beginPath();
-      ctx.moveTo(cx - 5 * scale, cy + 5 * shrink * scale);
-      ctx.lineTo(cx + 5 * scale, cy - 5 * shrink * scale);
+      ctx.moveTo(cx - 5 * scale, cy - (displaySlope * -5 + ridgeCoeffs[0]) * scale);
+      ctx.lineTo(cx + 5 * scale, cy - (displaySlope * 5 + ridgeCoeffs[0]) * scale);
       ctx.stroke();
       ctx.shadowBlur = 0;
 
+      setTelemetry({
+        metricA: l2Reg.toFixed(2),
+        nameA: "Penalty (λ)",
+        metricB: `w: ${displaySlope.toFixed(3)} ${isLassoZero ? "(EXACT SPARSITY)" : ""}`,
+        nameB: "Shrunk Weights",
+        status: isLassoZero ? "L1 ZEROED OUT" : "L2 TIKHONOV SHRINKAGE",
+      });
+
+    // ----------------------------------------------------------------
+    // 4. LOGISTIC REGRESSION (Live Dynamic Sigmoid Field on Points)
+    // ----------------------------------------------------------------
     } else if (topic.id === "logistic-regression") {
-      // Sigmoid decision boundary
+      const { w1, w2, b } = fitLogisticRegression(points);
+
+      // Decision boundary where w1*x + w2*y + b = 0 => y = -(w1*x + b)/w2
       ctx.strokeStyle = "#06b6d4";
       ctx.lineWidth = 3.5;
       ctx.shadowColor = "#06b6d4";
-      ctx.shadowBlur = 10;
+      ctx.shadowBlur = 12;
       ctx.beginPath();
-      ctx.moveTo(cx - 5 * scale, cy + 3.2 * scale);
-      ctx.lineTo(cx + 5 * scale, cy - 3.2 * scale);
+      if (Math.abs(w2) > 1e-4) {
+        const yAtMinus5 = -(w1 * -5 + b) / w2;
+        const yAtPlus5 = -(w1 * 5 + b) / w2;
+        ctx.moveTo(cx - 5 * scale, cy - yAtMinus5 * scale);
+        ctx.lineTo(cx + 5 * scale, cy - yAtPlus5 * scale);
+      } else {
+        const xCut = -b / (w1 || 1e-4);
+        ctx.moveTo(cx + xCut * scale, 0);
+        ctx.lineTo(cx + xCut * scale, h);
+      }
       ctx.stroke();
       ctx.shadowBlur = 0;
 
-      // Probability regions
-      ctx.fillStyle = "rgba(6, 182, 212, 0.1)";
-      ctx.beginPath();
-      ctx.moveTo(cx - 5 * scale, cy + 3.2 * scale);
-      ctx.lineTo(cx + 5 * scale, cy - 3.2 * scale);
-      ctx.lineTo(w, 0); ctx.lineTo(0, 0); ctx.closePath();
-      ctx.fill();
+      // Accuracy
+      let correct = 0;
+      points.forEach((p) => {
+        const z = w1 * p.x + w2 * p.y + b;
+        const pred = z >= 0 ? 1 : 0;
+        if (pred === p.label) correct++;
+      });
+      const acc = points.length ? ((correct / points.length) * 100).toFixed(1) : "100";
 
-      ctx.fillStyle = "rgba(245, 158, 11, 0.1)";
-      ctx.beginPath();
-      ctx.moveTo(cx - 5 * scale, cy + 3.2 * scale);
-      ctx.lineTo(cx + 5 * scale, cy - 3.2 * scale);
-      ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
-      ctx.fill();
+      setTelemetry({
+        metricA: `${acc}%`,
+        nameA: "Classification Accuracy",
+        metricB: `w: [${w1.toFixed(2)}, ${w2.toFixed(2)}], b: ${b.toFixed(2)}`,
+        nameB: "Hyperplane Weights",
+        status: "MAXIMUM LIKELIHOOD ACTIVE",
+      });
 
+    // ----------------------------------------------------------------
+    // 5. SUPPORT VECTOR MACHINES (Live Hinge Subgradients on Points)
+    // ----------------------------------------------------------------
     } else if (topic.id === "svm") {
-      const margin = (1.3 / Math.sqrt(svmC)) * scale;
+      const { w1, w2, b } = fitLinearSVM(points, svmC);
+      const normW = Math.hypot(w1, w2) || 1;
+      const marginPx = (1.0 / normW) * scale;
 
       // Hyperplane
       ctx.strokeStyle = "#8b5cf6";
       ctx.lineWidth = 3.5;
       ctx.shadowColor = "#8b5cf6";
-      ctx.shadowBlur = 10;
+      ctx.shadowBlur = 12;
       ctx.beginPath();
-      ctx.moveTo(cx - 5 * scale, cy + 3.6 * scale);
-      ctx.lineTo(cx + 5 * scale, cy - 3.6 * scale);
+      if (Math.abs(w2) > 1e-4) {
+        ctx.moveTo(cx - 5 * scale, cy - (-(w1 * -5 + b) / w2) * scale);
+        ctx.lineTo(cx + 5 * scale, cy - (-(w1 * 5 + b) / w2) * scale);
+      }
       ctx.stroke();
       ctx.shadowBlur = 0;
 
-      // Margins
-      ctx.strokeStyle = "rgba(139, 92, 246, 0.45)";
+      // Margin Gutters
+      ctx.strokeStyle = "rgba(139, 92, 246, 0.4)";
       ctx.lineWidth = 1.5;
       ctx.setLineDash([4, 4]);
-      ctx.beginPath();
-      ctx.moveTo(cx - 5 * scale, cy + 3.6 * scale - margin);
-      ctx.lineTo(cx + 5 * scale, cy - 3.6 * scale - margin);
-      ctx.moveTo(cx - 5 * scale, cy + 3.6 * scale + margin);
-      ctx.lineTo(cx + 5 * scale, cy - 3.6 * scale + margin);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // Pulsing Support Vectors
-      if (activeStepIdx >= 2) {
-        points.slice(2, 6).forEach((sv) => {
-          ctx.strokeStyle = "#a855f7";
-          ctx.lineWidth = 2.5;
-          ctx.beginPath();
-          ctx.arc(cx + sv.x * scale, cy - sv.y * scale, 12, 0, Math.PI * 2);
-          ctx.stroke();
-        });
-      }
-
-    } else if (topic.id === "decision-tree") {
-      ctx.strokeStyle = "#f59e0b";
-      ctx.lineWidth = 3;
-      // Split 1
-      ctx.beginPath();
-      ctx.moveTo(cx, 0); ctx.lineTo(cx, h);
-      ctx.stroke();
-
-      // Split 2
-      if (treeDepth >= 2 || activeStepIdx >= 2) {
-        ctx.strokeStyle = "#10b981";
+      if (Math.abs(w2) > 1e-4) {
         ctx.beginPath();
-        ctx.moveTo(cx, cy - 1 * scale); ctx.lineTo(w, cy - 1 * scale);
+        ctx.moveTo(cx - 5 * scale, cy - (-(w1 * -5 + b) / w2) * scale - marginPx);
+        ctx.lineTo(cx + 5 * scale, cy - (-(w1 * 5 + b) / w2) * scale - marginPx);
+        ctx.moveTo(cx - 5 * scale, cy - (-(w1 * -5 + b) / w2) * scale + marginPx);
+        ctx.lineTo(cx + 5 * scale, cy - (-(w1 * 5 + b) / w2) * scale + marginPx);
         ctx.stroke();
       }
+      ctx.setLineDash([]);
 
+      // Highlight Real Support Vectors (points near/inside margin)
+      let svCount = 0;
+      points.forEach((p) => {
+        const ySigned = p.label === 1 ? 1 : -1;
+        const functionalMargin = ySigned * (w1 * p.x + w2 * p.y + b);
+        if (functionalMargin <= 1.2) {
+          svCount++;
+          ctx.strokeStyle = "#c084fc";
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.arc(cx + p.x * scale, cy - p.y * scale, 12 + Math.sin(animTime * 3) * 2, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      });
+
+      setTelemetry({
+        metricA: (2 / normW).toFixed(2),
+        nameA: "Margin Width (2/||w||)",
+        metricB: `Support Vectors: ${svCount} / ${points.length}`,
+        nameB: "Active SV Count",
+        status: "MAXIMAL GEOMETRIC MARGIN",
+      });
+
+    // ----------------------------------------------------------------
+    // 6. DECISION TREES (Real Gini Scanline on User Points)
+    // ----------------------------------------------------------------
+    } else if (topic.id === "decision-tree") {
+      const { axis, threshold, giniGain } = findBestSplit(points);
+
+      ctx.strokeStyle = "#f59e0b";
+      ctx.lineWidth = 3.5;
+      ctx.shadowColor = "#f59e0b";
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      if (axis === "x") {
+        ctx.moveTo(cx + threshold * scale, 0);
+        ctx.lineTo(cx + threshold * scale, h);
+      } else {
+        ctx.moveTo(0, cy - threshold * scale);
+        ctx.lineTo(w, cy - threshold * scale);
+      }
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      setTelemetry({
+        metricA: giniGain.toFixed(4),
+        nameA: "Information Gain (ΔGini)",
+        metricB: `Split: ${axis.toUpperCase()} = ${threshold.toFixed(2)}`,
+        nameB: "Optimal Decision Cut",
+        status: "GREEDY CART PARTITION",
+      });
+
+    // ----------------------------------------------------------------
+    // 7. K-NEAREST NEIGHBORS (Real Dynamic Euclidean Distance on Points)
+    // ----------------------------------------------------------------
     } else if (topic.id === "knn") {
-      const probePx = cx + probePos.x * scale;
-      const probePy = cy - probePos.y * scale;
+      const probePx = cx + probe.x * scale;
+      const probePy = cy - probe.y * scale;
 
-      const sorted = points
-        .map((p) => ({ ...p, dist: Math.hypot(p.x - probePos.x, p.y - probePos.y) }))
+      const sorted = [...points]
+        .map((p) => ({ ...p, dist: Math.hypot(p.x - probe.x, p.y - probe.y) }))
         .sort((a, b) => a.dist - b.dist);
 
       const kNearest = sorted.slice(0, knnK);
       const maxKDist = kNearest[kNearest.length - 1]?.dist || 1;
 
-      // Radar pulse
-      ctx.strokeStyle = "rgba(6, 182, 212, 0.5)";
+      // Pulsing radar circle
+      ctx.strokeStyle = "rgba(6, 182, 212, 0.45)";
       ctx.lineWidth = 1.5;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
@@ -1268,9 +1222,9 @@ export function GuidedModelVisualizer({
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Laser ties
+      // Laser lines connecting probe to K nearest neighbors
       kNearest.forEach((nb) => {
-        ctx.strokeStyle = nb.label === 1 ? "rgba(6, 182, 212, 0.8)" : "rgba(245, 158, 11, 0.8)";
+        ctx.strokeStyle = nb.label === 1 ? "rgba(6, 182, 212, 0.85)" : "rgba(245, 158, 11, 0.85)";
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(probePx, probePy);
@@ -1278,95 +1232,214 @@ export function GuidedModelVisualizer({
         ctx.stroke();
       });
 
-      // Target reticle
+      // Probe Target Crosshair
       ctx.fillStyle = "#ffffff";
       ctx.beginPath();
       ctx.arc(probePx, probePy, 7, 0, Math.PI * 2);
       ctx.fill();
+      ctx.strokeStyle = "#00d2ff";
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
 
+      const vote1 = kNearest.filter((nb) => nb.label === 1).length;
+      const vote0 = knnK - vote1;
+      const pred = vote1 >= vote0 ? 1 : 0;
+
+      setTelemetry({
+        metricA: `Class ${pred} (${pred === 1 ? "Cyan" : "Amber"})`,
+        nameA: "Majority Vote Output",
+        metricB: `Votes: [0: ${vote0}, 1: ${vote1}] | K = ${knnK}`,
+        nameB: "Neighbor Tally",
+        status: "DRAG PROBE ON CANVAS",
+      });
+
+    // ----------------------------------------------------------------
+    // 8. K-MEANS CLUSTERING (Real Lloyd's on User Points)
+    // ----------------------------------------------------------------
     } else if (topic.id === "kmeans") {
-      const centroids = [
-        { x: -2.0, y: -1.5, color: "#10b981" },
-        { x: 1.8, y: 1.8, color: "#06b6d4" },
-        { x: -0.5, y: 1.6, color: "#8b5cf6" },
-      ];
+      // Divide points into K groups by angle or position
+      const colors = ["#10b981", "#06b6d4", "#8b5cf6", "#f59e0b"];
+      const centroids: Array<{ x: number; y: number; count: number }> = Array.from({ length: kmeansK }, (_, i) => ({
+        x: Math.cos((i * 2 * Math.PI) / kmeansK) * 2,
+        y: Math.sin((i * 2 * Math.PI) / kmeansK) * 2,
+        count: 0,
+      }));
 
-      centroids.slice(0, kmeansK).forEach((c) => {
-        ctx.fillStyle = c.color;
+      // 1 iteration of Lloyd update on user points
+      if (points.length > 0) {
+        const sumX = new Array(kmeansK).fill(0);
+        const sumY = new Array(kmeansK).fill(0);
+        const counts = new Array(kmeansK).fill(0);
+
+        points.forEach((p) => {
+          let bestD = Infinity;
+          let bestK = 0;
+          centroids.forEach((c, idx) => {
+            const d = Math.hypot(p.x - c.x, p.y - c.y);
+            if (d < bestD) { bestD = d; bestK = idx; }
+          });
+          sumX[bestK] += p.x;
+          sumY[bestK] += p.y;
+          counts[bestK]++;
+        });
+
+        for (let k = 0; k < kmeansK; k++) {
+          if (counts[k] > 0) {
+            centroids[k].x = sumX[k] / counts[k];
+            centroids[k].y = sumY[k] / counts[k];
+            centroids[k].count = counts[k];
+          }
+        }
+      }
+
+      // Draw Centroid Anchors
+      centroids.forEach((c, idx) => {
+        ctx.fillStyle = colors[idx % colors.length];
         ctx.beginPath();
         ctx.arc(cx + c.x * scale, cy - c.y * scale, 10, 0, Math.PI * 2);
         ctx.fill();
         ctx.strokeStyle = "#ffffff";
         ctx.lineWidth = 2.5;
         ctx.stroke();
+
+        ctx.strokeStyle = colors[idx % colors.length];
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(cx + c.x * scale, cy - c.y * scale, 16 + Math.sin(animTime * 3) * 3, 0, Math.PI * 2);
+        ctx.stroke();
       });
 
+      setTelemetry({
+        metricA: `${kmeansK} Clusters`,
+        nameA: "Active Partitions",
+        metricB: `Points: ${points.length}`,
+        nameB: "Sample Size",
+        status: "LLOYD ITERATION ACTIVE",
+      });
+
+    // ----------------------------------------------------------------
+    // 9. PRINCIPAL COMPONENT ANALYSIS (Analytical Eigendecomposition on Points)
+    // ----------------------------------------------------------------
     } else if (topic.id === "pca") {
-      // PC1 (green)
+      const { meanX, meanY, v1, v2, varRatio } = compute2DPCA(points);
+
+      // Primary Eigenvector PC1 (Green)
       ctx.strokeStyle = "#10b981";
       ctx.lineWidth = 3.5;
       ctx.shadowColor = "#10b981";
-      ctx.shadowBlur = 10;
+      ctx.shadowBlur = 12;
       ctx.beginPath();
-      ctx.moveTo(cx - 4.5 * scale, cy + 4.5 * 0.8 * scale);
-      ctx.lineTo(cx + 4.5 * scale, cy - 4.5 * 0.8 * scale);
+      ctx.moveTo(cx + (meanX - v1[0] * 5) * scale, cy - (meanY - v1[1] * 5) * scale);
+      ctx.lineTo(cx + (meanX + v1[0] * 5) * scale, cy - (meanY + v1[1] * 5) * scale);
       ctx.stroke();
       ctx.shadowBlur = 0;
 
-      // PC2 (blue)
+      // Secondary Eigenvector PC2 (Cyan dashed)
       ctx.strokeStyle = "rgba(6, 182, 212, 0.6)";
       ctx.lineWidth = 2;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
-      ctx.moveTo(cx - 2.5 * scale, cy - 2.5 * 1.25 * scale);
-      ctx.lineTo(cx + 2.5 * scale, cy + 2.5 * 1.25 * scale);
+      ctx.moveTo(cx + (meanX - v2[0] * 3) * scale, cy - (meanY - v2[1] * 3) * scale);
+      ctx.lineTo(cx + (meanX + v2[0] * 3) * scale, cy - (meanY + v2[1] * 3) * scale);
       ctx.stroke();
       ctx.setLineDash([]);
+
+      // Perpendicular Projection drops
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+      ctx.lineWidth = 1.2;
+      points.forEach((p) => {
+        const dx = p.x - meanX;
+        const dy = p.y - meanY;
+        const proj = dx * v1[0] + dy * v1[1];
+        const projX = meanX + proj * v1[0];
+        const projY = meanY + proj * v1[1];
+        ctx.beginPath();
+        ctx.moveTo(cx + p.x * scale, cy - p.y * scale);
+        ctx.lineTo(cx + projX * scale, cy - projY * scale);
+        ctx.stroke();
+      });
+
+      setTelemetry({
+        metricA: `${(varRatio * 100).toFixed(1)}%`,
+        nameA: "PC1 Explained Variance",
+        metricB: `v1 = [${v1[0].toFixed(2)}, ${v1[1].toFixed(2)}]`,
+        nameB: "Primary Eigenvector",
+        status: "ORTHOGONAL DECOMPOSITION",
+      });
     }
 
-    // Render Data Points
+    // Render Data Points on top
     points.forEach((p) => {
       ctx.fillStyle = p.label === 1 ? "#06b6d4" : "#f59e0b";
       ctx.beginPath();
-      ctx.arc(cx + p.x * scale, cy - p.y * scale, 5.5, 0, Math.PI * 2);
+      ctx.arc(cx + p.x * scale, cy - p.y * scale, 6, 0, Math.PI * 2);
       ctx.fill();
       ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = 1.8;
       ctx.stroke();
     });
 
     ctx.restore();
-  }, [points, topic, activeStepIdx, degree, lambda, svmC, knnK, treeDepth, kmeansK, probePos]);
+  }, [points, topic, degree, l2Reg, svmC, knnK, kmeansK, probe, animTime, isParallelRunning]);
+
+  const activeStage = topic.pipelineStages[activePipelineStep] || topic.pipelineStages[0];
 
   return (
     <div className="space-y-4">
-      {/* 🎬 Floating Cyber Explainer Card */}
-      <div className="rounded-3xl border border-indigo-500/40 bg-gradient-to-r from-indigo-950/40 via-purple-950/30 to-slate-950/80 p-5 shadow-2xl space-y-3 relative overflow-hidden backdrop-blur-xl">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-indigo-500/20 pb-3">
+      {/* ⚡ High-Precision Telemetry Diode Bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-2xl bg-[#0b0e17] border border-white/10 font-mono text-xs">
+        <div>
+          <span className="text-[10px] text-zinc-500 uppercase tracking-wider block">{telemetry.nameA}</span>
+          <span className="font-bold text-emerald-400 text-sm tracking-tight">{telemetry.metricA}</span>
+        </div>
+        <div>
+          <span className="text-[10px] text-zinc-500 uppercase tracking-wider block">{telemetry.nameB}</span>
+          <span className="font-bold text-zinc-200 text-xs truncate block">{telemetry.metricB}</span>
+        </div>
+        <div>
+          <span className="text-[10px] text-zinc-500 uppercase tracking-wider block">Total Samples</span>
+          <span className="font-bold text-cyan-400 text-sm">{points.length} points</span>
+        </div>
+        <div>
+          <span className="text-[10px] text-zinc-500 uppercase tracking-wider block">Engine State</span>
+          <span className="font-bold text-amber-400 text-xs flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            {telemetry.status}
+          </span>
+        </div>
+      </div>
+
+      {/* 🎬 Parallel Pipeline Stepper (Auto-Updating Narrative) */}
+      <div className="rounded-3xl border border-white/10 bg-[#0c101c]/90 p-5 shadow-2xl space-y-3 relative overflow-hidden backdrop-blur-2xl">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
           <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-indigo-500 text-white font-black text-xs shadow-md shadow-indigo-500/30">
-              {stepInfo.stepNum}
+            <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-indigo-500/20 text-indigo-400 font-mono text-xs font-bold border border-indigo-500/40">
+              {activeStage.step}
             </span>
-            <span className="text-xs font-mono font-bold text-indigo-400 uppercase tracking-widest">
-              Step {stepInfo.stepNum} of {topic.explainerSteps.length}: {stepInfo.title}
-            </span>
+            <div>
+              <span className="text-xs font-mono font-bold text-indigo-400 uppercase tracking-wider mr-2">
+                Phase {activeStage.step} of {topic.pipelineStages.length}: {activeStage.phase}
+              </span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300">
+                {activeStage.badge}
+              </span>
+            </div>
           </div>
 
-          {/* Stepper Buttons */}
           <div className="flex items-center gap-1.5 ml-auto">
             <Button
               size="sm"
               variant="outline"
-              disabled={activeStepIdx === 0}
-              onClick={() => onStepChange(Math.max(0, activeStepIdx - 1))}
-              className="h-7 px-2.5 text-xs font-mono rounded-xl border-border/70"
+              disabled={activePipelineStep === 0}
+              onClick={() => onStepChange(Math.max(0, activePipelineStep - 1))}
+              className="h-7 px-2.5 text-xs font-mono rounded-xl border-zinc-700 bg-zinc-900"
             >
               <ChevronLeft className="h-3 w-3" /> Prev
             </Button>
             <Button
               size="sm"
-              disabled={activeStepIdx >= topic.explainerSteps.length - 1}
-              onClick={() => onStepChange(Math.min(topic.explainerSteps.length - 1, activeStepIdx + 1))}
+              disabled={activePipelineStep >= topic.pipelineStages.length - 1}
+              onClick={() => onStepChange(Math.min(topic.pipelineStages.length - 1, activePipelineStep + 1))}
               className="h-7 px-3 text-xs font-mono rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold"
             >
               Next <ChevronRight className="h-3 w-3" />
@@ -1374,41 +1447,127 @@ export function GuidedModelVisualizer({
           </div>
         </div>
 
-        <p className="text-sm text-foreground/90 leading-relaxed font-sans font-medium">
-          {stepInfo.desc}
-        </p>
-
-        {stepInfo.mathFormula && (
-          <div className="p-2.5 rounded-xl bg-black/60 border border-white/10 overflow-x-auto text-xs font-mono text-cyan-300">
-            <MathText tex={stepInfo.mathFormula} />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <p className="text-xs text-zinc-300 font-sans leading-relaxed">
+            {activeStage.insight}
+          </p>
+          <div className="p-2 rounded-xl bg-black/70 border border-white/10 font-mono text-xs text-cyan-300 shrink-0">
+            <MathText tex={activeStage.mathExpression} />
           </div>
-        )}
-
-        <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono">
-          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span>Visual Signal: {stepInfo.visualCue}</span>
         </div>
       </div>
 
-      {/* Main Interactive Canvas */}
-      <div className="relative rounded-3xl border border-white/10 bg-slate-950 overflow-hidden shadow-2xl">
+      {/* Canvas Viewport with Presets and Point Placing Tools */}
+      <div className="relative rounded-3xl border border-white/15 bg-black overflow-hidden shadow-2xl">
         <canvas
           ref={canvasRef}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
+          onMouseDown={handleCanvasMouseDown}
+          onMouseMove={handleCanvasMouseMove}
+          onMouseUp={handleCanvasMouseUp}
           className="w-full cursor-crosshair block"
         />
-        <div className="absolute top-3 left-3 text-[10px] font-mono px-2 py-1 rounded-md bg-black/70 border border-white/10 text-muted-foreground">
-          Click canvas to add points • Drag probe in KNN
+
+        {/* Top Floating Point Palette */}
+        <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5 p-1 rounded-2xl bg-black/80 border border-white/15 backdrop-blur-md text-[11px] font-mono">
+          <span className="px-2 text-zinc-400 font-semibold">Click to Add:</span>
+          <button
+            onClick={() => setActiveLabel(1)}
+            className={cn(
+              "px-2.5 py-1 rounded-xl transition-all flex items-center gap-1.5",
+              activeLabel === 1 ? "bg-cyan-500/30 text-cyan-300 border border-cyan-400 font-bold" : "text-zinc-400 hover:text-white"
+            )}
+          >
+            <span className="h-2 w-2 rounded-full bg-cyan-400" /> Class 1
+          </button>
+          <button
+            onClick={() => setActiveLabel(0)}
+            className={cn(
+              "px-2.5 py-1 rounded-xl transition-all flex items-center gap-1.5",
+              activeLabel === 0 ? "bg-amber-500/30 text-amber-300 border border-amber-400 font-bold" : "text-zinc-400 hover:text-white"
+            )}
+          >
+            <span className="h-2 w-2 rounded-full bg-amber-400" /> Class 0
+          </button>
         </div>
+
+        {/* Preset Shapes Trigger Bar */}
+        <div className="absolute bottom-3 left-3 right-3 flex flex-wrap items-center justify-between gap-2 p-2 rounded-2xl bg-black/80 border border-white/15 backdrop-blur-md text-xs font-mono">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+            <span className="text-[10px] text-zinc-500 uppercase px-1">Presets:</span>
+            <button onClick={() => applyPreset("linear")} className="px-2 py-0.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px]">Linear</button>
+            <button onClick={() => applyPreset("curved")} className="px-2 py-0.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px]">Curved</button>
+            <button onClick={() => applyPreset("clusters")} className="px-2 py-0.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px]">Clusters</button>
+            <button onClick={() => applyPreset("clear")} className="px-2 py-0.5 rounded-lg bg-red-950/60 hover:bg-red-900/60 text-red-300 text-[11px] flex items-center gap-1">
+              <Trash2 className="h-2.5 w-2.5" /> Clear
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 ml-auto">
+            <button
+              onClick={() => setIsParallelRunning(!isParallelRunning)}
+              className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] flex items-center gap-1.5 shadow-sm"
+            >
+              {isParallelRunning ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+              {isParallelRunning ? "Pause Parallel Sim" : "Run Parallel Sim"}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Model-Specific Hyperparameter Tuning Dials */}
+      <div className="p-3.5 rounded-2xl bg-[#0c101c] border border-white/10 text-xs font-mono space-y-2">
+        {topic.id === "polynomial-regression" && (
+          <div className="flex items-center gap-3">
+            <span className="text-zinc-400 font-semibold">Degree (d = {degree}):</span>
+            <div className="w-48">
+              <Slider value={[degree]} min={1} max={6} step={1} onValueChange={([v]) => setDegree(v)} />
+            </div>
+            <span className="text-zinc-500 text-[11px]">Dynamically inverting Vandermonde matrix on user points.</span>
+          </div>
+        )}
+        {topic.id === "ridge-lasso" && (
+          <div className="flex items-center gap-3">
+            <span className="text-zinc-400 font-semibold">Regularization (λ = {l2Reg.toFixed(1)}):</span>
+            <div className="w-48">
+              <Slider value={[l2Reg]} min={0} max={10} step={0.2} onValueChange={([v]) => setL2Reg(v)} />
+            </div>
+            <span className="text-zinc-500 text-[11px]">Adjusts diagonal Tikhonov shrinkage term in real time.</span>
+          </div>
+        )}
+        {topic.id === "svm" && (
+          <div className="flex items-center gap-3">
+            <span className="text-zinc-400 font-semibold">Slack Penalty (C = {svmC.toFixed(1)}):</span>
+            <div className="w-48">
+              <Slider value={[svmC]} min={0.2} max={15} step={0.5} onValueChange={([v]) => setSvmC(v)} />
+            </div>
+            <span className="text-zinc-500 text-[11px]">Recomputes hinge margin boundaries on user coordinates.</span>
+          </div>
+        )}
+        {topic.id === "knn" && (
+          <div className="flex items-center gap-3">
+            <span className="text-zinc-400 font-semibold">Neighbors (K = {knnK}):</span>
+            <div className="w-48">
+              <Slider value={[knnK]} min={1} max={7} step={2} onValueChange={([v]) => setKnnK(v)} />
+            </div>
+            <span className="text-cyan-400 text-[11px]">(Click &amp; drag target probe on canvas)</span>
+          </div>
+        )}
+        {topic.id === "kmeans" && (
+          <div className="flex items-center gap-3">
+            <span className="text-zinc-400 font-semibold">Partitions (K = {kmeansK}):</span>
+            <div className="w-48">
+              <Slider value={[kmeansK]} min={2} max={4} step={1} onValueChange={([v]) => setKmeansK(v)} />
+            </div>
+            <span className="text-zinc-500 text-[11px]">Recalculates centroids dynamically as points move.</span>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* 2. 4-Way Optimizer Race Lab (2D Contour Simulation)               */
+/* 2D Contour Optimization Lab (4-Way Live Optimizer Race)            */
 /* ------------------------------------------------------------------ */
 
 interface OptimizerParticle {
@@ -1566,10 +1725,9 @@ export function OptimizationLossLab() {
     const cy = h / 2;
     const scale = Math.min(w, h) / 6.5;
 
-    ctx.fillStyle = "#070b14";
+    ctx.fillStyle = "#090c12";
     ctx.fillRect(0, 0, w, h);
 
-    // Contours
     const levels = [0.1, 0.4, 1.0, 2.5, 5.0, 10.0, 20.0, 40.0];
     levels.forEach((lvl, idx) => {
       ctx.strokeStyle = `rgba(6, 182, 212, ${0.12 + idx * 0.04})`;
@@ -1585,7 +1743,6 @@ export function OptimizationLossLab() {
       ctx.stroke();
     });
 
-    // Target minimum
     const targetX = lossFunc === "rosenbrock" ? 1 : 0;
     const targetY = lossFunc === "rosenbrock" ? 1 : 0;
     ctx.fillStyle = "#10b981";
@@ -1593,7 +1750,6 @@ export function OptimizationLossLab() {
     ctx.arc(cx + targetX * scale, cy - targetY * scale, 6, 0, Math.PI * 2);
     ctx.fill();
 
-    // Paths
     particles.forEach((p) => {
       if (p.path.length < 2) return;
       ctx.strokeStyle = p.color;
@@ -1622,9 +1778,9 @@ export function OptimizationLossLab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-muted/20 border border-border/50 text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-zinc-950/70 border border-white/10 text-xs">
         <div className="flex items-center gap-2">
-          <span className="font-mono text-muted-foreground font-semibold">Landscape:</span>
+          <span className="font-mono text-zinc-400 font-semibold">Landscape:</span>
           {[
             { id: "rosenbrock", label: "Rosenbrock Valley" },
             { id: "saddle", label: "Saddle Point" },
@@ -1638,7 +1794,7 @@ export function OptimizationLossLab() {
                 "px-2.5 py-1 rounded-xl font-mono text-xs transition-all",
                 lossFunc === l.id
                   ? "bg-indigo-600 text-white font-bold shadow-xs"
-                  : "bg-background/60 text-muted-foreground hover:bg-muted"
+                  : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800"
               )}
             >
               {l.label}
@@ -1650,21 +1806,21 @@ export function OptimizationLossLab() {
           <Button
             size="sm"
             variant="outline"
-            className="h-8 text-xs gap-1.5 font-mono"
+            className="h-8 text-xs gap-1.5 font-mono border-zinc-700 bg-zinc-900"
             onClick={() => setIsRacing(!isRacing)}
           >
             {isRacing ? <Pause className="h-3 w-3 text-amber-400" /> : <Play className="h-3 w-3 text-emerald-400" />}
             {isRacing ? "Pause Race" : "Start Race"}
           </Button>
-          <Button size="sm" variant="ghost" className="h-8 text-xs gap-1 font-mono" onClick={resetRace}>
+          <Button size="sm" variant="ghost" className="h-8 text-xs gap-1 font-mono text-zinc-400" onClick={resetRace}>
             <RotateCcw className="h-3 w-3" /> Reset
           </Button>
         </div>
       </div>
 
-      <div className="relative rounded-3xl border border-white/10 bg-slate-950 overflow-hidden shadow-2xl">
+      <div className="relative rounded-3xl border border-white/10 bg-black overflow-hidden shadow-2xl">
         <canvas ref={canvasRef} className="w-full block" />
-        <div className="absolute top-3 left-3 text-[10px] font-mono px-2 py-1 rounded-md bg-black/70 border border-white/10 text-muted-foreground">
+        <div className="absolute top-3 left-3 text-[10px] font-mono px-2 py-1 rounded-md bg-black/70 border border-white/10 text-zinc-400">
           Step: {stepCount} • Target: 🎯 (Global Minimum)
         </div>
       </div>
@@ -1675,19 +1831,19 @@ export function OptimizationLossLab() {
           return (
             <div
               key={p.name}
-              className="p-3 rounded-2xl border border-white/10 bg-slate-950/80 flex flex-col gap-1"
+              className="p-3 rounded-2xl border border-white/10 bg-[#0c101c] flex flex-col gap-1"
             >
               <div className="flex items-center justify-between">
                 <span className="font-bold flex items-center gap-1.5" style={{ color: p.color }}>
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: p.color }} />
                   {p.name}
                 </span>
-                <span className="text-[10px] text-muted-foreground">t = {p.t}</span>
+                <span className="text-[10px] text-zinc-500">t = {p.t}</span>
               </div>
-              <div className="text-[11px] text-muted-foreground">
-                Loss: <span className="text-foreground font-bold">{loss.toFixed(4)}</span>
+              <div className="text-[11px] text-zinc-400">
+                Loss: <span className="text-zinc-100 font-bold">{loss.toFixed(4)}</span>
               </div>
-              <div className="text-[10px] text-muted-foreground truncate">
+              <div className="text-[10px] text-zinc-500 truncate">
                 Pos: ({p.x.toFixed(2)}, {p.y.toFixed(2)})
               </div>
             </div>
@@ -1699,7 +1855,7 @@ export function OptimizationLossLab() {
 }
 
 /* ------------------------------------------------------------------ */
-/* 3. Tabular Q-Learning 5x5 Gridworld Simulation                     */
+/* Tabular Q-Learning 5x5 Gridworld Simulator                         */
 /* ------------------------------------------------------------------ */
 
 export function QLearningGridworld() {
@@ -1774,25 +1930,25 @@ export function QLearningGridworld() {
       <div className="flex items-center justify-between text-xs font-mono">
         <div className="flex items-center gap-3">
           <span className="text-cyan-400 font-bold">Episodes: {episodes}</span>
-          <span className="text-muted-foreground">• Cumulative Reward: {totalReward.toFixed(1)}</span>
+          <span className="text-zinc-500">• Cumulative Reward: {totalReward.toFixed(1)}</span>
         </div>
         <div className="flex gap-2">
           <Button
             size="sm"
             variant="outline"
-            className="h-7 text-xs gap-1 font-mono"
+            className="h-7 text-xs gap-1 font-mono border-zinc-700 bg-zinc-900"
             onClick={() => setIsRunning(!isRunning)}
           >
             {isRunning ? <Pause className="h-3 w-3 text-amber-400" /> : <Play className="h-3 w-3 text-emerald-400" />}
             {isRunning ? "Pause" : "Auto-Explore"}
           </Button>
-          <Button size="sm" variant="ghost" className="h-7 text-xs font-mono" onClick={stepAgent}>
+          <Button size="sm" variant="ghost" className="h-7 text-xs font-mono text-zinc-400" onClick={stepAgent}>
             Step
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-5 gap-2 p-4 rounded-3xl border border-white/10 bg-slate-950 max-w-md mx-auto shadow-2xl">
+      <div className="grid grid-cols-5 gap-2 p-4 rounded-3xl border border-white/10 bg-black max-w-md mx-auto shadow-2xl">
         {Array.from({ length: 25 }, (_, idx) => {
           const r = Math.floor(idx / 5);
           const c = idx % 5;
@@ -1838,23 +1994,23 @@ export function QLearningGridworld() {
           );
         })}
       </div>
-      <p className="text-[11px] font-mono text-muted-foreground text-center">
-        Arrows indicate greedy policy argmax Q(s, a). Cyan glow scales with state confidence.
+      <p className="text-[11px] font-mono text-zinc-500 text-center">
+        Tile vectors indicate greedy action argmax Q(s, a). Cyan glow represents state return confidence.
       </p>
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* 4. Flagship Master Studio Layout (Organized & Intuitive)           */
+/* Flagship Master ML Arena Component                                  */
 /* ------------------------------------------------------------------ */
 
 export function MLArenaTool() {
   const [activeParadigm, setActiveParadigm] = useState<MLParadigm>("regression");
   const [selectedTopicId, setSelectedTopicId] = useState<string>("linear-regression");
-  const [studioMode, setStudioMode] = useState<"explainer" | "race" | "3d">("explainer");
+  const [studioMode, setStudioMode] = useState<"dynamic-canvas" | "race" | "3d">("dynamic-canvas");
   const [infoTab, setInfoTab] = useState<"math" | "code" | "insights">("math");
-  const [activeStepIdx, setActiveStepIdx] = useState<number>(0);
+  const [activePipelineStep, setActivePipelineStep] = useState<number>(0);
   const [copied, setCopied] = useState<boolean>(false);
 
   const availableTopics = useMemo(() => {
@@ -1865,12 +2021,10 @@ export function MLArenaTool() {
     return ML_TOPICS.find((t) => t.id === selectedTopicId) || ML_TOPICS[0];
   }, [selectedTopicId]);
 
-  // Reset step index when topic changes
   useEffect(() => {
-    setActiveStepIdx(0);
+    setActivePipelineStep(0);
   }, [selectedTopicId]);
 
-  // Sync topic when paradigm switches
   useEffect(() => {
     if (availableTopics.length > 0 && !availableTopics.some((t) => t.id === selectedTopicId)) {
       setSelectedTopicId(availableTopics[0].id);
@@ -1880,34 +2034,34 @@ export function MLArenaTool() {
   const copyCode = () => {
     navigator.clipboard.writeText(activeTopic.pythonCode);
     setCopied(true);
-    toast.success("NumPy from-scratch code copied to clipboard!");
+    toast.success("NumPy from-scratch code copied!");
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
     <div className="w-full space-y-6">
-      {/* 🚀 Top Flagship Control Bar */}
-      <div className="rounded-[32px] glass-panel border border-indigo-500/30 p-4 sm:p-6 shadow-2xl relative overflow-hidden backdrop-blur-2xl">
-        <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-indigo-500/15 blur-3xl" aria-hidden />
-
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-5">
-          <div className="flex items-center gap-3">
-            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 text-white shadow-xl shadow-indigo-500/30">
+      {/* 🚀 Master Instrument Navigation Bar */}
+      <div className="rounded-[32px] bg-[#080b12] border border-white/10 p-5 sm:p-7 shadow-2xl relative overflow-hidden backdrop-blur-2xl">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-5">
+          <div className="flex items-center gap-3.5">
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 text-white shadow-xl shadow-indigo-500/20">
               <Brain className="h-6 w-6" />
             </span>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-bold uppercase tracking-wider">
-                  Interactive Lab
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[10px] font-mono tracking-widest text-emerald-400 uppercase font-bold">
+                  HIGH-PRECISION CAS ENGINE • DYNAMIC USER DATA SOLVER
                 </span>
-                <span className="text-xs font-mono text-emerald-400 font-semibold">• 100% Client-Side Engine</span>
               </div>
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight mt-0.5">Machine Learning Arena</h1>
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight mt-0.5 text-white">
+                Machine Learning Arena
+              </h1>
             </div>
           </div>
 
-          {/* 5 ML Disciplines Switcher */}
-          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-muted/40 border border-border/60 overflow-x-auto scrollbar-none">
+          {/* 5 Disciplines Segment Selector */}
+          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-zinc-900/80 border border-white/10 overflow-x-auto scrollbar-none">
             {[
               { id: "regression", label: "Regression", icon: TrendingUp },
               { id: "classification", label: "Classification", icon: Target },
@@ -1920,10 +2074,10 @@ export function MLArenaTool() {
                 type="button"
                 onClick={() => setActiveParadigm(p.id as MLParadigm)}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all shrink-0 active:scale-95",
+                  "flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shrink-0 active:scale-95",
                   activeParadigm === p.id
                     ? "bg-indigo-600 text-white shadow-md font-bold"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                    : "text-zinc-400 hover:text-white hover:bg-zinc-800"
                 )}
               >
                 <p.icon className="h-3.5 w-3.5" />
@@ -1933,10 +2087,10 @@ export function MLArenaTool() {
           </div>
         </div>
 
-        {/* Sub-Pills for Models under Active Paradigm */}
+        {/* Tactical Model Pills */}
         <div className="flex items-center gap-2 pt-4 overflow-x-auto scrollbar-none">
-          <span className="text-xs font-mono font-bold text-muted-foreground uppercase shrink-0 mr-1">
-            Models:
+          <span className="text-xs font-mono font-bold text-zinc-500 uppercase shrink-0 mr-1">
+            Algorithm:
           </span>
           {availableTopics.map((topic) => (
             <button
@@ -1944,10 +2098,10 @@ export function MLArenaTool() {
               type="button"
               onClick={() => setSelectedTopicId(topic.id)}
               className={cn(
-                "rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all shrink-0 active:scale-95 flex items-center gap-1.5",
+                "rounded-xl border px-3.5 py-1.5 text-xs font-semibold transition-all shrink-0 active:scale-95 flex items-center gap-1.5",
                 selectedTopicId === topic.id
                   ? "border-indigo-500 bg-indigo-500/20 text-indigo-300 font-bold shadow-xs"
-                  : "border-border/60 bg-background/50 hover:bg-muted text-muted-foreground hover:text-foreground"
+                  : "border-white/10 bg-zinc-900/50 hover:bg-zinc-800 text-zinc-400 hover:text-white"
               )}
             >
               <span>{topic.name}</span>
@@ -1956,26 +2110,25 @@ export function MLArenaTool() {
         </div>
       </div>
 
-      {/* 🌟 The Dual Interactive Stage: Visualizer (Left) & Mathematical Code (Right) */}
+      {/* 🌟 The Dual Master Stage: Interactive Visualizer & Mathematical Rigor */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Visual Explainer Studio (7 Columns) */}
+        {/* Left Stage: 60% Width Responsive Visualizer */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="rounded-3xl glass-panel border border-border/70 p-5 shadow-2xl space-y-4">
-            {/* View Switcher Header */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/50 pb-3">
-              <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-muted/40 border border-border/60">
+          <div className="rounded-3xl bg-[#080b12] border border-white/10 p-5 sm:p-6 shadow-2xl space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
+              <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-zinc-900/80 border border-white/10">
                 <button
                   type="button"
-                  onClick={() => setStudioMode("explainer")}
+                  onClick={() => setStudioMode("dynamic-canvas")}
                   className={cn(
                     "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all",
-                    studioMode === "explainer"
+                    studioMode === "dynamic-canvas"
                       ? "bg-indigo-600 text-white font-bold shadow-md"
-                      : "text-muted-foreground hover:text-foreground"
+                      : "text-zinc-400 hover:text-white"
                   )}
                 >
                   <Activity className="h-3.5 w-3.5 text-cyan-400" />
-                  <span>How It Works (Animated)</span>
+                  <span>Dynamic Live Canvas</span>
                 </button>
                 <button
                   type="button"
@@ -1984,7 +2137,7 @@ export function MLArenaTool() {
                     "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all",
                     studioMode === "race"
                       ? "bg-indigo-600 text-white font-bold shadow-md"
-                      : "text-muted-foreground hover:text-foreground"
+                      : "text-zinc-400 hover:text-white"
                   )}
                 >
                   <Trophy className="h-3.5 w-3.5 text-amber-400" />
@@ -1997,7 +2150,7 @@ export function MLArenaTool() {
                     "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all",
                     studioMode === "3d"
                       ? "bg-indigo-600 text-white font-bold shadow-md"
-                      : "text-muted-foreground hover:text-foreground"
+                      : "text-zinc-400 hover:text-white"
                   )}
                 >
                   <Compass className="h-3.5 w-3.5 text-emerald-400" />
@@ -2005,33 +2158,30 @@ export function MLArenaTool() {
                 </button>
               </div>
 
-              <span className="text-xs font-mono px-2.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 font-bold">
+              <span className="text-xs font-mono px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 font-bold">
                 {activeTopic.name}
               </span>
             </div>
 
-            {/* View 1: Guided Explainer */}
-            {studioMode === "explainer" && (
+            {studioMode === "dynamic-canvas" && (
               activeParadigm === "reinforcement" ? (
                 <QLearningGridworld />
               ) : (
-                <GuidedModelVisualizer
+                <DynamicModelCanvas
                   topic={activeTopic}
-                  activeStepIdx={activeStepIdx}
-                  onStepChange={setActiveStepIdx}
+                  activePipelineStep={activePipelineStep}
+                  onStepChange={setActivePipelineStep}
                 />
               )
             )}
 
-            {/* View 2: Optimizer Race */}
             {studioMode === "race" && <OptimizationLossLab />}
 
-            {/* View 3: 3D Surface */}
             {studioMode === "3d" && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="text-sm font-bold text-foreground">
+                    <h4 className="text-sm font-bold text-white">
                       {activeTopic.lossSurfaceName || "Optimization Loss Surface"}
                     </h4>
                     <p className="text-xs font-mono text-cyan-400 mt-0.5">
@@ -2039,27 +2189,26 @@ export function MLArenaTool() {
                     </p>
                   </div>
                   <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
-                    SURFACE NORMALS
+                    DIRECTIONAL SHADERS
                   </span>
                 </div>
-                <div className="rounded-2xl overflow-hidden border border-border/60 bg-black/40 shadow-inner">
+                <div className="rounded-2xl overflow-hidden border border-white/10 bg-black shadow-inner">
                   <Plot3D expr={activeTopic.lossSurface3d || "x^2 + y^2"} height={390} />
                 </div>
-                <div className="flex items-center justify-between text-[11px] text-muted-foreground font-mono">
-                  <span>• DRAG TO ORBIT • SCROLL TO SCALE • INSPECT LOCAL MINIMA</span>
-                  <span className="text-cyan-400 font-semibold">60 FPS REAL-TIME CANVAS</span>
+                <div className="flex items-center justify-between text-[11px] text-zinc-500 font-mono">
+                  <span>• DRAG TO ORBIT • SCROLL TO SCALE • INSPECT CONVEXITY</span>
+                  <span className="text-cyan-400 font-semibold">60 FPS WEBGL SHADERS</span>
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Right Column: Mathematics, Insights & NumPy Implementation (5 Columns) */}
+        {/* Right Stage: 40% Width Mathematical Knowledge Base */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="rounded-3xl glass-panel border border-border/70 p-5 shadow-2xl space-y-4">
-            {/* Header Tabs for Info Column */}
-            <div className="flex items-center justify-between border-b border-border/50 pb-3">
-              <div className="flex items-center gap-1 p-1 rounded-2xl bg-muted/40 border border-border/60">
+          <div className="rounded-3xl bg-[#080b12] border border-white/10 p-5 sm:p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center gap-1 p-1 rounded-2xl bg-zinc-900/80 border border-white/10">
                 {[
                   { id: "math", label: "Derivations", icon: BookOpen },
                   { id: "code", label: "NumPy Code", icon: Code2 },
@@ -2071,8 +2220,8 @@ export function MLArenaTool() {
                     className={cn(
                       "flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all",
                       infoTab === t.id
-                        ? "bg-foreground text-background font-bold shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
+                        ? "bg-white text-black font-bold shadow-sm"
+                        : "text-zinc-400 hover:text-white"
                     )}
                   >
                     <t.icon className="h-3.5 w-3.5" />
@@ -2086,7 +2235,7 @@ export function MLArenaTool() {
                   size="sm"
                   variant="outline"
                   onClick={copyCode}
-                  className="h-7 text-xs gap-1.5 font-mono rounded-xl"
+                  className="h-7 text-xs gap-1.5 font-mono rounded-xl border-zinc-700 bg-zinc-900"
                 >
                   {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
                   <span>{copied ? "Copied" : "Copy"}</span>
@@ -2094,71 +2243,65 @@ export function MLArenaTool() {
               )}
             </div>
 
-            {/* Tab 1: Mathematical Derivations */}
             {infoTab === "math" && (
               <div className="space-y-4 text-left">
-                {/* Objective Function */}
                 <div className="space-y-1.5">
-                  <span className="text-xs font-bold text-foreground flex items-center gap-1">
+                  <span className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
                     <CheckCircle2 className="h-3.5 w-3.5 text-indigo-400" /> 1. Objective Loss Formulation:
                   </span>
-                  <div className="p-3.5 rounded-2xl bg-black/50 border border-white/10 overflow-x-auto text-sm text-cyan-300">
+                  <div className="p-3.5 rounded-2xl bg-black border border-white/10 overflow-x-auto text-sm text-cyan-300">
                     <MathText tex={activeTopic.math.objective} display />
                   </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{activeTopic.math.objectiveExpl}</p>
+                  <p className="text-xs text-zinc-400 leading-relaxed">{activeTopic.math.objectiveExpl}</p>
                 </div>
 
-                {/* Analytical Gradient */}
                 {activeTopic.math.gradient && (
                   <div className="space-y-1.5">
-                    <span className="text-xs font-bold text-foreground flex items-center gap-1">
+                    <span className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
                       <CheckCircle2 className="h-3.5 w-3.5 text-amber-400" /> 2. Analytical Gradient Vector:
                     </span>
-                    <div className="p-3.5 rounded-2xl bg-black/50 border border-white/10 overflow-x-auto text-sm text-amber-300">
+                    <div className="p-3.5 rounded-2xl bg-black border border-white/10 overflow-x-auto text-sm text-amber-300">
                       <MathText tex={activeTopic.math.gradient} display />
                     </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{activeTopic.math.gradientExpl}</p>
+                    <p className="text-xs text-zinc-400 leading-relaxed">{activeTopic.math.gradientExpl}</p>
                   </div>
                 )}
 
-                {/* Closed Form Solution */}
                 {activeTopic.math.closedForm && (
                   <div className="space-y-1.5">
-                    <span className="text-xs font-bold text-foreground flex items-center gap-1">
+                    <span className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
                       <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" /> 3. Closed-Form / Analytical Optimum:
                     </span>
-                    <div className="p-3.5 rounded-2xl bg-black/50 border border-white/10 overflow-x-auto text-sm text-emerald-300">
+                    <div className="p-3.5 rounded-2xl bg-black border border-white/10 overflow-x-auto text-sm text-emerald-300">
                       <MathText tex={activeTopic.math.closedForm} display />
                     </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{activeTopic.math.closedFormExpl}</p>
+                    <p className="text-xs text-zinc-400 leading-relaxed">{activeTopic.math.closedFormExpl}</p>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Tab 2: Vectorized Python & NumPy Code */}
             {infoTab === "code" && (
               <div className="space-y-3">
-                <div className="flex items-center justify-between text-xs text-muted-foreground font-mono">
-                  <span>Pure NumPy • From-Scratch</span>
-                  <span className="text-emerald-400 font-bold">No Scikit-Learn</span>
+                <div className="flex items-center justify-between text-xs text-zinc-400 font-mono">
+                  <span>Pure NumPy • Vectorized</span>
+                  <span className="text-emerald-400 font-bold">No Black Box sklearn</span>
                 </div>
-                <pre className="p-4 rounded-2xl border border-white/10 bg-slate-950 font-mono text-xs overflow-x-auto text-emerald-400/90 leading-relaxed max-h-[460px] shadow-inner text-left">
+                <pre className="p-4 rounded-2xl border border-white/10 bg-black font-mono text-xs overflow-x-auto text-emerald-400 leading-relaxed max-h-[460px] shadow-inner text-left">
                   <code>{activeTopic.pythonCode}</code>
                 </pre>
               </div>
             )}
 
-            {/* Tab 3: Theoretical Insights & Guarantees */}
             {infoTab === "insights" && (
               <div className="space-y-3 text-left">
-                <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-muted-foreground">
+                <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">
                   Mathematical Guarantees &amp; Assumptions:
                 </h4>
                 <ul className="space-y-2.5">
                   {activeTopic.math.keyPoints.map((pt, idx) => (
-                    <li key={idx} className="flex items-start gap-2.5 text-xs text-muted-foreground leading-relaxed">
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-400 font-mono text-[10px] font-bold">
+                    <li key={idx} className="flex items-start gap-2.5 text-xs text-zinc-400 leading-relaxed">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-lg bg-indigo-500/20 text-indigo-400 font-mono text-[10px] font-bold border border-indigo-500/30">
                         {idx + 1}
                       </span>
                       <span>{pt}</span>
