@@ -24,7 +24,14 @@ export const metadata: Metadata = {
     "math solver", "3d graphing", "step by step calculus", "matrix algebra", "latex ocr", "interactive mathematics",
     "eigenvalues", "multivariate surface", "mathoml", "derivatives", "integrals"
   ],
-  icons: { icon: "/logo.svg" },
+  icons: {
+    icon: [
+      { url: "/logo.svg", type: "image/svg+xml" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/logo.svg",
+    apple: "/logo.svg",
+  },
 };
 
 export default function RootLayout({

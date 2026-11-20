@@ -177,10 +177,9 @@ function Header() {
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6">
         {/* Brand Logo */}
         <button className="flex items-center gap-3 shrink-0 group" onClick={goHome} aria-label="MathOML home">
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-0.5 shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-all">
-            <div className="flex h-full w-full items-center justify-center rounded-[14px] bg-background dark:bg-slate-950/90">
-              <Sigma className="h-5 w-5 text-emerald-500 group-hover:rotate-12 transition-transform duration-300" />
-            </div>
+          <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl group-hover:scale-105 transition-all">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.svg" alt="MathOML Logo" className="h-10 w-10 rounded-2xl shadow-lg shadow-emerald-500/20" />
           </div>
           <div className="flex flex-col text-left">
             <span className="font-extrabold text-lg tracking-tight leading-none">
