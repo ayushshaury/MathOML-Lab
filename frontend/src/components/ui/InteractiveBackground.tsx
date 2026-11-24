@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useTheme } from "next-themes";
 
 interface Particle {
   x: number;
@@ -21,7 +20,6 @@ const MATH_CHARS = ["∫", "∑", "∂", "π", "∞", "λ", "√", "θ", "∇", 
 export function InteractiveBackground() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const mouseRef = useRef<{ x: number; y: number; active: boolean }>({ x: -1000, y: -1000, active: false });
-  const { resolvedTheme } = useTheme();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -68,7 +66,7 @@ export function InteractiveBackground() {
       vRot: (Math.random() - 0.5) * 0.01,
     }));
 
-    const isDark = resolvedTheme !== "light";
+    const isDark = false;
 
     let lastTime = performance.now();
 
@@ -167,7 +165,7 @@ export function InteractiveBackground() {
       window.removeEventListener("pointermove", handlePointerMove);
       document.removeEventListener("mouseleave", handlePointerLeave);
     };
-  }, [resolvedTheme]);
+  }, []);
 
   return (
     <canvas

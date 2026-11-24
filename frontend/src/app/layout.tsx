@@ -1,20 +1,11 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "katex/dist/katex.min.css";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
-import { ThemeProvider } from "@/components/theme-provider";
 import { InteractiveBackground } from "@/components/ui/InteractiveBackground";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const geistSans = { variable: "--font-geist-sans" };
+const geistMono = { variable: "--font-geist-mono" };
 
 export const metadata: Metadata = {
   title: "MathOML — The Interactive Digital Mathematics Laboratory",
@@ -40,15 +31,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground min-h-screen selection:bg-emerald-500/30 selection:text-emerald-300`}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
-          <InteractiveBackground />
-          <div className="relative z-10 flex min-h-screen flex-col">
-            {children}
-          </div>
-          <Toaster />
-        </ThemeProvider>
+    <html lang="en">
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground min-h-screen selection:bg-emerald-500/20 selection:text-emerald-700`}>
+        <InteractiveBackground />
+        <div className="relative z-10 flex min-h-screen flex-col">
+          {children}
+        </div>
+        <Toaster />
       </body>
     </html>
   );

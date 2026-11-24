@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import {
-  Sigma, Search, Sun, Moon, Home, ArrowRight, Sparkles,
+  Sigma, Search, Home, ArrowRight, Sparkles,
   Equal, Shuffle, Layers, TrendingUp, SquareStack, MoveRight, GitBranch, Infinity as InfinityIcon,
   ListOrdered, Grid3x3, SquareDashed, Waves, Compass, Triangle, Shapes, BarChart3, Dice5,
   LineChart, Mountain, Calculator, ScanLine, FlaskRound, BookOpen, ExternalLink, Play, Github,
@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useTheme } from "next-themes";
 import { useMathLab } from "@/lib/store";
 import { CATEGORIES, TOOLS, searchTools, toolsByCategory, type Category } from "@/lib/tools";
 import {
@@ -170,10 +169,9 @@ function SearchPalette() {
 
 function Header() {
   const { view, goHome, openTool, setSearchOpen } = useMathLab();
-  const { setTheme, resolvedTheme } = useTheme();
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border/50 bg-background/80 dark:bg-background/70 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6">
         {/* Brand Logo */}
         <button className="flex items-center gap-3 shrink-0 group" onClick={goHome} aria-label="MathOML home">
@@ -254,18 +252,6 @@ function Header() {
           >
             <Github className="h-4 w-4" />
           </a>
-
-          {/* Theme Switcher */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-9 w-9 rounded-xl hover:bg-muted/70"
-            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-            aria-label="Toggle theme"
-          >
-            <Sun className="h-4 w-4 hidden dark:block text-amber-400" />
-            <Moon className="h-4 w-4 dark:hidden text-slate-700" />
-          </Button>
         </nav>
       </div>
     </header>
@@ -696,7 +682,7 @@ function HomeView() {
           </h1>
 
           <p className="mx-auto mt-6 max-w-2xl text-muted-foreground text-sm sm:text-lg leading-relaxed">
-            Deterministic computer algebra, real-time 3D directional surface shaders, interactive tangent curve tracing, and multi-question automated photo OCR.
+            Interactive 3D surfaces, 2D curves, step-by-step calculus, matrix algebra, and machine learning.
           </p>
 
           {/* Search Bar */}
@@ -711,13 +697,13 @@ function HomeView() {
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2">
               {[
-                { label: "🤖 ML Arena (RL & 3D Loss)", tool: "ml-arena", color: "hover:border-indigo-500/50 hover:bg-indigo-500/10 hover:text-indigo-400 font-bold" },
-                { label: "🌊 Ripple Wave 3D", tool: "graph-3d", color: "hover:border-cyan-500/50 hover:bg-cyan-500/10 hover:text-cyan-400" },
-                { label: "📈 Harmonic Wave 2D", tool: "graph-2d", color: "hover:border-emerald-500/50 hover:bg-emerald-500/10 hover:text-emerald-400" },
-                { label: "⚡ Derivative Steps", tool: "derivative", color: "hover:border-amber-500/50 hover:bg-amber-500/10 hover:text-amber-400" },
-                { label: "📸 Multi-Question OCR", tool: "image-to-equation", color: "hover:border-violet-500/50 hover:bg-violet-500/10 hover:text-violet-400" },
-                { label: "🧮 Matrix Inversion", tool: "determinant", color: "hover:border-rose-500/50 hover:bg-rose-500/10 hover:text-rose-400" },
-                { label: "📊 Probability & Stats", tool: "statistics", color: "hover:border-sky-500/50 hover:bg-sky-500/10 hover:text-sky-400" },
+                { label: "ML Arena", tool: "ml-arena", color: "hover:border-indigo-500/50 hover:bg-indigo-500/10 hover:text-indigo-400 font-bold" },
+                { label: "Ripple Wave 3D", tool: "graph-3d", color: "hover:border-cyan-500/50 hover:bg-cyan-500/10 hover:text-cyan-400" },
+                { label: "Harmonic Wave 2D", tool: "graph-2d", color: "hover:border-emerald-500/50 hover:bg-emerald-500/10 hover:text-emerald-400" },
+                { label: "Derivative Steps", tool: "derivative", color: "hover:border-amber-500/50 hover:bg-amber-500/10 hover:text-amber-400" },
+                { label: "Photo OCR", tool: "image-to-equation", color: "hover:border-violet-500/50 hover:bg-violet-500/10 hover:text-violet-400" },
+                { label: "Matrix Inversion", tool: "determinant", color: "hover:border-rose-500/50 hover:bg-rose-500/10 hover:text-rose-400" },
+                { label: "Probability & Stats", tool: "statistics", color: "hover:border-sky-500/50 hover:bg-sky-500/10 hover:text-sky-400" },
               ].map((item) => (
                 <button
                   key={item.label}
@@ -739,16 +725,16 @@ function HomeView() {
         </div>
       </section>
 
-      {/* Flagship Instruments Showcase */}
+      {/* Core Tools Showcase */}
       <section className="space-y-6">
         <div className="text-center max-w-2xl mx-auto">
-          <h2 className="text-2xl sm:text-4xl font-black tracking-tight">Flagship Intelligence Instruments</h2>
+          <h2 className="text-2xl sm:text-4xl font-black tracking-tight">Core Laboratories</h2>
           <p className="text-xs sm:text-sm text-muted-foreground mt-2">
-            Engineered from scratch for deep intuition, rigorous mathematics, and real-time visualization.
+            Mathematical computing, step-by-step calculus, and interactive machine learning.
           </p>
         </div>
 
-        {/* Hero Flagship Banner: Machine Learning Arena */}
+        {/* Machine Learning Arena */}
         <div
           onClick={() => openTool("ml-arena")}
           className="group relative cursor-pointer overflow-hidden rounded-[32px] glass-panel p-6 sm:p-8 border border-indigo-500/40 shadow-2xl transition-all duration-300 hover:shadow-indigo-500/10 hover:border-indigo-500/70 hover:-translate-y-1"
@@ -765,24 +751,14 @@ function HomeView() {
                 </div>
               </div>
               <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                Explore Regression (OLS, Ridge, Lasso, SVR), Classification (Logistic, SVM, Decision Trees, KNN), Optimization (Adam, RMSProp, 3D loss surfaces), Unsupervised (K-Means, PCA), and Tabular Q-Learning Reinforcement Learning in an interactive 5x5 Gridworld with Bellman derivations and from-scratch NumPy code.
+                Explore Regression, Classification, Optimization (Gradient Descent, SGD, Adam, 3D loss landscapes), Unsupervised Learning (K-Means, PCA), and Tabular Q-Learning with step-by-step mathematical derivations.
               </p>
-              <div className="flex flex-wrap gap-2 pt-1">
-                {["Interactive 2D Curves", "3D Loss Landscapes", "Live Q-Learning Gridworld", "LaTeX Equations", "From-Scratch Python Code"].map((tag) => (
-                  <span key={tag} className="rounded-lg bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 text-[11px] font-mono font-semibold text-indigo-300">
-                    {tag}
-                  </span>
-                ))}
-              </div>
             </div>
 
             <div className="flex sm:flex-col items-center sm:items-end gap-3 shrink-0 w-full sm:w-auto justify-between sm:justify-start">
               <Button className="w-full sm:w-auto gap-2 rounded-2xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-xl shadow-indigo-950/30 px-6 h-12">
                 Launch ML Arena <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
-              <span className="text-[11px] font-mono text-muted-foreground hidden sm:block">
-                All 5 ML Branches • Pure Client-Side
-              </span>
             </div>
           </div>
         </div>
@@ -799,12 +775,12 @@ function HomeView() {
                   <Mountain className="h-6 w-6" />
                 </span>
                 <span className="rounded-full bg-cyan-500/10 border border-cyan-500/30 px-2.5 py-0.5 text-[10px] font-mono font-bold text-cyan-400 uppercase">
-                  3D Shaders
+                  3D View
                 </span>
               </div>
               <h3 className="text-lg font-bold">3D Surface Studio</h3>
               <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                Directional lighting model with surface normals. Choose between Viridis, Neon Synthwave, and Plasma colormaps with free orbital camera rotation.
+                Interactive 3D mathematical surfaces with customizable colormaps and orbital rotation.
               </p>
             </div>
             <div className="mt-6 flex items-center gap-1.5 text-xs font-bold text-cyan-400 group-hover:translate-x-1 transition-transform">
@@ -823,12 +799,12 @@ function HomeView() {
                   <LineChart className="h-6 w-6" />
                 </span>
                 <span className="rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 text-[10px] font-mono font-bold text-emerald-400 uppercase">
-                  Curve Tracer
+                  Grapher
                 </span>
               </div>
               <h3 className="text-lg font-bold">2D Graphing Calculator</h3>
               <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                Real-time curve snapping, dynamic tangent line tracers, roots and extrema markers, definite area integrals, and dynamic variable sliders.
+                Plot 2D functions with roots, extrema, tangent lines, and definite integrals.
               </p>
             </div>
             <div className="mt-6 flex items-center gap-1.5 text-xs font-bold text-emerald-400 group-hover:translate-x-1 transition-transform">
@@ -847,12 +823,12 @@ function HomeView() {
                   <ScanLine className="h-6 w-6" />
                 </span>
                 <span className="rounded-full bg-violet-500/10 border border-violet-500/30 px-2.5 py-0.5 text-[10px] font-mono font-bold text-violet-400 uppercase">
-                  Multi-OCR
+                  OCR
                 </span>
               </div>
               <h3 className="text-lg font-bold">Photo Worksheet OCR</h3>
               <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                Scan multiple numbered questions on worksheets at once. Solves each equation sequentially in an automated step-by-step queue with cyberpunk laser animation.
+                Scan multiple numbered equations from worksheets and solve step-by-step.
               </p>
             </div>
             <div className="mt-6 flex items-center gap-1.5 text-xs font-bold text-violet-400 group-hover:translate-x-1 transition-transform">
@@ -871,12 +847,12 @@ function HomeView() {
                   <Grid3x3 className="h-6 w-6" />
                 </span>
                 <span className="rounded-full bg-rose-500/10 border border-rose-500/30 px-2.5 py-0.5 text-[10px] font-mono font-bold text-rose-400 uppercase">
-                  Linear Studio
+                  Matrix Lab
                 </span>
               </div>
               <h3 className="text-lg font-bold">Matrix &amp; Linear Algebra</h3>
               <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                Decompositions, determinants, eigenvalues, eigenvectors, Gaussian row elimination, matrix inverses, and systems of linear equations.
+                Determinants, eigenvalues, eigenvectors, matrix inverses, and systems of linear equations.
               </p>
             </div>
             <div className="mt-6 flex items-center gap-1.5 text-xs font-bold text-rose-400 group-hover:translate-x-1 transition-transform">
@@ -886,11 +862,11 @@ function HomeView() {
         </div>
       </section>
 
-      {/* Complete 25-Tool Laboratory Matrix */}
+      {/* Complete Tools Laboratory */}
       <section className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/50 pb-5">
           <div>
-            <h2 className="text-xl sm:text-3xl font-black tracking-tight">The 25 Instruments</h2>
+            <h2 className="text-xl sm:text-3xl font-black tracking-tight">Tools &amp; Calculators</h2>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">Select a discipline or explore the complete suite.</p>
           </div>
 
@@ -906,7 +882,7 @@ function HomeView() {
                   : "border border-border/60 bg-card/60 hover:bg-muted text-muted-foreground"
               )}
             >
-              All Instruments ({TOOLS.length})
+              All Tools ({TOOLS.length})
             </button>
             {CATEGORIES.map((cat) => {
               const count = toolsByCategory(cat.id).length;
@@ -1017,7 +993,7 @@ export default function Page() {
               <Sigma className="h-3.5 w-3.5" />
             </span>
             <span className="font-semibold text-foreground">MathOML Laboratory</span>
-            <span>— Exact Symbolic &amp; Numerical Intelligence.</span>
+            <span>— Interactive Mathematics Studio</span>
           </div>
           <div className="flex items-center gap-4">
             <a
@@ -1029,7 +1005,7 @@ export default function Page() {
               <Github className="h-3.5 w-3.5" /> GitHub Repository
             </a>
             <span>•</span>
-            <span>100% Client-Side CAS</span>
+            <span>Open Source</span>
           </div>
         </div>
       </footer>

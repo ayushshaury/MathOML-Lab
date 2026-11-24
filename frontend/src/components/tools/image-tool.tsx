@@ -19,6 +19,9 @@ import { solveEquation } from "@/lib/math/equations";
 import { differentiateSteps } from "@/lib/math/differentiate";
 import { integrateSteps } from "@/lib/math/integrals";
 import { algebraSteps } from "@/lib/math/algebra";
+import {
+  determinantSteps, inverseSteps, eigenSteps, rankSteps, matrixOpSteps, matTex, type Matrix
+} from "@/lib/math/matrices";
 import { cn } from "@/lib/utils";
 
 interface QueueItem {
@@ -26,16 +29,81 @@ interface QueueItem {
   index: number;
   raw: string;
   equation: string;
-  type: "equation" | "derivative" | "integral" | "algebra";
-  category?: "quadratic" | "linear" | "derivative" | "integral" | "rational" | "algebra";
+  type: "equation" | "derivative" | "integral" | "algebra" | "matrix";
+  category?: "quadratic" | "linear" | "derivative" | "integral" | "rational" | "algebra" | "matrix" | "determinant" | "inverse" | "eigen";
   formattedTex?: string;
   status: "pending" | "solving" | "solved" | "error";
   solution?: Solution | null;
 }
 
+function parseMatrixFromText(raw: string): { matrix: number[][]; formattedTex: string } | null {
+  if (!raw) return null;
+  const str = raw.trim();
+
+  // 1. Bracketed 2D array: [[1, 2], [3, 4]]
+  const match = str.match(/\[\s*(\[\s*[-0-9\.\s\,]+\s*\](?:\s*,\s*\[\s*[-0-9\.\s\,]+\s*\])*)\s*\]/);
+  if (match) {
+    const rowMatches = match[1].match(/\[\s*([-0-9\.\s\,]+)\s*\]/g);
+    if (rowMatches && rowMatches.length > 0) {
+      const rows: number[][] = [];
+      for (const rm of rowMatches) {
+        const content = rm.replace(/^\[|\]$/g, "").trim();
+        const cells = content.split(/[\s,]+/).map(Number).filter((n) => !isNaN(n));
+        if (cells.length > 0) rows.push(cells);
+      }
+      if (rows.length >= 1 && rows.every((r) => r.length === rows[0].length)) {
+        return {
+          matrix: rows,
+          formattedTex: `\\begin{pmatrix} ${rows.map((r) => r.join(" & ")).join(" \\\\ ")} \\end{pmatrix}`,
+        };
+      }
+    }
+  }
+
+  // 2. Semicolon notation: [1 2; 3 4]
+  const semiMatch = str.match(/\[\s*([-0-9\.\s\,\;]+)\s*\]/);
+  if (semiMatch && semiMatch[1].includes(";")) {
+    const rowStrings = semiMatch[1].split(";").map((r) => r.trim()).filter(Boolean);
+    const rows: number[][] = [];
+    for (const r of rowStrings) {
+      const cells = r.split(/[\s,]+/).map(Number).filter((n) => !isNaN(n));
+      if (cells.length > 0) rows.push(cells);
+    }
+    if (rows.length >= 2 && rows.every((r) => r.length === rows[0].length)) {
+      return {
+        matrix: rows,
+        formattedTex: `\\begin{pmatrix} ${rows.map((r) => r.join(" & ")).join(" \\\\ ")} \\end{pmatrix}`,
+      };
+    }
+  }
+
+  return null;
+}
+
 function toDisplayTex(expr: string): string {
   if (!expr) return "";
-  let tex = expr
+  let tex = expr;
+
+  // Convert embedded matrix arrays [[...]] to LaTeX pmatrix
+  const matMatches = tex.match(/\[\s*\[\s*[-0-9\.\s\,]+\s*\](?:\s*,\s*\[\s*[-0-9\.\s\,]+\s*\])*\s*\]/g);
+  if (matMatches) {
+    for (const m of matMatches) {
+      const parsed = parseMatrixFromText(m);
+      if (parsed) {
+        tex = tex.replace(m, parsed.formattedTex);
+      }
+    }
+    if (expr.startsWith("det(") && expr.endsWith(")")) {
+      tex = tex.replace(/^det\((.*)\)$/, "\\det $1");
+    } else if (expr.startsWith("inv(") && expr.endsWith(")")) {
+      tex = tex.replace(/^inv\((.*)\)$/, "{$1}^{-1}");
+    } else if (expr.startsWith("eigen(") && expr.endsWith(")")) {
+      tex = tex.replace(/^eigen\((.*)\)$/, "\\operatorname{eigen}($1)");
+    }
+    return tex;
+  }
+
+  tex = tex
     .replace(/\*/g, " \\cdot ")
     .replace(/\bsqrt\(([^()]*)\)/g, "\\sqrt{$1}")
     .replace(/\bpi\b/g, "\\pi ")
@@ -87,6 +155,79 @@ export function ImageToEquationTool() {
   const solveItem = (item: QueueItem): QueueItem => {
     try {
       let sol: Solution;
+
+      // Matrix & Linear Algebra Solver Routing
+      if (
+        item.type === "matrix" ||
+        item.category === "matrix" ||
+        item.category === "determinant" ||
+        item.category === "inverse" ||
+        item.category === "eigen" ||
+        item.equation.includes("[[") ||
+        item.equation.startsWith("det(") ||
+        item.equation.startsWith("inv(") ||
+        item.equation.startsWith("eigen(")
+      ) {
+        // 1. Matrix operations between two matrices: A + B, A - B, A * B
+        const opMatch = item.equation.match(/(\[\[[\s\S]*?\]\])\s*([\+\-\*])\s*(\[\[[\s\S]*?\]\])/);
+        if (opMatch) {
+          const m1 = parseMatrixFromText(opMatch[1]);
+          const m2 = parseMatrixFromText(opMatch[3]);
+          if (m1 && m2) {
+            sol = matrixOpSteps(m1.matrix, m2.matrix, opMatch[2], 0);
+            return { ...item, status: "solved", solution: sol };
+          }
+        }
+
+        // 2. Determinant: det([[...]]) or category === 'determinant'
+        if (item.category === "determinant" || /\b(?:det|determinant)\b/i.test(item.equation) || item.equation.startsWith("det(")) {
+          const p = parseMatrixFromText(item.equation);
+          if (p) {
+            sol = determinantSteps(p.matrix);
+            return { ...item, status: "solved", solution: sol };
+          }
+        }
+
+        // 3. Inverse: inv([[...]]) or category === 'inverse'
+        if (item.category === "inverse" || /\b(?:inv|inverse)\b/i.test(item.equation) || item.equation.startsWith("inv(")) {
+          const p = parseMatrixFromText(item.equation);
+          if (p) {
+            sol = inverseSteps(p.matrix);
+            return { ...item, status: "solved", solution: sol };
+          }
+        }
+
+        // 4. Eigenvalues: eigen([[...]]) or category === 'eigen'
+        if (item.category === "eigen" || /\b(?:eigen|eigenvalue)\b/i.test(item.equation) || item.equation.startsWith("eigen(")) {
+          const p = parseMatrixFromText(item.equation);
+          if (p) {
+            const eigenRes = eigenSteps(p.matrix);
+            sol = {
+              title: "Eigenvalues & Eigenvectors",
+              resultTex: eigenRes.eigenvalues.map((v, i) => `\\lambda_{${i + 1}} = ${v}`).join(", "),
+              steps: eigenRes.steps,
+            };
+            return { ...item, status: "solved", solution: sol };
+          }
+        }
+
+        // 5. Default Matrix: Determinant for square matrices, rank for rectangular
+        const p = parseMatrixFromText(item.equation);
+        if (p) {
+          if (p.matrix.length === p.matrix[0].length) {
+            sol = determinantSteps(p.matrix);
+          } else {
+            const rankRes = rankSteps(p.matrix);
+            sol = {
+              title: "Matrix Rank",
+              resultTex: `\\operatorname{rank}(A) = ${rankRes.rank}`,
+              steps: rankRes.steps,
+            };
+          }
+          return { ...item, status: "solved", solution: sol };
+        }
+      }
+
       if (item.type === "derivative" || /\b(d\/dx|dy\/dx|diff|deriv)\b/i.test(item.equation)) {
         // Strip derivative operator d/dx [...] or dy/dx of ... to isolate the function
         const cleanExpr = item.equation
@@ -133,7 +274,7 @@ export function ImageToEquationTool() {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12000);
+      const timeoutId = setTimeout(() => controller.abort(), 45000);
 
       const res = await fetch(getApiEndpoint("/api/ocr"), {
         method: "POST",
@@ -260,7 +401,7 @@ export function ImageToEquationTool() {
   };
 
   // Load interactive demo worksheets (1-click guaranteed testing)
-  const loadDemoWorksheet = (type: "algebra" | "calculus" | "mixed") => {
+  const loadDemoWorksheet = (type: "algebra" | "calculus" | "matrix" | "mixed") => {
     const canvas = document.createElement("canvas");
     canvas.width = 720;
     canvas.height = 360;
@@ -311,6 +452,15 @@ export function ImageToEquationTool() {
         { id: "q1", index: 1, raw: "1) d/dx [x^3 + 4*x]", equation: "d/dx [x^3 + 4*x]", type: "derivative", status: "pending", solution: null },
         { id: "q2", index: 2, raw: "2) int (x^2 + 3*x) dx", equation: "int (x^2 + 3*x) dx", type: "integral", status: "pending", solution: null },
         { id: "q3", index: 3, raw: "3) d/dx [sin(x)*cos(x)]", equation: "d/dx [sin(x)*cos(x)]", type: "derivative", status: "pending", solution: null },
+      ];
+    } else if (type === "matrix") {
+      ctx.fillText("1) det([[2, 5], [1, 3]])", 100, 105);
+      ctx.fillText("2) inv([[4, 7], [2, 6]])", 100, 185);
+      ctx.fillText("3) [[1, 2], [3, 4]] + [[5, 6], [7, 8]]", 100, 265);
+      preset = [
+        { id: "q1", index: 1, raw: "1) det([[2, 5], [1, 3]])", equation: "det([[2, 5], [1, 3]])", type: "matrix", category: "determinant", formattedTex: "\\det \\begin{pmatrix} 2 & 5 \\\\ 1 & 3 \\end{pmatrix}", status: "pending", solution: null },
+        { id: "q2", index: 2, raw: "2) inv([[4, 7], [2, 6]])", equation: "inv([[4, 7], [2, 6]])", type: "matrix", category: "inverse", formattedTex: "\\begin{pmatrix} 4 & 7 \\\\ 2 & 6 \\end{pmatrix}^{-1}", status: "pending", solution: null },
+        { id: "q3", index: 3, raw: "3) [[1, 2], [3, 4]] + [[5, 6], [7, 8]]", equation: "[[1, 2], [3, 4]] + [[5, 6], [7, 8]]", type: "matrix", category: "matrix", formattedTex: "\\begin{pmatrix} 1 & 2 \\\\ 3 & 4 \\end{pmatrix} + \\begin{pmatrix} 5 & 6 \\\\ 7 & 8 \\end{pmatrix}", status: "pending", solution: null },
       ];
     } else {
       ctx.fillText("1) 4*x - 8 = 12", 100, 105);
@@ -373,7 +523,7 @@ export function ImageToEquationTool() {
               <Sparkles className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
               Pre-loaded Test Sheets (1-Click Instant Scan):
             </span>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <button
                 type="button"
                 onClick={() => loadDemoWorksheet("algebra")}
@@ -388,6 +538,14 @@ export function ImageToEquationTool() {
                 className="rounded-2xl border bg-card hover:bg-accent p-3 text-left text-xs font-medium transition-all hover:border-cyan-500/50 shadow-2xs"
               >
                 <p className="font-bold text-foreground">Calculus Sheet</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5 truncate">3 Questions</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => loadDemoWorksheet("matrix")}
+                className="rounded-2xl border bg-card hover:bg-accent p-3 text-left text-xs font-medium transition-all hover:border-rose-500/50 shadow-2xs"
+              >
+                <p className="font-bold text-foreground">Matrix Sheet</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5 truncate">3 Questions</p>
               </button>
               <button
@@ -486,7 +644,7 @@ export function ImageToEquationTool() {
                           #{item.index}
                         </span>
                         <div className="flex gap-1">
-                          {(["equation", "derivative", "integral", "algebra"] as const).map((t) => (
+                          {(["equation", "derivative", "integral", "matrix", "algebra"] as const).map((t) => (
                             <button
                               key={t}
                               type="button"

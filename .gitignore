@@ -68,3 +68,6 @@ server.log
 upload/
 db/*.db
 db/*.db-journal
+.yolo_config/
+.models/
+
