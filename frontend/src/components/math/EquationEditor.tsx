@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { MathText } from "./MathText";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { getApiEndpoint } from "@/lib/api-client";
 
 /* ------------------------------------------------------------------ */
 /* Symbol palette                                                      */
@@ -177,7 +178,7 @@ export function EquationEditor({
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
-      const res = await fetch("/api/ocr", {
+      const res = await fetch(getApiEndpoint("/api/ocr"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image: dataUrl }),

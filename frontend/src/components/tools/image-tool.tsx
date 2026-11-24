@@ -27,8 +27,34 @@ interface QueueItem {
   raw: string;
   equation: string;
   type: "equation" | "derivative" | "integral" | "algebra";
+  category?: "quadratic" | "linear" | "derivative" | "integral" | "rational" | "algebra";
+  formattedTex?: string;
   status: "pending" | "solving" | "solved" | "error";
   solution?: Solution | null;
+}
+
+function toDisplayTex(expr: string): string {
+  if (!expr) return "";
+  let tex = expr
+    .replace(/\*/g, " \\cdot ")
+    .replace(/\bsqrt\(([^()]*)\)/g, "\\sqrt{$1}")
+    .replace(/\bpi\b/g, "\\pi ")
+    .replace(/\bInfinity\b/g, "\\infty ")
+    .replace(/<=/g, "\\le ")
+    .replace(/>=/g, "\\ge ")
+    .replace(/!=/g, "\\ne ")
+    .replace(/\+-/g, "\\pm ")
+    .replace(/\^\(([^()]*)\)/g, "^{$1}")
+    .replace(/\^([0-9a-zA-Z])/g, "^{$1}");
+
+  if (tex.startsWith("d/dx [") && tex.endsWith("]")) {
+    const inner = tex.slice(6, -1);
+    tex = `\\frac{d}{dx}\\left[${inner}\\right]`;
+  } else if (tex.startsWith("int ") && tex.endsWith(" dx")) {
+    const inner = tex.slice(4, -3);
+    tex = `\\int ${inner}\\, dx`;
+  }
+  return tex;
 }
 
 const SCAN_STAGES = [
@@ -57,18 +83,26 @@ export function ImageToEquationTool() {
     return () => clearInterval(interval);
   }, [loading]);
 
-  // Solver for individual queue items
+  // Solver for individual queue items with clean expression extraction
   const solveItem = (item: QueueItem): QueueItem => {
     try {
       let sol: Solution;
-      if (item.type === "equation" || item.equation.includes("=")) {
-        sol = solveEquation(item.equation);
-      } else if (item.type === "derivative" || /\b(d\/dx|dy\/dx)\b/i.test(item.equation)) {
-        const cleanExpr = item.equation.replace(/d\/dx\s*\[?|dy\/dx\s*\[?|\]/gi, "").trim();
+      if (item.type === "derivative" || /\b(d\/dx|dy\/dx|diff|deriv)\b/i.test(item.equation)) {
+        // Strip derivative operator d/dx [...] or dy/dx of ... to isolate the function
+        const cleanExpr = item.equation
+          .replace(/^\s*(?:d\/d[a-z]|dy\/dx|diff|deriv)\s*\[?\s*|\s*\]?\s*$/gi, "")
+          .replace(/^y\s*=\s*/i, "")
+          .trim();
         sol = differentiateSteps(cleanExpr || item.equation, "x", 1);
       } else if (item.type === "integral" || /\b(int|integral)\b/i.test(item.equation) || item.equation.includes("∫")) {
-        const cleanExpr = item.equation.replace(/[∫\s]|dx/gi, "").trim();
+        // Strip integral symbol int (...) dx to isolate integrand
+        const cleanExpr = item.equation
+          .replace(/^\s*(?:int|integral|∫)\s*\[?\(?\s*/i, "")
+          .replace(/\s*(?:\)?\]?\s*)?(?:d[a-z])\s*$/i, "")
+          .trim();
         sol = integrateSteps(cleanExpr || item.equation, "x", false);
+      } else if (item.type === "equation" || item.equation.includes("=")) {
+        sol = solveEquation(item.equation);
       } else {
         sol = algebraSteps(item.equation, "simplify");
       }
@@ -112,13 +146,7 @@ export function ImageToEquationTool() {
       const json = await res.json();
       if (!res.ok || json.error) throw new Error(json.error ?? "Recognition failed");
 
-      const detectedQuestions: {
-        id: string;
-        index: number;
-        raw: string;
-        equation: string;
-        type: "equation" | "derivative" | "integral" | "algebra";
-      }[] = json.questions ?? [];
+      const detectedQuestions: any[] = json.questions ?? [];
 
       if (detectedQuestions.length === 0) {
         throw new Error("No mathematical equations detected. Try a clearer or higher-contrast photo.");
@@ -126,6 +154,8 @@ export function ImageToEquationTool() {
 
       const newQueue: QueueItem[] = detectedQuestions.map((q) => ({
         ...q,
+        category: q.category || (q.equation.includes("=") ? "quadratic" : q.type),
+        formattedTex: q.formattedTex || toDisplayTex(q.equation),
         status: "pending",
         solution: null,
       }));
@@ -493,18 +523,54 @@ export function ImageToEquationTool() {
                     </div>
 
                     {/* Attractive Math Readability: Large KaTeX Display Card */}
-                    <div className="rounded-2xl border bg-muted/25 p-3.5 flex items-center justify-center min-h-[50px] shadow-inner overflow-x-auto">
-                      <MathText tex={item.equation} display className="text-base sm:text-lg font-medium" />
+                    <div className="rounded-2xl border bg-muted/20 p-3.5 flex flex-col items-center justify-center min-h-[56px] shadow-inner overflow-x-auto space-y-1.5">
+                      {item.raw && item.raw !== item.equation && (
+                        <div className="text-[11px] font-mono text-muted-foreground self-start truncate max-w-full flex items-center gap-1.5">
+                          <span className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                            Scanned
+                          </span>
+                          <span>&quot;{item.raw}&quot;</span>
+                        </div>
+                      )}
+                      <MathText tex={item.formattedTex || toDisplayTex(item.equation)} display className="text-base sm:text-lg font-medium" />
                     </div>
 
-                    {/* Editable Formula Input */}
-                    <div className="flex items-center gap-2">
-                      <Input
-                        value={item.equation}
-                        onChange={(e) => updateEquation(item.id, e.target.value)}
-                        className="font-mono text-xs sm:text-sm h-9"
-                        placeholder="Edit equation..."
-                      />
+                    {/* Editable Formula Input with Quick Operator Chips */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={item.equation}
+                          onChange={(e) => updateEquation(item.id, e.target.value)}
+                          className="font-mono text-xs sm:text-sm h-9"
+                          placeholder="Edit detected mathematical formula..."
+                        />
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                        <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground/60 mr-1">
+                          Quick edit:
+                        </span>
+                        {[
+                          { label: "x²", insert: "^2" },
+                          { label: "x³", insert: "^3" },
+                          { label: "√x", insert: "sqrt(" },
+                          { label: "d/dx", insert: "d/dx [" },
+                          { label: "∫ dx", insert: "int () dx" },
+                          { label: "+", insert: " + " },
+                          { label: "-", insert: " - " },
+                          { label: "*", insert: "*" },
+                          { label: "/", insert: "/" },
+                          { label: "=", insert: " = " },
+                        ].map((chip) => (
+                          <button
+                            key={chip.label}
+                            type="button"
+                            onClick={() => updateEquation(item.id, `${item.equation}${chip.insert}`)}
+                            className="px-2 py-0.5 rounded-md text-[11px] font-mono bg-muted/60 hover:bg-muted border border-border/50 text-foreground transition-all hover:border-emerald-500/40"
+                          >
+                            {chip.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
 
                     {/* Action Bar */}

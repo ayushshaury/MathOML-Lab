@@ -579,6 +579,167 @@ class KNN:
 
   /* ================= OPTIMIZATION ================= */
   {
+    id: "batch-gradient-descent",
+    name: "Batch Gradient Descent (BGD)",
+    paradigm: "optimization",
+    badge: "First-Order Deterministic",
+    summary: "Computes the exact gradient of empirical risk over the entire dataset, taking monotonic descent steps down the error surface.",
+    lossSurface3d: "0.5*x^2 + 2*y^2",
+    lossSurfaceName: "Convex Elliptic Paraboloid (Condition Number κ = 4)",
+    pipelineStages: [
+      { step: 1, phase: "Total Dataset Loss", badge: "Global Sum", mathExpression: "J(w) = \\frac{1}{2m} \\sum_{i=1}^m (h_w(x^{(i)}) - y^{(i)})^2", insight: "Averages empirical risk across every sample in the dataset, producing zero variance." },
+      { step: 2, phase: "Exact Gradient Vector", badge: "Subspace Calculus", mathExpression: "\\nabla J(w) = \\frac{1}{m} X^T (Xw - y)", insight: "Orthogonal to contour equipotential lines; points in the direction of steepest loss ascent." },
+      { step: 3, phase: "Deterministic Step", badge: "Lipschitz α", mathExpression: "w^{(t+1)} = w^{(t)} - \\alpha \\nabla J(w^{(t)})", insight: "Guaranteed monotonic decrease in loss J(w^{(t+1)}) \\le J(w^{(t)}) when learning rate alpha < 2/L." },
+      { step: 4, phase: "Stationary Convergence", badge: "Critical Point", mathExpression: "\\|\\nabla J(w^*)\\|_2 < \\epsilon \\implies \\nabla J(w^*) = 0", insight: "Stops exactly at the global minimum with zero asymptotic oscillations." },
+    ],
+    math: {
+      objective: "J(w) = \\frac{1}{2m} \\|Xw - y\\|_2^2 = \\frac{1}{2m} \\sum_{i=1}^m \\left(w^T x^{(i)} - y^{(i)}\\right)^2",
+      objectiveExpl: "Batch Mean Squared Error measures global discrepancy across all m training examples simultaneously.",
+      gradient: "\\nabla_w J(w) = \\frac{1}{m} X^T (Xw - y) = \\frac{1}{m} \\sum_{i=1}^m \\left(w^T x^{(i)} - y^{(i)}\\right) x^{(i)}",
+      gradientExpl: "The gradient vector aggregates sensitivity over every row in feature matrix X. Computing this requires O(m · d) FLOPs per step.",
+      closedForm: "w^{(t+1)} = w^{(t)} - \\alpha \\nabla J(w^{(t)}), \\quad \\text{Monotonic convergence for } 0 < \\alpha < \\frac{2}{L}",
+      closedFormExpl: "For L-Lipschitz smooth objectives, the parameter update contracts distances to the optimum w* when alpha < 2/L, where L = lambda_max(X^T X / m).",
+      keyPoints: [
+        "Deterministic: Every epoch follows an identical path; zero stochastic variance or wandering.",
+        "Global Monotonicity: Guaranteed to decrease loss at every step given appropriately tuned learning rate alpha.",
+        "Computational Bottleneck: Full O(m * d) dataset pass required per parameter update; prohibitive for massive datasets (m > 10^7).",
+        "Vulnerable to Local Saddles: Can halt or slow down near saddle points or flat plateaus where ||grad J|| ≈ 0."
+      ]
+    },
+    pythonCode: `import numpy as np
+
+class BatchGradientDescent:
+    """
+    Exact Batch Gradient Descent (BGD) for Linear Regression.
+    Computes the true gradient over the entire dataset X in O(m * d) time.
+    """
+    def __init__(self, lr=0.05, max_iter=1000, tol=1e-6):
+        self.lr = lr
+        self.max_iter = max_iter
+        self.tol = tol
+        self.weights = None
+        self.bias = 0.0
+        self.loss_history = []
+
+    def fit(self, X: np.ndarray, y: np.ndarray):
+        m, n_features = X.shape
+        self.weights = np.zeros(n_features)
+        self.bias = 0.0
+        self.loss_history = []
+
+        for step in range(self.max_iter):
+            # 1. Forward Pass: Predictions & Residuals
+            y_pred = np.dot(X, self.weights) + self.bias
+            residuals = y_pred - y
+            loss = (1.0 / (2.0 * m)) * np.sum(residuals ** 2)
+            self.loss_history.append(loss)
+
+            # 2. Exact Vectorized Gradient over entire batch
+            grad_w = (1.0 / m) * np.dot(X.T, residuals)
+            grad_b = (1.0 / m) * np.sum(residuals)
+
+            # 3. Check First-Order Optimality (Stationary Point)
+            grad_norm = np.sqrt(np.sum(grad_w ** 2) + grad_b ** 2)
+            if grad_norm < self.tol:
+                break
+
+            # 4. Parameter Update Step
+            self.weights -= self.lr * grad_w
+            self.bias -= self.lr * grad_b
+
+        return self
+
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        return np.dot(X, self.weights) + self.bias`
+  },
+  {
+    id: "stochastic-gradient-descent",
+    name: "Stochastic Gradient Descent (SGD)",
+    paradigm: "optimization",
+    badge: "Mini-Batch & Noise Exploration",
+    summary: "Samples random subsets (or single instances) to compute noisy, unbiased gradient approximations, escaping saddle points and scaling to big data.",
+    lossSurface3d: "x^2 - y^2 + 0.1*(x^4 + y^4)",
+    lossSurfaceName: "Non-Convex Saddle Landscape (Twin Basins)",
+    pipelineStages: [
+      { step: 1, phase: "Mini-Batch Sampling", badge: "Sub-sample B << m", mathExpression: "\\mathcal{B}_t \\subset \\{1, \\dots, m\\}, \\quad |\\mathcal{B}_t| = B", insight: "Draws small random subsets of training data, reducing per-step compute from O(m) to O(B)." },
+      { step: 2, phase: "Unbiased Gradient Estimate", badge: "E[g] = ∇J", mathExpression: "g_t(w) = \\frac{1}{B} \\sum_{i \\in \\mathcal{B}_t} \\nabla f_i(w), \\quad \\mathbb{E}[g_t] = \\nabla J(w)", insight: "Expectation matches true gradient, while stochastic noise Var(g) acts as implicit regularization." },
+      { step: 3, phase: "Stochastic Step & Saddle Escape", badge: "Noisy Jitter", mathExpression: "w^{(t+1)} = w^{(t)} - \\alpha_t g_t(w^{(t)})", insight: "Fluctuations knock parameters out of shallow local minima and strict saddle points." },
+      { step: 4, phase: "Robbins-Monro Annealing", badge: "Decay Schedule", mathExpression: "\\alpha_t = \\frac{\\alpha_0}{1 + \\lambda t}, \\quad \\sum \\alpha_t = \\infty, \\; \\sum \\alpha_t^2 < \\infty", insight: "Gradually diminishes step variance, causing parameters to settle into the true global optimum." },
+    ],
+    math: {
+      objective: "J(w) = \\mathbb{E}_{(x, y) \\sim \\mathcal{D}}[\\ell(w; x, y)] \\approx \\frac{1}{m} \\sum_{i=1}^m \\ell_i(w)",
+      objectiveExpl: "Approximates the full population risk by optimizing mini-batches of size B sampled independently from distribution D.",
+      gradient: "g_t(w) = \\frac{1}{B} \\sum_{i \\in \\mathcal{B}_t} \\nabla \\ell_i(w), \\quad \\mathbb{E}[g_t(w) \\mid w] = \\nabla J(w), \\quad \\operatorname{Var}(g_t) = \\frac{\\sigma^2}{B}",
+      gradientExpl: "The stochastic gradient is an unbiased estimator of true gradient. Variance is inversely proportional to batch size B.",
+      closedForm: "w_{t+1} = w_t - \\alpha_t g_t, \\quad \\sum_{t=1}^\\infty \\alpha_t = \\infty, \\quad \\sum_{t=1}^\\infty \\alpha_t^2 < \\infty",
+      closedFormExpl: "The Robbins-Monro convergence conditions guarantee almost sure convergence (w_t -> w*) even with continuous gradient noise.",
+      keyPoints: [
+        "O(1) Step Cost: Independent of total dataset size m; updates parameters immediately after inspecting small batches.",
+        "Implicit Regularization: Gradient variance prevents overfitting to individual training examples.",
+        "Saddle Point Escape: Stochastic noise perturbs trajectories along directions of negative curvature (escape saddles).",
+        "Learning Rate Annealing: Requires learning rate decay (alpha_t -> 0) to avoid random walk wandering around the optimum."
+      ]
+    },
+    pythonCode: `import numpy as np
+
+class StochasticGradientDescent:
+    """
+    Mini-Batch / Stochastic Gradient Descent (SGD) with Learning Rate Decay.
+    Samples random mini-batches of size B to provide fast, unbiased gradient updates.
+    """
+    def __init__(self, lr=0.1, batch_size=32, epochs=50, decay=0.001):
+        self.lr0 = lr
+        self.batch_size = batch_size
+        self.epochs = epochs
+        self.decay = decay
+        self.weights = None
+        self.bias = 0.0
+        self.loss_history = []
+
+    def fit(self, X: np.ndarray, y: np.ndarray):
+        m, n_features = X.shape
+        self.weights = np.zeros(n_features)
+        self.bias = 0.0
+        self.loss_history = []
+        global_step = 0
+
+        for epoch in range(self.epochs):
+            # 1. Shuffle data at the beginning of each epoch
+            indices = np.random.permutation(m)
+            X_shuffled = X[indices]
+            y_shuffled = y[indices]
+
+            for i in range(0, m, self.batch_size):
+                # 2. Extract mini-batch (B samples)
+                X_batch = X_shuffled[i : i + self.batch_size]
+                y_batch = y_shuffled[i : i + self.batch_size]
+                B = X_batch.shape[0]
+
+                # 3. Learning Rate Decay: Robbins-Monro schedule
+                lr_t = self.lr0 / (1.0 + self.decay * global_step)
+
+                # 4. Unbiased Stochastic Gradient Estimate
+                y_pred = np.dot(X_batch, self.weights) + self.bias
+                residuals = y_pred - y_batch
+                grad_w = (1.0 / B) * np.dot(X_batch.T, residuals)
+                grad_b = (1.0 / B) * np.sum(residuals)
+
+                # 5. Stochastic Parameter Step
+                self.weights -= lr_t * grad_w
+                self.bias -= lr_t * grad_b
+                global_step += 1
+
+            # Track full-dataset loss after each epoch
+            full_pred = np.dot(X, self.weights) + self.bias
+            full_loss = (1.0 / (2.0 * m)) * np.sum((full_pred - y) ** 2)
+            self.loss_history.append(full_loss)
+
+        return self
+
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        return np.dot(X, self.weights) + self.bias`
+  },
+  {
     id: "adam-optimizer",
     name: "Adam, RMSProp & Momentum",
     paradigm: "optimization",
@@ -1571,6 +1732,641 @@ export function DynamicModelCanvas({
 }
 
 /* ------------------------------------------------------------------ */
+/* Interactive Gradient Descent & Stochastic Descent Studio           */
+/* ------------------------------------------------------------------ */
+
+export function GradientDescentLab({
+  topic,
+  activePipelineStep,
+  onStepChange,
+}: {
+  topic: MLTopic;
+  activePipelineStep: number;
+  onStepChange: (step: number) => void;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const isSGD = topic.id === "stochastic-gradient-descent";
+  const isAdam = topic.id === "adam-optimizer";
+
+  // Landscape selection
+  const [landscape, setLandscape] = useState<"bowl" | "rosenbrock" | "saddle" | "beale">(
+    isSGD ? "saddle" : isAdam ? "rosenbrock" : "bowl"
+  );
+
+  // Hyperparameters
+  const [learningRate, setLearningRate] = useState<number>(isSGD ? 0.08 : 0.05);
+  const [noiseVariance, setNoiseVariance] = useState<number>(0.35); // for SGD
+  const [decayEnabled, setDecayEnabled] = useState<boolean>(true); // Robbins-Monro
+  const [isRunning, setIsRunning] = useState<boolean>(false);
+  const [stepCount, setStepCount] = useState<number>(0);
+
+  // Initial coordinates
+  const defaultStart = useMemo(() => {
+    if (landscape === "bowl") return { x: -2.4, y: 1.8 };
+    if (landscape === "rosenbrock") return { x: -1.5, y: 1.5 };
+    if (landscape === "saddle") return { x: 0.06, y: 0.12 }; // Close to saddle (0,0) to demonstrate escape
+    return { x: 1.0, y: 1.5 };
+  }, [landscape]);
+
+  const [w, setW] = useState<{ x: number; y: number }>(defaultStart);
+  const [path, setPath] = useState<Array<{ x: number; y: number }>>([defaultStart]);
+  const [recentGrad, setRecentGrad] = useState<{ gx: number; gy: number; norm: number }>({ gx: 0, gy: 0, norm: 0 });
+  const [lastNoiseVector, setLastNoiseVector] = useState<{ nx: number; ny: number }>({ nx: 0, ny: 0 });
+  const [status, setStatus] = useState<"READY" | "DESCENDING" | "CONVERGED" | "SADDLE ESCAPED" | "OSCILLATING">("READY");
+
+  // Adam momentum state
+  const [mVec, setMVec] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [vVec, setVVec] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Reset landscape & coordinates when algorithm changes
+  useEffect(() => {
+    const initLandscape = topic.id === "stochastic-gradient-descent" ? "saddle" : topic.id === "adam-optimizer" ? "rosenbrock" : "bowl";
+    setLandscape(initLandscape);
+    const initStart = initLandscape === "bowl" ? { x: -2.4, y: 1.8 } : initLandscape === "saddle" ? { x: 0.06, y: 0.12 } : { x: -1.5, y: 1.5 };
+    setW(initStart);
+    setPath([initStart]);
+    setStepCount(0);
+    setIsRunning(false);
+    setStatus("READY");
+    setMVec({ x: 0, y: 0 });
+    setVVec({ x: 0, y: 0 });
+  }, [topic.id]);
+
+  // Mathematical surfaces and analytical gradients
+  const evalLandscape = useCallback((x: number, y: number) => {
+    if (landscape === "bowl") {
+      // Convex Elliptic Paraboloid: 0.5 * x^2 + 2 * y^2
+      const loss = 0.5 * x * x + 2 * y * y;
+      const gx = x;
+      const gy = 4 * y;
+      return { loss, gx, gy, minX: 0, minY: 0 };
+    } else if (landscape === "rosenbrock") {
+      // Rosenbrock Banana Ravine: (1 - x)^2 + 10 * (y - x^2)^2
+      const loss = Math.pow(1 - x, 2) + 10 * Math.pow(y - x * x, 2);
+      const gx = -2 * (1 - x) - 40 * x * (y - x * x);
+      const gy = 20 * (y - x * x);
+      return {
+        loss,
+        gx: Math.max(-40, Math.min(40, gx)),
+        gy: Math.max(-40, Math.min(40, gy)),
+        minX: 1,
+        minY: 1,
+      };
+    } else if (landscape === "saddle") {
+      // Non-Convex Double Well Saddle: x^2 - y^2 + 0.1*(x^4 + y^4)
+      const loss = x * x - y * y + 0.1 * (Math.pow(x, 4) + Math.pow(y, 4));
+      const gx = 2 * x + 0.4 * Math.pow(x, 3);
+      const gy = -2 * y + 0.4 * Math.pow(y, 3);
+      return { loss, gx, gy, minX: 0, minY: 2.236 };
+    } else {
+      // Beale Surface: (1.5 - x + xy)^2 + (2.25 - x + xy^2)^2
+      const loss = Math.pow(1.5 - x + x * y, 2) + Math.pow(2.25 - x + x * y * y, 2);
+      const gx = 2 * (1.5 - x + x * y) * (y - 1) + 2 * (2.25 - x + x * y * y) * (y * y - 1);
+      const gy = 2 * (1.5 - x + x * y) * x + 4 * (2.25 - x + x * y * y) * x * y;
+      return {
+        loss,
+        gx: Math.max(-30, Math.min(30, gx)),
+        gy: Math.max(-30, Math.min(30, gy)),
+        minX: 3,
+        minY: 0.5,
+      };
+    }
+  }, [landscape]);
+
+  // Execute one discrete descent step
+  const performStep = useCallback(() => {
+    setW((currW) => {
+      const { gx, gy } = evalLandscape(currW.x, currW.y);
+      const norm = Math.hypot(gx, gy);
+      setRecentGrad({ gx, gy, norm });
+
+      if (norm < 0.02 && !isSGD) {
+        setStatus("CONVERGED");
+        setIsRunning(false);
+        return currW;
+      }
+
+      let effLr = learningRate;
+      if (isSGD && decayEnabled) {
+        // Robbins-Monro schedule: alpha_t = alpha_0 / (1 + 0.015 * t)
+        effLr = learningRate / (1 + 0.015 * stepCount);
+      }
+
+      let stepX = 0;
+      let stepY = 0;
+
+      if (isSGD) {
+        // Stochastic perturbation (Box-Muller gaussian noise)
+        const u1 = Math.max(1e-6, Math.random());
+        const u2 = Math.random();
+        const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+        const z1 = Math.sqrt(-2.0 * Math.log(u1)) * Math.sin(2.0 * Math.PI * u2);
+        const noiseMag = noiseVariance * (norm * 0.35 + 0.5);
+        const noiseX = z0 * noiseMag;
+        const noiseY = z1 * noiseMag;
+        setLastNoiseVector({ nx: noiseX, ny: noiseY });
+
+        const stochGx = gx + noiseX;
+        const stochGy = gy + noiseY;
+        stepX = -effLr * stochGx;
+        stepY = -effLr * stochGy;
+
+        if (landscape === "saddle" && Math.abs(currW.y) > 0.8) {
+          setStatus("SADDLE ESCAPED");
+        } else {
+          setStatus("DESCENDING");
+        }
+      } else if (isAdam) {
+        // Adam optimization
+        const t = stepCount + 1;
+        const nm_x = 0.9 * mVec.x + 0.1 * gx;
+        const nm_y = 0.9 * mVec.y + 0.1 * gy;
+        const nv_x = 0.999 * vVec.x + 0.001 * (gx * gx);
+        const nv_y = 0.999 * vVec.y + 0.001 * (gy * gy);
+        setMVec({ x: nm_x, y: nm_y });
+        setVVec({ x: nv_x, y: nv_y });
+        const m_hat_x = nm_x / (1 - Math.pow(0.9, t));
+        const m_hat_y = nm_y / (1 - Math.pow(0.9, t));
+        const v_hat_x = nv_x / (1 - Math.pow(0.999, t));
+        const v_hat_y = nv_y / (1 - Math.pow(0.999, t));
+        stepX = -effLr * (m_hat_x / (Math.sqrt(v_hat_x) + 1e-8));
+        stepY = -effLr * (m_hat_y / (Math.sqrt(v_hat_y) + 1e-8));
+        setStatus(norm < 0.03 ? "CONVERGED" : "DESCENDING");
+      } else {
+        // Deterministic Batch Gradient Descent
+        stepX = -effLr * gx;
+        stepY = -effLr * gy;
+
+        if (norm > 30) {
+          setStatus("OSCILLATING");
+        } else {
+          setStatus("DESCENDING");
+        }
+      }
+
+      const nextX = Math.max(-3.5, Math.min(3.5, currW.x + stepX));
+      const nextY = Math.max(-3.5, Math.min(3.5, currW.y + stepY));
+
+      const newPoint = { x: nextX, y: nextY };
+      setPath((prev) => [...prev.slice(-100), newPoint]);
+      setStepCount((s) => s + 1);
+      return newPoint;
+    });
+  }, [evalLandscape, learningRate, isSGD, isAdam, decayEnabled, noiseVariance, stepCount, landscape, mVec, vVec]);
+
+  // Continuous animation cycle
+  useEffect(() => {
+    if (!isRunning) return;
+    const interval = setInterval(performStep, isSGD ? 40 : 45);
+    return () => clearInterval(interval);
+  }, [isRunning, performStep, isSGD]);
+
+  // Click on contour canvas to reposition starting parameters
+  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const px = e.clientX - rect.left;
+    const py = e.clientY - rect.top;
+    const wCanvas = rect.width;
+    const hCanvas = rect.height;
+    const cx = wCanvas / 2;
+    const cy = hCanvas / 2;
+    const scale = Math.min(wCanvas, hCanvas) / 7.0;
+
+    const mathX = (px - cx) / scale;
+    const mathY = -(py - cy) / scale;
+
+    const clampedX = Math.max(-3.2, Math.min(3.2, mathX));
+    const clampedY = Math.max(-3.2, Math.min(3.2, mathY));
+
+    setW({ x: clampedX, y: clampedY });
+    setPath([{ x: clampedX, y: clampedY }]);
+    setStepCount(0);
+    setMVec({ x: 0, y: 0 });
+    setVVec({ x: 0, y: 0 });
+    setStatus("READY");
+    toast.success(`Position placed at (${clampedX.toFixed(2)}, ${clampedY.toFixed(2)})`);
+  };
+
+  // Render 2D contour isolines and trajectory
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const width = canvas.parentElement?.clientWidth || 560;
+    const height = 400;
+
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+
+    ctx.save();
+    ctx.scale(dpr, dpr);
+
+    const cx = width / 2;
+    const cy = height / 2;
+    const scale = Math.min(width, height) / 7.0;
+
+    // Background: Midnight Black #08090B
+    ctx.fillStyle = "#08090B";
+    ctx.fillRect(0, 0, width, height);
+
+    // Subtle coordinate axes
+    ctx.strokeStyle = "rgba(250, 246, 243, 0.08)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, cy);
+    ctx.lineTo(width, cy);
+    ctx.moveTo(cx, 0);
+    ctx.lineTo(cx, height);
+    ctx.stroke();
+
+    // Contour Isolines
+    const levels = [0.15, 0.45, 1.0, 2.2, 4.0, 7.5, 12.0, 18.0, 26.0, 36.0];
+    const { minX, minY } = evalLandscape(0, 0);
+
+    levels.forEach((lvl, idx) => {
+      ctx.strokeStyle = `rgba(250, 246, 243, ${0.04 + idx * 0.02})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      const numSteps = 72;
+      for (let i = 0; i <= numSteps; i++) {
+        const theta = (i / numSteps) * Math.PI * 2;
+        let dx = 0;
+        let dy = 0;
+        if (landscape === "bowl") {
+          dx = Math.cos(theta) * Math.sqrt(lvl * 2.0);
+          dy = Math.sin(theta) * Math.sqrt(lvl * 0.5);
+        } else if (landscape === "rosenbrock") {
+          const r = Math.sqrt(lvl) * 0.6;
+          dx = 1.0 + r * Math.cos(theta);
+          dy = 1.0 + r * Math.sin(theta) + (dx - 1) * (dx - 1);
+        } else if (landscape === "saddle") {
+          dx = Math.cos(theta) * Math.sqrt(lvl * 1.2);
+          dy = Math.sin(theta) * Math.sqrt(lvl * 0.9) + (Math.sin(theta) > 0 ? 1.5 : -1.5) * 0.5;
+        } else {
+          dx = 3.0 + Math.cos(theta) * Math.sqrt(lvl * 0.8);
+          dy = 0.5 + Math.sin(theta) * Math.sqrt(lvl * 0.8);
+        }
+        const px = cx + dx * scale;
+        const py = cy - dy * scale;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.stroke();
+    });
+
+    // Optimum Target 🎯
+    const targetPx = cx + minX * scale;
+    const targetPy = cy - minY * scale;
+    ctx.fillStyle = "#CDF22B";
+    ctx.beginPath();
+    ctx.arc(targetPx, targetPy, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#08090B";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Pulse ring around target
+    ctx.strokeStyle = "rgba(205, 242, 43, 0.4)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(targetPx, targetPy, 10, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Trajectory History Path
+    if (path.length > 1) {
+      ctx.strokeStyle = "#CDF22B";
+      ctx.lineWidth = isSGD ? 1.8 : 2.5;
+      ctx.shadowColor = "#CDF22B";
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      path.forEach((pt, idx) => {
+        const px = cx + pt.x * scale;
+        const py = cy - pt.y * scale;
+        if (idx === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      });
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // Dots along trajectory
+      path.forEach((pt, idx) => {
+        if (idx % 2 === 0 || idx === path.length - 1) {
+          const px = cx + pt.x * scale;
+          const py = cy - pt.y * scale;
+          ctx.fillStyle = idx === path.length - 1 ? "#CDF22B" : "rgba(250, 246, 243, 0.5)";
+          ctx.beginPath();
+          ctx.arc(px, py, idx === path.length - 1 ? 5 : 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+    }
+
+    // Directional Gradient Vector Arrow (-α ∇J)
+    const currPx = cx + w.x * scale;
+    const currPy = cy - w.y * scale;
+    const { gx, gy } = evalLandscape(w.x, w.y);
+    const gradNorm = Math.hypot(gx, gy);
+
+    if (gradNorm > 1e-4) {
+      const arrowLength = Math.min(50, Math.max(16, gradNorm * (learningRate * 90)));
+      const dirX = -gx / gradNorm;
+      const dirY = gy / gradNorm; // Inverted for canvas y-axis
+
+      const tipX = currPx + dirX * arrowLength;
+      const tipY = currPy + dirY * arrowLength;
+
+      ctx.strokeStyle = "#CDF22B";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(currPx, currPy);
+      ctx.lineTo(tipX, tipY);
+      ctx.stroke();
+
+      const angle = Math.atan2(dirY, dirX);
+      const headLen = 7;
+      ctx.fillStyle = "#CDF22B";
+      ctx.beginPath();
+      ctx.moveTo(tipX, tipY);
+      ctx.lineTo(tipX - headLen * Math.cos(angle - Math.PI / 6), tipY - headLen * Math.sin(angle - Math.PI / 6));
+      ctx.lineTo(tipX - headLen * Math.cos(angle + Math.PI / 6), tipY - headLen * Math.sin(angle + Math.PI / 6));
+      ctx.closePath();
+      ctx.fill();
+
+      // For SGD: also draw noisy sample direction
+      if (isSGD && (lastNoiseVector.nx !== 0 || lastNoiseVector.ny !== 0)) {
+        const noiseTipX = currPx + (dirX * arrowLength + lastNoiseVector.nx * 7);
+        const noiseTipY = currPy + (dirY * arrowLength - lastNoiseVector.ny * 7);
+        ctx.strokeStyle = "rgba(250, 246, 243, 0.45)";
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(currPx, currPy);
+        ctx.lineTo(noiseTipX, noiseTipY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // Starting marker
+    const startPt = path[0] || w;
+    const startPx = cx + startPt.x * scale;
+    const startPy = cy - startPt.y * scale;
+    ctx.strokeStyle = "#FAF6F3";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(startPx, startPy, 6, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.restore();
+  }, [w, path, evalLandscape, landscape, isSGD, learningRate, lastNoiseVector]);
+
+  const currEval = evalLandscape(w.x, w.y);
+  const activeStage = topic.pipelineStages[activePipelineStep] || topic.pipelineStages[0];
+
+  return (
+    <div className="space-y-4">
+      {/* Landscape & Execution Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-[#08090B] border border-[#1E2227] text-xs">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="font-mono text-[#FAF6F3]/50 font-semibold mr-1">Landscape:</span>
+          {[
+            { id: "bowl", label: "Elliptic Bowl (κ=4)" },
+            { id: "saddle", label: "Saddle Point" },
+            { id: "rosenbrock", label: "Rosenbrock Valley" },
+            { id: "beale", label: "Beale Surface" },
+          ].map((l) => (
+            <button
+              key={l.id}
+              onClick={() => {
+                setLandscape(l.id as any);
+                const nextStart = l.id === "bowl" ? { x: -2.4, y: 1.8 } : l.id === "saddle" ? { x: 0.06, y: 0.12 } : { x: -1.5, y: 1.5 };
+                setW(nextStart);
+                setPath([nextStart]);
+                setStepCount(0);
+                setIsRunning(false);
+                setStatus("READY");
+              }}
+              className={cn(
+                "px-2.5 py-1 rounded-xl font-mono text-xs transition-all",
+                landscape === l.id
+                  ? "bg-[#CDF22B] text-[#08090B] font-bold shadow-[0_0_12px_rgba(205,242,43,0.3)]"
+                  : "bg-[#14171A] border border-[#1E2227] text-[#FAF6F3]/70 hover:text-[#FAF6F3]"
+              )}
+            >
+              {l.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-2 ml-auto">
+          <Button
+            size="sm"
+            onClick={() => setIsRunning(!isRunning)}
+            className="h-8 text-xs font-mono font-bold bg-[#CDF22B] text-[#08090B] hover:bg-[#bde024] shadow-[0_0_12px_rgba(205,242,43,0.3)] gap-1.5"
+          >
+            {isRunning ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+            {isRunning ? "Pause" : isSGD ? "Run SGD" : "Run Descent"}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setIsRunning(false);
+              performStep();
+            }}
+            className="h-8 text-xs font-mono border-[#1E2227] bg-[#14171A] text-[#FAF6F3] hover:text-[#CDF22B] hover:border-[#CDF22B]/40 gap-1.5"
+          >
+            <FastForward className="h-3.5 w-3.5" />
+            Step 1 Iter
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setIsRunning(false);
+              setW(defaultStart);
+              setPath([defaultStart]);
+              setStepCount(0);
+              setMVec({ x: 0, y: 0 });
+              setVVec({ x: 0, y: 0 });
+              setStatus("READY");
+            }}
+            className="h-8 text-xs font-mono text-[#FAF6F3]/70 hover:text-[#FAF6F3] border border-[#1E2227] bg-[#14171A] gap-1"
+          >
+            <RotateCcw className="h-3 w-3" /> Reset
+          </Button>
+        </div>
+      </div>
+
+      {/* Interactive 2D Contour Canvas */}
+      <div className="relative rounded-3xl border border-[#1E2227] bg-[#08090B] overflow-hidden shadow-2xl">
+        <canvas
+          ref={canvasRef}
+          onClick={handleCanvasClick}
+          className="w-full block cursor-crosshair"
+          title="Click anywhere to place initial parameter w"
+        />
+        <div className="absolute top-3 left-3 text-[10px] font-mono px-2.5 py-1 rounded-lg bg-[#08090B]/90 border border-[#1E2227] text-[#FAF6F3]/70 flex items-center gap-2 backdrop-blur-md">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#CDF22B] animate-pulse" />
+          <span>Step {stepCount} • Click anywhere to drop start position (w₁, w₂)</span>
+        </div>
+        <div className="absolute top-3 right-3 text-[10px] font-mono px-2.5 py-1 rounded-lg bg-[#08090B]/90 border border-[#1E2227] text-[#FAF6F3]/70 backdrop-blur-md">
+          🎯 Target: Global Minimum
+        </div>
+      </div>
+
+      {/* Real-Time Telemetry HUD */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-xs">
+        <div className="p-3 rounded-2xl border border-[#1E2227] bg-[#0C0E12] flex flex-col gap-1">
+          <span className="text-[10px] text-[#FAF6F3]/50 uppercase tracking-wider">Parameters (w₁, w₂)</span>
+          <span className="text-sm font-bold text-[#FAF6F3]">
+            ({w.x.toFixed(3)}, {w.y.toFixed(3)})
+          </span>
+          <span className="text-[10px] text-[#FAF6F3]/40">Dimension: 2D Plane</span>
+        </div>
+
+        <div className="p-3 rounded-2xl border border-[#1E2227] bg-[#0C0E12] flex flex-col gap-1">
+          <span className="text-[10px] text-[#FAF6F3]/50 uppercase tracking-wider">Current Loss J(w)</span>
+          <span className="text-sm font-bold text-[#CDF22B]">
+            {currEval.loss.toFixed(4)}
+          </span>
+          <span className="text-[10px] text-[#FAF6F3]/40">Objective Cost</span>
+        </div>
+
+        <div className="p-3 rounded-2xl border border-[#1E2227] bg-[#0C0E12] flex flex-col gap-1">
+          <span className="text-[10px] text-[#FAF6F3]/50 uppercase tracking-wider">Gradient Norm ||∇J||</span>
+          <span className="text-sm font-bold text-[#FAF6F3]">
+            {recentGrad.norm.toFixed(4)}
+          </span>
+          <span className="text-[10px] text-[#FAF6F3]/40">First-Order Sensitivity</span>
+        </div>
+
+        <div className="p-3 rounded-2xl border border-[#1E2227] bg-[#0C0E12] flex flex-col gap-1">
+          <span className="text-[10px] text-[#FAF6F3]/50 uppercase tracking-wider">Trajectory Status</span>
+          <span
+            className={cn(
+              "text-xs font-bold truncate",
+              status === "CONVERGED" || status === "SADDLE ESCAPED"
+                ? "text-[#CDF22B]"
+                : status === "OSCILLATING"
+                ? "text-amber-400"
+                : "text-[#FAF6F3]"
+            )}
+          >
+            {status}
+          </span>
+          <span className="text-[10px] text-[#FAF6F3]/40">
+            {isSGD ? (decayEnabled ? "Annealed Schedule" : "Constant α") : "Monotonic Batch"}
+          </span>
+        </div>
+      </div>
+
+      {/* Hyperparameter Tuning Sliders */}
+      <div className="p-3.5 rounded-2xl bg-[#08090B] border border-[#1E2227] text-xs font-mono space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="text-[#FAF6F3] font-semibold whitespace-nowrap">
+              Learning Rate (α = {learningRate.toFixed(3)}):
+            </span>
+            <Slider
+              value={[learningRate]}
+              min={0.005}
+              max={0.35}
+              step={0.005}
+              onValueChange={([val]) => setLearningRate(val)}
+              className="w-36 sm:w-48"
+            />
+          </div>
+
+          {isSGD && (
+            <div className="flex items-center gap-3">
+              <span className="text-[#FAF6F3] font-semibold whitespace-nowrap">
+                Mini-Batch Noise (σ = {noiseVariance.toFixed(2)}):
+              </span>
+              <Slider
+                value={[noiseVariance]}
+                min={0.05}
+                max={0.9}
+                step={0.05}
+                onValueChange={([val]) => setNoiseVariance(val)}
+                className="w-32 sm:w-40"
+              />
+            </div>
+          )}
+
+          {isSGD && (
+            <button
+              type="button"
+              onClick={() => setDecayEnabled(!decayEnabled)}
+              className={cn(
+                "px-3 py-1 rounded-xl text-xs font-mono transition-all border",
+                decayEnabled
+                  ? "bg-[#CDF22B]/15 border-[#CDF22B] text-[#CDF22B] font-bold shadow-[0_0_8px_rgba(205,242,43,0.2)]"
+                  : "bg-[#14171A] border-[#1E2227] text-[#FAF6F3]/60 hover:text-[#FAF6F3]"
+              )}
+            >
+              Robbins-Monro Decay: {decayEnabled ? "ENABLED" : "OFF"}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* 4-Phase Pipeline Stages Sync */}
+      <div className="flex items-center justify-between p-3 rounded-2xl bg-[#08090B] border border-[#1E2227]">
+        <div className="flex items-center gap-2">
+          <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#CDF22B]/15 text-[#CDF22B] font-mono text-xs font-bold border border-[#CDF22B]/30">
+            {activeStage.step}
+          </span>
+          <div>
+            <span className="text-xs font-mono font-bold text-[#CDF22B] uppercase tracking-wider mr-2">
+              Phase {activeStage.step} of {topic.pipelineStages.length}: {activeStage.phase}
+            </span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#14171A] border border-[#1E2227] text-[#FAF6F3]/70">
+              {activeStage.badge}
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={activePipelineStep === 0}
+            onClick={() => onStepChange(Math.max(0, activePipelineStep - 1))}
+            className="h-7 px-2.5 text-xs font-mono text-[#FAF6F3]/70 hover:text-[#FAF6F3] border border-[#1E2227] bg-[#14171A]"
+          >
+            <ChevronLeft className="h-3 w-3" /> Prev
+          </Button>
+          <Button
+            size="sm"
+            disabled={activePipelineStep >= topic.pipelineStages.length - 1}
+            onClick={() => onStepChange(Math.min(topic.pipelineStages.length - 1, activePipelineStep + 1))}
+            className="h-7 px-3 text-xs font-mono rounded-xl bg-[#CDF22B] hover:bg-[#bde024] text-[#08090B] font-bold shadow-[0_0_15px_rgba(205,242,43,0.3)]"
+          >
+            Next <ChevronRight className="h-3 w-3" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="p-3.5 rounded-2xl bg-[#0C0E12] border border-[#1E2227] text-left space-y-1">
+        <div className="text-xs font-mono text-[#FAF6F3]">
+          <MathText tex={activeStage.mathExpression} />
+        </div>
+        <p className="text-xs text-[#FAF6F3]/70 leading-relaxed font-sans">
+          {activeStage.insight}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* 2D Contour Optimization Lab (4-Way Live Optimizer Race)            */
 /* ------------------------------------------------------------------ */
 
@@ -2055,13 +2851,7 @@ export function MLArenaTool() {
               <Brain className="h-6 w-6 stroke-[2.5]" />
             </span>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-[#CDF22B] animate-pulse shadow-[0_0_8px_#CDF22B]" />
-                <span className="text-[10px] font-mono tracking-widest text-[#CDF22B] uppercase font-bold">
-                  HIGH-PRECISION CAS ENGINE • DYNAMIC REAL-TIME SOLVERS
-                </span>
-              </div>
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight mt-0.5 text-[#FAF6F3]">
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[#FAF6F3]">
                 Machine Learning Arena
               </h1>
             </div>
@@ -2173,6 +2963,12 @@ export function MLArenaTool() {
             {studioMode === "dynamic-canvas" && (
               activeParadigm === "reinforcement" ? (
                 <QLearningGridworld />
+              ) : activeParadigm === "optimization" ? (
+                <GradientDescentLab
+                  topic={activeTopic}
+                  activePipelineStep={activePipelineStep}
+                  onStepChange={setActivePipelineStep}
+                />
               ) : (
                 <DynamicModelCanvas
                   topic={activeTopic}

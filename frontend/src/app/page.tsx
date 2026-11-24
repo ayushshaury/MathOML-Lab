@@ -66,7 +66,7 @@ const loading = () => (
       <div className="h-12 w-12 rounded-full border-2 border-emerald-500/20 animate-ping" />
       <span className="absolute inset-0 m-auto h-8 w-8 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
     </div>
-    <span className="text-xs font-mono text-muted-foreground animate-pulse">Launching High-Precision CAS Engine…</span>
+    <span className="text-xs font-mono text-muted-foreground animate-pulse">Loading instrument…</span>
   </div>
 );
 
@@ -190,15 +190,6 @@ function Header() {
             </span>
           </div>
         </button>
-
-        {/* Live System Telemetry Status */}
-        <div className="hidden xl:inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-mono text-emerald-600 dark:text-emerald-400 ml-2">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-          </span>
-          <span>CAS &amp; ML 25/25 ONLINE • 0ms DELAY</span>
-        </div>
 
         {/* Top Flagship Quick Switcher */}
         <div className="hidden lg:flex items-center gap-1.5 ml-3 border-l border-border/50 pl-3">
@@ -670,7 +661,7 @@ function ToolCard({ toolId, onOpen }: { toolId: string; onOpen: (id: string) => 
 
       <div className="mt-auto pt-3 w-full border-t border-border/40 flex items-center justify-between text-xs font-semibold text-muted-foreground group-hover:text-foreground transition-colors">
         <span className="flex items-center gap-1 font-mono text-[11px] text-emerald-500">
-          1-Click Launch
+          Open Tool
         </span>
         <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1 text-emerald-500" />
       </div>
@@ -699,12 +690,6 @@ function HomeView() {
         <div className="pointer-events-none absolute -bottom-40 -left-40 h-[450px] w-[450px] rounded-full bg-cyan-500/15 blur-[120px]" aria-hidden />
 
         <div className="relative max-w-5xl mx-auto">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 backdrop-blur-md px-4 py-1.5 text-xs font-semibold text-emerald-500 dark:text-emerald-400 mb-6 shadow-sm">
-            <Sparkles className="h-3.5 w-3.5 animate-spin" />
-            <span>Next-Gen Mathematical Computing &amp; Visualization</span>
-          </div>
-
           <h1 className="mx-auto max-w-4xl text-3xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.08]">
             Compute. Visualize.{" "}
             <span className="text-shimmer">Master Mathematics.</span>
@@ -719,10 +704,10 @@ function HomeView() {
             <HeroSearch onSearch={(id) => openTool(id)} />
           </div>
 
-          {/* ⚡ 1-Click Power Launcher Dock */}
+          {/* Quick Launcher Dock */}
           <div className="mt-8 pt-6 border-t border-border/40">
             <p className="text-xs font-mono font-bold tracking-widest text-muted-foreground uppercase mb-3.5">
-              ⚡ 1-Click Instant Instrument Launch:
+              Quick Launch:
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2">
               {[
@@ -757,10 +742,6 @@ function HomeView() {
       {/* Flagship Instruments Showcase */}
       <section className="space-y-6">
         <div className="text-center max-w-2xl mx-auto">
-          <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs font-mono font-bold text-indigo-400 mb-2">
-            <Brain className="h-3.5 w-3.5 animate-pulse" />
-            <span>CORE SUITE &amp; ML LABORATORY</span>
-          </div>
           <h2 className="text-2xl sm:text-4xl font-black tracking-tight">Flagship Intelligence Instruments</h2>
           <p className="text-xs sm:text-sm text-muted-foreground mt-2">
             Engineered from scratch for deep intuition, rigorous mathematics, and real-time visualization.
@@ -780,13 +761,7 @@ function HomeView() {
                   <Brain className="h-6 w-6" />
                 </span>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-indigo-500/10 border border-indigo-500/30 px-2.5 py-0.5 text-[10px] font-mono font-bold text-indigo-400 uppercase">
-                      New • Flagship Suite
-                    </span>
-                    <span className="text-xs font-mono text-emerald-400 font-semibold">• 5 ML Paradigms</span>
-                  </div>
-                  <h3 className="text-xl sm:text-2xl font-black tracking-tight mt-1">Machine Learning Arena</h3>
+                  <h3 className="text-xl sm:text-2xl font-black tracking-tight">Machine Learning Arena</h3>
                 </div>
               </div>
               <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
