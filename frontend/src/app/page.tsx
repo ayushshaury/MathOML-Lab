@@ -95,6 +95,7 @@ const TOOL_COMPONENTS: Record<string, React.ComponentType> = {
   "graph-3d": dynamic(() => import("@/components/tools/graph-tools").then((m) => m.Graph3DTool), { loading }),
   "image-to-equation": dynamic(() => import("@/components/tools/image-tool").then((m) => m.ImageToEquationTool), { loading }),
   "ml-arena": dynamic(() => import("@/components/tools/ml-arena-tool").then((m) => m.MLArenaTool), { loading }),
+  "eda-studio": dynamic(() => import("@/components/tools/eda-tool").then((m) => m.EDATool), { loading }),
 };
 
 /* ------------------------------------------------------------------ */
@@ -192,6 +193,7 @@ function Header() {
         {/* Top Flagship Quick Switcher */}
         <div className="hidden lg:flex items-center gap-1.5 ml-3 border-l border-border/50 pl-3">
           {[
+            { id: "eda-studio", label: "EDA Studio", icon: BarChart3, color: "text-sky-500" },
             { id: "ml-arena", label: "ML Arena", icon: Brain, color: "text-indigo-400" },
             { id: "graph-3d", label: "3D Surface", icon: Mountain, color: "text-cyan-400" },
             { id: "graph-2d", label: "2D Grapher", icon: LineChart, color: "text-emerald-400" },
@@ -697,6 +699,7 @@ function HomeView() {
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2">
               {[
+                { label: "EDA Studio", tool: "eda-studio", color: "hover:border-sky-500/50 hover:bg-sky-500/10 hover:text-sky-600 font-bold" },
                 { label: "ML Arena", tool: "ml-arena", color: "hover:border-indigo-500/50 hover:bg-indigo-500/10 hover:text-indigo-400 font-bold" },
                 { label: "Ripple Wave 3D", tool: "graph-3d", color: "hover:border-cyan-500/50 hover:bg-cyan-500/10 hover:text-cyan-400" },
                 { label: "Harmonic Wave 2D", tool: "graph-2d", color: "hover:border-emerald-500/50 hover:bg-emerald-500/10 hover:text-emerald-400" },
@@ -758,6 +761,38 @@ function HomeView() {
             <div className="flex sm:flex-col items-center sm:items-end gap-3 shrink-0 w-full sm:w-auto justify-between sm:justify-start">
               <Button className="w-full sm:w-auto gap-2 rounded-2xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-xl shadow-indigo-950/30 px-6 h-12">
                 Launch ML Arena <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* EDA Studio Showcase */}
+        <div
+          onClick={() => openTool("eda-studio")}
+          className="group relative cursor-pointer overflow-hidden rounded-[32px] glass-panel p-6 sm:p-8 border border-sky-500/40 shadow-2xl transition-all duration-300 hover:shadow-sky-500/10 hover:border-sky-500/70 hover:-translate-y-1"
+        >
+          <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-sky-500/15 blur-3xl group-hover:scale-125 transition-transform duration-700" aria-hidden />
+          <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+            <div className="space-y-3 max-w-2xl">
+              <div className="flex items-center gap-3">
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-teal-600 text-white shadow-lg shadow-sky-500/30">
+                  <BarChart3 className="h-6 w-6" />
+                </span>
+                <div>
+                  <h3 className="text-xl sm:text-2xl font-black tracking-tight">EDA Studio (Exploratory Data Analysis)</h3>
+                  <p className="text-xs text-muted-foreground font-mono">
+                    BOX PLOTS • GAUSSIAN KDE • VIOLIN ENVELOPES • CORRELATION HEATMAP • MISSING VALUE &amp; OUTLIER FIXER
+                  </p>
+                </div>
+              </div>
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                Profile continuous and categorical variables with Box Plots, Gaussian KDE, and Violin density envelopes. Diagnose skewness, detect 1.5×IQR outliers, impute missing values (mean, median, mode), and follow the full data-type decision matrix.
+              </p>
+            </div>
+
+            <div className="flex sm:flex-col items-center sm:items-end gap-3 shrink-0 w-full sm:w-auto justify-between sm:justify-start">
+              <Button className="w-full sm:w-auto gap-2 rounded-2xl font-bold bg-gradient-to-r from-sky-600 via-teal-600 to-emerald-600 hover:from-sky-500 hover:to-teal-500 text-white shadow-xl shadow-sky-950/30 px-6 h-12">
+                Launch EDA Studio <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>
           </div>

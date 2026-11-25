@@ -61,6 +61,7 @@ export const TOOLS: Tool[] = [
   { id: "geometry", name: "Geometry Calculator", category: "geometry", description: "Areas, volumes, perimeters and coordinate geometry.", keywords: ["geometry", "area", "volume", "circle", "sphere", "triangle", "distance"], icon: "Shapes" },
   // Stats
   { id: "statistics", name: "Descriptive Statistics", category: "stats", description: "Mean, median, quartiles, deviation, outliers, charts.", keywords: ["statistics", "mean", "median", "mode", "std", "variance", "quartile"], icon: "BarChart3" },
+  { id: "eda-studio", name: "EDA Studio (Exploratory Data Analysis)", category: "stats", description: "Interactive data profiling, distribution visualizer (Box Plots, KDE, Violin, Heatmap), and messy data cleaning (outliers, missing values, scaling).", keywords: ["eda", "exploratory data analysis", "box plot", "kde", "violin", "outliers", "missing values", "heatmap", "correlation", "data cleaning", "imputation", "skewness", "pairplot"], icon: "BarChart3" },
   { id: "probability", name: "Probability & Distributions", category: "stats", description: "Binomial, normal, Poisson and combinatorics.", keywords: ["probability", "binomial", "normal", "poisson", "permutation", "combination", "distribution"], icon: "Dice5" },
   { id: "regression", name: "Regression & Correlation", category: "stats", description: "Least-squares fitting with R² and residual analysis.", keywords: ["regression", "correlation", "scatter", "least squares", "fit", "r2"], icon: "LineChart" },
   { id: "hypothesis", name: "Hypothesis Testing", category: "stats", description: "z-tests and t-tests with p-values.", keywords: ["hypothesis", "z-test", "t-test", "p-value", "significance"], icon: "FlaskConical" },
@@ -123,6 +124,7 @@ export const EXAMPLES: Record<string, string[]> = {
   "trig-solver": ["sin(x) = 0.5", "cos(x) = -0.5", "tan(x) = 1", "2*sin(x) - 1 = 0"],
   geometry: ["circle", "sphere"],
   statistics: ["12 15 11 20 17 14 12 19 16 13", "2, 4, 4, 4, 5, 5, 7, 9"],
+  "eda-studio": ["Titanic Age & Fare Distribution", "Housing Outliers & Missing LotFrontage", "Cardiovascular Cholesterol Skewness"],
   probability: ["binomial", "normal", "poisson"],
   regression: ["1 2\n2 4.1\n3 5.8\n4 8.2\n5 10.1", "0 1\n1 2.2\n2 4.3\n3 7.9"],
   hypothesis: ["102 98 101 99 103 97 100 104 98 100"],
