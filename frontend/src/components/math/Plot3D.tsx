@@ -26,80 +26,71 @@ interface Cam {
   zoom: number;
 }
 
-type PaletteName = "synthwave" | "viridis" | "sunset" | "plasma" | "cyberpunk" | "coolwarm" | "emerald" | "ice";
+type PaletteName = "ocean" | "viridis" | "coolwarm" | "emerald" | "sunset" | "plasma" | "ice";
 type RenderMode = "solid" | "wireframe" | "contours" | "points";
 
 const PALETTES: Record<PaletteName, { name: string; stops: [number, number, number][] }> = {
-  synthwave: {
-    name: "Neon Synthwave",
+  ocean: {
+    name: "Apple Ocean",
     stops: [
-      [59, 7, 100],   // Deep violet
-      [192, 38, 211], // Fuchsia
-      [6, 182, 212],  // Cyan
-      [250, 204, 21], // Yellow
+      [30, 58, 138],  // Deep sapphire
+      [0, 113, 227],  // Apple blue
+      [56, 189, 248], // Sky blue
+      [224, 242, 254],// Crisp ice
     ],
   },
   viridis: {
-    name: "Viridis Perceptual",
+    name: "Viridis",
     stops: [
-      [68, 1, 84],    // Deep indigo
-      [49, 104, 142], // Teal
-      [53, 183, 121], // Emerald
-      [253, 231, 37], // Bright yellow
-    ],
-  },
-  sunset: {
-    name: "Sunset Fire",
-    stops: [
-      [30, 27, 75],   // Dark plum
-      [159, 18, 57],  // Crimson
-      [245, 158, 11], // Amber
-      [254, 240, 138],// Golden yellow
-    ],
-  },
-  plasma: {
-    name: "Fiery Plasma",
-    stops: [
-      [13, 8, 135],   // Deep navy blue
-      [156, 23, 158], // Magenta violet
-      [237, 121, 83], // Fiery coral
-      [240, 249, 33], // Neon yellow
-    ],
-  },
-  cyberpunk: {
-    name: "Cyber Neon Matrix",
-    stops: [
-      [10, 15, 30],   // Cyber black
-      [14, 165, 233], // Electric cyan
-      [236, 72, 153], // Hot neon pink
-      [52, 211, 153], // Lime emerald
+      [68, 1, 84],
+      [49, 104, 142],
+      [53, 183, 121],
+      [253, 231, 37],
     ],
   },
   coolwarm: {
-    name: "Cool-Warm Divergent",
+    name: "Cool-Warm",
     stops: [
-      [59, 130, 246], // Cool cobalt blue
-      [241, 245, 249],// Pure neutral white
-      [239, 68, 68],  // Warm fiery crimson
-      [185, 28, 28],  // Deep red
+      [37, 99, 235],
+      [241, 245, 249],
+      [239, 68, 68],
+      [153, 27, 27],
     ],
   },
   emerald: {
-    name: "Emerald Jade",
+    name: "Emerald",
     stops: [
-      [6, 78, 59],    // Deep pine
-      [5, 150, 105],  // Emerald
-      [52, 211, 153], // Mint
-      [167, 243, 208],// Soft seafoam
+      [6, 78, 59],
+      [5, 150, 105],
+      [52, 211, 153],
+      [167, 243, 208],
+    ],
+  },
+  sunset: {
+    name: "Warm Amber",
+    stops: [
+      [88, 28, 135],
+      [190, 18, 60],
+      [245, 158, 11],
+      [254, 243, 199],
+    ],
+  },
+  plasma: {
+    name: "Spectral",
+    stops: [
+      [13, 8, 135],
+      [156, 23, 158],
+      [237, 121, 83],
+      [253, 231, 37],
     ],
   },
   ice: {
-    name: "Ice Aurora",
+    name: "Slate Ice",
     stops: [
-      [15, 23, 42],   // Slate navy
-      [2, 132, 199],  // Deep sky
-      [56, 189, 248], // Sky blue
-      [248, 250, 252],// Ice white
+      [30, 41, 59],
+      [14, 165, 233],
+      [125, 211, 252],
+      [248, 250, 252],
     ],
   },
 };
@@ -134,7 +125,7 @@ export function Plot3D({ expr, className, height = 480 }: Plot3DProps) {
   const [range, setRange] = useState<[number, number]>([-5, 5]);
 
   // Aesthetic settings
-  const [palette, setPalette] = useState<PaletteName>("synthwave");
+  const [palette, setPalette] = useState<PaletteName>("ocean");
   const [renderMode, setRenderMode] = useState<RenderMode>("solid");
   const [meshRes, setMeshRes] = useState<number>(48);
   const [showZeroPlane, setShowZeroPlane] = useState<boolean>(false);
@@ -244,10 +235,10 @@ export function Plot3D({ expr, className, height = 480 }: Plot3DProps) {
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    const dark = document.documentElement.classList.contains("dark");
+    const dark = false;
     const bgGrad = ctx.createRadialGradient(size.w / 2, size.h / 2, 10, size.w / 2, size.h / 2, size.w * 0.7);
-    bgGrad.addColorStop(0, dark ? "#0f172a" : "#ffffff");
-    bgGrad.addColorStop(1, dark ? "#070b14" : "#f8fafc");
+    bgGrad.addColorStop(0, "#ffffff");
+    bgGrad.addColorStop(1, "#fafafa");
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, size.w, size.h);
 
@@ -453,12 +444,12 @@ export function Plot3D({ expr, className, height = 480 }: Plot3DProps) {
         ctx.fillStyle = q.color;
         ctx.fill();
         if (q.isContour) {
-          ctx.strokeStyle = "#ffffff";
+          ctx.strokeStyle = "rgba(15, 23, 42, 0.45)";
           ctx.lineWidth = 1.2;
           ctx.stroke();
         }
       } else if (renderMode === "points") {
-        // Sci-Fi Hologram Point Cloud Matrix
+        // Point cloud matrix
         ctx.fillStyle = q.wireColor;
         for (let k = 0; k < 4; k++) {
           ctx.beginPath();
@@ -563,7 +554,7 @@ export function Plot3D({ expr, className, height = 480 }: Plot3DProps) {
       />
 
       {/* Floating Modern Toolbar (Top Right) */}
-      <div className="absolute top-3 right-3 flex items-center gap-1.5 rounded-xl border bg-background/85 dark:bg-background/75 backdrop-blur-md p-1 shadow-md">
+      <div className="absolute top-3 right-3 flex items-center gap-1 rounded-xl border border-zinc-200/80 bg-white/90 backdrop-blur-md p-1 shadow-xs">
         <Button
           variant="ghost"
           size="icon"
@@ -585,7 +576,7 @@ export function Plot3D({ expr, className, height = 480 }: Plot3DProps) {
         <Button
           variant={autoRotate ? "secondary" : "ghost"}
           size="icon"
-          className={cn("h-8 w-8", autoRotate && "text-emerald-600 dark:text-emerald-400")}
+          className={cn("h-8 w-8", autoRotate && "text-[#0071e3] bg-zinc-100")}
           title={autoRotate ? "Pause rotation" : "Auto rotate surface"}
           onClick={() => setAutoRotate(!autoRotate)}
         >
@@ -651,7 +642,7 @@ export function Plot3D({ expr, className, height = 480 }: Plot3DProps) {
             <DropdownMenuItem onClick={() => setRenderMode("solid")}>Solid Surface</DropdownMenuItem>
             <DropdownMenuItem onClick={() => setRenderMode("wireframe")}>Wireframe Mesh</DropdownMenuItem>
             <DropdownMenuItem onClick={() => setRenderMode("contours")}>Contour Lines</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setRenderMode("points")}>Hologram Point Matrix</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setRenderMode("points")}>Point Cloud</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -673,7 +664,7 @@ export function Plot3D({ expr, className, height = 480 }: Plot3DProps) {
         <Button
           variant={showZeroPlane ? "secondary" : "ghost"}
           size="icon"
-          className={cn("h-8 w-8", showZeroPlane && "text-cyan-500 font-bold bg-cyan-500/10")}
+          className={cn("h-8 w-8", showZeroPlane && "text-[#0071e3] font-bold bg-[#0071e3]/10")}
           title={showZeroPlane ? "Hide z=0 reference plane" : "Show z=0 reference grid"}
           onClick={() => setShowZeroPlane(!showZeroPlane)}
         >
@@ -701,8 +692,8 @@ export function Plot3D({ expr, className, height = 480 }: Plot3DProps) {
       </div>
 
       {/* Domain Controls (Top Left) */}
-      <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-xl border bg-background/85 dark:bg-background/75 backdrop-blur-md px-2 py-1 shadow-md">
-        <span className="text-[11px] font-medium text-muted-foreground mr-1">Domain:</span>
+      <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-xl border border-zinc-200/80 bg-white/90 backdrop-blur-md px-2 py-1 shadow-xs">
+        <span className="text-[11px] font-medium text-zinc-500 mr-1">Domain:</span>
         {([-3, -5, -10, -20] as const).map((bound) => (
           <button
             key={bound}
@@ -711,8 +702,8 @@ export function Plot3D({ expr, className, height = 480 }: Plot3DProps) {
             className={cn(
               "rounded-md px-2 py-0.5 text-xs font-mono transition-all",
               range[0] === bound
-                ? "bg-emerald-600 text-white shadow-xs font-semibold"
-                : "hover:bg-muted text-muted-foreground"
+                ? "bg-zinc-900 text-white shadow-2xs font-medium"
+                : "hover:bg-zinc-100 text-zinc-600"
             )}
           >
             ±{Math.abs(bound)}
@@ -722,8 +713,8 @@ export function Plot3D({ expr, className, height = 480 }: Plot3DProps) {
 
       {/* Dynamic Parameter `a` Slider Bar */}
       {showParamSlider && (
-        <div className="absolute bottom-12 left-3 flex items-center gap-3 rounded-xl border bg-background/85 dark:bg-background/75 backdrop-blur-md px-3 py-1.5 shadow-md">
-          <span className="font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+        <div className="absolute bottom-12 left-3 flex items-center gap-3 rounded-xl border border-zinc-200/80 bg-white/90 backdrop-blur-md px-3 py-1.5 shadow-xs">
+          <span className="font-mono text-xs font-semibold text-zinc-800">
             a = {paramA.toFixed(2)}
           </span>
           <Slider
@@ -747,7 +738,7 @@ export function Plot3D({ expr, className, height = 480 }: Plot3DProps) {
       )}
 
       {/* Footer Navigation Tip */}
-      <div className="absolute bottom-3 right-3 text-[11px] text-muted-foreground bg-background/80 dark:bg-background/60 backdrop-blur rounded-lg px-2.5 py-1 border shadow-xs pointer-events-none">
+      <div className="absolute bottom-3 right-3 text-[11px] text-zinc-500 bg-white/85 backdrop-blur rounded-lg px-2.5 py-1 border border-zinc-200/80 shadow-2xs pointer-events-none">
         Drag to rotate · Scroll to zoom
       </div>
     </div>

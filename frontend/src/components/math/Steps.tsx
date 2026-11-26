@@ -8,31 +8,35 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-/** Step-by-step solution renderer with collapsible steps. */
+/** Step-by-step solution renderer with collapsible steps in Apple/Notion style. */
 export function StepsView({ solution }: { solution: Solution }) {
   const [collapsed, setCollapsed] = useState(false);
+
   if (solution.error && solution.steps.length === 0) {
     return (
-      <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 flex gap-3 items-start">
-        <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+      <div className="rounded-xl border border-red-200 bg-red-50/70 p-4 flex gap-3 items-start text-red-900">
+        <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
         <div>
-          <p className="font-medium text-destructive">Calculation error</p>
-          <p className="text-sm text-destructive/90 mt-1">{solution.error}</p>
+          <p className="font-semibold text-sm">Calculation Error</p>
+          <p className="text-xs text-red-700 mt-1">{solution.error}</p>
         </div>
       </div>
     );
   }
+
   return (
     <div className="space-y-4">
-      {/* final result */}
+      {/* Final Result Card */}
       {solution.resultTex && (
-        <div className="rounded-xl border-2 border-emerald-600/30 bg-emerald-600/5 dark:bg-emerald-400/10 p-4 sm:p-5">
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Result</p>
+        <div className="rounded-2xl border border-zinc-200 bg-zinc-50/80 p-5 shadow-2xs space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+              Evaluated Result
+            </span>
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              className="h-7 px-2 text-xs gap-1"
+              className="h-7 px-2.5 text-xs gap-1.5 rounded-lg border-zinc-200 hover:bg-white text-zinc-700"
               onClick={() => {
                 navigator.clipboard?.writeText(solution.resultText ?? solution.resultTex ?? "").then(
                   () => toast.success("Result copied to clipboard"),
@@ -43,55 +47,58 @@ export function StepsView({ solution }: { solution: Solution }) {
               <Copy className="h-3.5 w-3.5" /> Copy
             </Button>
           </div>
-          <MathText tex={solution.resultTex} display className="text-lg sm:text-xl" />
+          <div className="pt-1">
+            <MathText tex={solution.resultTex} display className="text-lg sm:text-xl text-zinc-900 font-semibold" />
+          </div>
         </div>
       )}
 
-      {/* error note with partial steps */}
+      {/* Partial error notice */}
       {solution.error && solution.steps.length > 0 && (
-        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 flex gap-2 items-start text-sm">
+        <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3 flex gap-2 items-start text-xs text-amber-900">
           <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
           <span>{solution.error}</span>
         </div>
       )}
 
-      {/* steps */}
-      <div>
+      {/* Step-by-Step Derivation */}
+      <div className="pt-1">
         <button
-          className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors w-full text-left"
+          className="flex items-center gap-2 text-xs font-semibold text-zinc-600 hover:text-zinc-900 transition-colors w-full text-left py-1"
           onClick={() => setCollapsed(!collapsed)}
         >
-          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          <ListChecks className="h-4 w-4" />
-          Step-by-step explanation ({solution.steps.length} {solution.steps.length === 1 ? "step" : "steps"})
+          {collapsed ? <ChevronRight className="h-4 w-4 text-zinc-400" /> : <ChevronDown className="h-4 w-4 text-zinc-400" />}
+          <ListChecks className="h-4 w-4 text-zinc-500" />
+          <span>Step-by-step derivation ({solution.steps.length} {solution.steps.length === 1 ? "step" : "steps"})</span>
         </button>
+
         {!collapsed && (
-          <ol className="mt-3 space-y-0">
+          <ol className="mt-4 space-y-0">
             {solution.steps.map((step, i) => (
-              <li key={i} className="relative pl-9 pb-4 last:pb-0">
-                {/* timeline line */}
+              <li key={i} className="relative pl-9 pb-5 last:pb-1">
+                {/* Timeline connector line */}
                 {i < solution.steps.length - 1 && (
-                  <span className="absolute left-[13px] top-8 bottom-0 w-px bg-border" aria-hidden />
+                  <span className="absolute left-[13px] top-8 bottom-0 w-px bg-zinc-200" aria-hidden />
                 )}
-                {/* number bubble */}
+                {/* Number badge */}
                 <span
                   className={cn(
-                    "absolute left-0 top-0.5 h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold",
+                    "absolute left-0 top-0.5 h-7 w-7 rounded-full flex items-center justify-center text-xs font-semibold shadow-2xs",
                     i === solution.steps.length - 1
-                      ? "bg-emerald-600 text-white"
-                      : "bg-secondary text-secondary-foreground"
+                      ? "bg-zinc-900 text-white"
+                      : "bg-white border border-zinc-200 text-zinc-700"
                   )}
                 >
                   {i + 1}
                 </span>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium leading-snug">{step.title}</p>
+                  <p className="text-sm font-semibold text-zinc-900 leading-snug">{step.title}</p>
                   {step.explanation && (
-                    <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{step.explanation}</p>
+                    <p className="text-xs text-zinc-500 mt-1 leading-relaxed">{step.explanation}</p>
                   )}
                   {step.math && (
-                    <div className="mt-2 rounded-lg bg-muted/60 dark:bg-muted/30 px-3 py-2 overflow-x-auto">
-                      <MathText tex={step.isTex ? step.math : step.math} display className="text-base" />
+                    <div className="mt-2.5 rounded-xl border border-zinc-200/80 bg-white px-3.5 py-2.5 overflow-x-auto shadow-2xs">
+                      <MathText tex={step.isTex ? step.math : step.math} display className="text-sm sm:text-base text-zinc-900" />
                     </div>
                   )}
                 </div>
@@ -101,12 +108,12 @@ export function StepsView({ solution }: { solution: Solution }) {
         )}
       </div>
 
-      {/* notes */}
+      {/* Methodological Notes */}
       {solution.notes && solution.notes.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-2 pt-2">
           {solution.notes.map((note, i) => (
-            <div key={i} className="rounded-lg border border-primary/20 bg-primary/5 p-3 flex gap-2 items-start text-sm">
-              <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+            <div key={i} className="rounded-xl border border-zinc-200/80 bg-zinc-50 p-3 flex gap-2 items-start text-xs text-zinc-600">
+              <Info className="h-4 w-4 text-zinc-400 shrink-0 mt-0.5" />
               <span>{note}</span>
             </div>
           ))}
@@ -116,12 +123,13 @@ export function StepsView({ solution }: { solution: Solution }) {
   );
 }
 
-/** Compact header shown above the input of each tool. */
+/** Clean empty state shown before calculation. */
 export function SolutionPending() {
   return (
-    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
-      <CheckCircle2 className="h-8 w-8 opacity-40" />
-      <p className="text-sm">Enter your problem and press Solve to see the full working.</p>
+    <div className="flex flex-col items-center justify-center py-14 text-zinc-400 gap-2 text-center">
+      <CheckCircle2 className="h-7 w-7 text-zinc-300" />
+      <p className="text-xs font-medium text-zinc-600">Enter your problem on the left and select Solve.</p>
+      <p className="text-[11px] text-zinc-400 max-w-xs">Detailed mathematical steps and analytical explanations will render here.</p>
     </div>
   );
 }

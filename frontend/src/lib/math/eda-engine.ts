@@ -588,38 +588,34 @@ function inferDatasetDomain(name: string, columns: ColumnProfile[]): { domain: s
   const catCount = columns.filter((c) => c.type === "categorical" || c.type === "boolean").length;
   const dateCount = columns.filter((c) => c.type === "datetime").length;
 
-  let domain = "General Structured Tabular Dataset";
+  let domain = "Tabular Dataset";
   if (/titanic|passenger|fare|survived|pclass|age|sex|embarked/.test(joinedNames)) {
-    domain = "Demographic & Survival Analytics";
+    domain = "Demographic & Passenger Data";
   } else if (/price|housing|sqft|bedroom|lot|neighborhood|mortgage|rent|estate/.test(joinedNames)) {
-    domain = "Real Estate & Property Valuation";
+    domain = "Real Estate & Housing Data";
   } else if (/cholesterol|bp|heart|patient|glucose|bmi|diagnosis|disease|symptom|medical|clinical/.test(joinedNames)) {
-    domain = "Clinical & Healthcare Diagnostics";
+    domain = "Clinical & Health Records";
   } else if (/sales|revenue|profit|order|customer|product|discount|quantity|retail|invoice/.test(joinedNames)) {
-    domain = "Commercial Sales & Retail Telemetry";
+    domain = "Sales & Retail Transactions";
   } else if (/vortex|u_vel|v_vel|w_vel|potential|flux|velocity/.test(joinedNames) && numCount >= 4) {
-    domain = "3D Physics & Vector Field Simulation";
+    domain = "3D Physics & Vector Field";
   } else if (/iris|sepal|petal|species|wine|alcohol|ph|density|sensor|x|y|z/.test(joinedNames) && numCount >= 3) {
-    domain = "Scientific Measurement & Multivariate Coordinates";
+    domain = "Scientific Measurements";
   } else if (/stock|open|close|volume|high|low|ticker|market|return|forex/.test(joinedNames)) {
-    domain = "Financial Time-Series & Market Metrics";
+    domain = "Financial Time Series";
   } else if (/salary|employee|department|attrition|experience|hr|tenure|performance/.test(joinedNames)) {
-    domain = "Workforce & Human Resources Analytics";
+    domain = "Workforce & HR Records";
   } else if (dateCount > 0 && numCount > 0) {
-    domain = "Temporal & Time-Indexed Metric Series";
+    domain = "Time-Series Dataset";
   } else if (numCount > catCount * 2 && numCount >= 3) {
-    domain = "Continuous Multivariate Numerical Dataset";
+    domain = "Numerical Dataset";
   } else if (catCount > numCount) {
-    domain = "Categorical & Survey Classification Dataset";
+    domain = "Categorical Dataset";
   }
 
-  const explanation = `Identified as a ${domain} containing ${numCount} numerical, ${catCount} categorical/boolean, and ${dateCount} temporal column(s). ${
-    numCount >= 3
-      ? "Contains sufficient numerical axes to unlock interactive 3D spatial exploration alongside 2D univariate and bivariate charts."
-      : numCount >= 1
-      ? "Composed for 2D univariate distributions, quartile box plots, and category breakdowns."
-      : "Categorical schema focused on class frequencies, proportions, and contingency bars."
-  }`;
+  const explanation = `${domain} with ${numCount} numeric, ${catCount} categorical, and ${dateCount} date ${
+    numCount + catCount + dateCount === 1 ? "column" : "columns"
+  }.`;
 
   return { domain, explanation };
 }
@@ -837,9 +833,9 @@ export function generateAutomatedInsights(profile: DatasetProfile): DataInsight[
     id: "structure_overview",
     category: "structure",
     severity: "info",
-    title: `Dataset Profile: ${profile.inferredDomain}`,
+    title: profile.inferredDomain,
     explanation: profile.domainExplanation,
-    evidence: `${profile.rowCount.toLocaleString()} rows × ${profile.columnCount} columns • ${profile.memoryFormatted} footprint`,
+    evidence: `${profile.rowCount.toLocaleString()} rows × ${profile.columnCount} columns`,
   });
 
   const validNumericCols = profile.columns.filter((c) => c.type === "numerical" && c.numStats && !c.isPotentialId);
@@ -852,7 +848,7 @@ export function generateAutomatedInsights(profile: DatasetProfile): DataInsight[
       category: "comparison",
       severity: "info",
       title: `Highest vs. Lowest Mean: "${highest.name}" & "${lowest.name}"`,
-      explanation: `Feature magnitudes vary across numerical columns. Standardize or Min-Max scale prior to clustering, PCA, or gradient-based optimization.`,
+      explanation: `Numeric features have different scales. Standardize or normalize values before clustering or gradient-based models.`,
       evidence: `${highest.name} mean = ${highest.numStats!.mean} (SD = ${highest.numStats!.stdDev}) vs. ${lowest.name} mean = ${lowest.numStats!.mean} (SD = ${lowest.numStats!.stdDev})`,
       columns: [highest.name, lowest.name],
     });
@@ -868,7 +864,7 @@ export function generateAutomatedInsights(profile: DatasetProfile): DataInsight[
         category: "correlation",
         severity: "positive",
         title: `Strong ${dir} correlation: "${top.colA}" & "${top.colB}"`,
-        explanation: `These dimensions move synchronously. Strong linear/monotonic coupling can boost predictive power or reveal collinearity.`,
+        explanation: `These columns change together closely, indicating collinearity or strong shared variation.`,
         evidence: `Pearson r = ${top.pearson}, Spearman rho = ${top.spearman} (n = ${top.n} pairs)`,
         columns: [top.colA, top.colB],
       });
@@ -878,7 +874,7 @@ export function generateAutomatedInsights(profile: DatasetProfile): DataInsight[
         category: "correlation",
         severity: "info",
         title: `Moderate linear trend: "${top.colA}" & "${top.colB}"`,
-        explanation: `Moderate correlation indicates partial association; check 2D/3D Scatter views for non-linear structure or subgroup clustering.`,
+        explanation: `Moderate association between columns. Inspect scatter plots for non-linear patterns or subgroups.`,
         evidence: `Pearson r = ${top.pearson}, Spearman rho = ${top.spearman} (n = ${top.n})`,
         columns: [top.colA, top.colB],
       });
@@ -889,8 +885,8 @@ export function generateAutomatedInsights(profile: DatasetProfile): DataInsight[
         id: `corr_weak_${weakest.colA}_${weakest.colB}`,
         category: "correlation",
         severity: "info",
-        title: `Linear independence: "${weakest.colA}" & "${weakest.colB}"`,
-        explanation: `Minimal linear covariance detected between this pair.`,
+        title: `Weak correlation: "${weakest.colA}" & "${weakest.colB}"`,
+        explanation: `Minimal linear relationship observed between these columns.`,
         evidence: `Pearson r = ${weakest.pearson}, Spearman rho = ${weakest.spearman}`,
         columns: [weakest.colA, weakest.colB],
       });
@@ -905,7 +901,7 @@ export function generateAutomatedInsights(profile: DatasetProfile): DataInsight[
       category: "missing",
       severity: worst.missingPct > 25 ? "critical" : "warning",
       title: `Missing data in ${colsWithMissing.length} column(s)`,
-      explanation: `Dataset completeness is ${(100 - profile.totalMissingPct).toFixed(2)}%. Address missing cells via Median imputation (skewed data), Mean imputation, Mode, or row removal.`,
+      explanation: `${(100 - profile.totalMissingPct).toFixed(2)}% of cells contain values. Impute missing entries or remove incomplete rows in Clean Data.`,
       evidence: `Highest missing: "${worst.name}" (${worst.missingCount} nulls, ${worst.missingPct}%) • Total missing cells: ${profile.totalMissingCells}`,
       columns: colsWithMissing.slice(0, 4).map((c) => c.name),
     });
@@ -914,8 +910,8 @@ export function generateAutomatedInsights(profile: DatasetProfile): DataInsight[
       id: "no_missing_data",
       category: "missing",
       severity: "positive",
-      title: "100% Data Completeness",
-      explanation: "Every cell across all rows and columns contains a non-null observation.",
+      title: "No Missing Values",
+      explanation: "All rows and columns contain complete, non-null values.",
       evidence: `0 missing cells out of ${(profile.rowCount * profile.columnCount).toLocaleString()} total fields`,
     });
   }
@@ -930,8 +926,8 @@ export function generateAutomatedInsights(profile: DatasetProfile): DataInsight[
       id: `outliers_${topOut.name}`,
       category: "outliers",
       severity: "warning",
-      title: `Outliers present in ${outlierCols.length} numerical column(s)`,
-      explanation: `Values fall outside Tukey's 1.5×IQR fences. Inspect via Box Plot or Winsorize/filter them in Data Cleaning.`,
+      title: `Outliers detected in ${outlierCols.length} numerical column(s)`,
+      explanation: `Values fall outside the 1.5×IQR bounds. Review in Box Plot or trim outliers in Clean Data.`,
       evidence: `"${topOut.name}": ${s.iqrOutlierCount} IQR outliers (fences [${s.lowerFence}, ${s.upperFence}]), ${s.zScoreOutlierCount} |Z|>3 points, max = ${s.max}`,
       columns: outlierCols.slice(0, 3).map((c) => c.name),
     });
@@ -948,9 +944,9 @@ export function generateAutomatedInsights(profile: DatasetProfile): DataInsight[
       id: `skew_${topSkew.name}`,
       category: "distribution",
       severity: "warning",
-      title: `Pronounced skewness in "${topSkew.name}" (${dir})`,
-      explanation: `Distribution tail pulls Mean (${s.mean}) away from Median (${s.median}). ${
-        s.min >= 0 ? "A Log(1+x) transform helps normalize right-tail spread." : "Consider robust median/IQR scaling."
+      title: `Skewed distribution: "${topSkew.name}" (${dir})`,
+      explanation: `Mean (${s.mean}) diverges from median (${s.median}). ${
+        s.min >= 0 ? "A log(1+x) transform can reduce skewness." : "Robust median/IQR scaling is recommended."
       }`,
       evidence: `Skewness = ${s.skewness}, Excess Kurtosis = ${s.kurtosis}`,
       columns: skewedCols.slice(0, 3).map((c) => c.name),
@@ -965,8 +961,8 @@ export function generateAutomatedInsights(profile: DatasetProfile): DataInsight[
         id: `imbalance_${cc.name}`,
         category: "imbalance",
         severity: "warning",
-        title: `Categorical dominance in "${cc.name}"`,
-        explanation: `"${cc.catStats!.topValue}" accounts for most observations, creating an imbalanced distribution.`,
+        title: `Imbalanced categories in "${cc.name}"`,
+        explanation: `"${cc.catStats!.topValue}" accounts for ${topPct}% of observations in this column.`,
         evidence: `"${cc.catStats!.topValue}" = ${cc.catStats!.topCount}/${cc.count} (${topPct}%) across ${cc.uniqueCount} labels`,
         columns: [cc.name],
       });
@@ -979,8 +975,8 @@ export function generateAutomatedInsights(profile: DatasetProfile): DataInsight[
       id: "duplicate_records",
       category: "quality",
       severity: "warning",
-      title: `${profile.duplicateRowCount} duplicate record(s) identified`,
-      explanation: "Exact repeated rows can inflate model metrics and bias averages.",
+      title: `${profile.duplicateRowCount} duplicate rows found`,
+      explanation: "Repeated rows can skew averages and model evaluation.",
       evidence: `${profile.duplicateRowCount} duplicates (${profile.duplicateRowPct}% of rows)`,
     });
   }
@@ -989,8 +985,8 @@ export function generateAutomatedInsights(profile: DatasetProfile): DataInsight[
       id: "constant_columns",
       category: "quality",
       severity: "critical",
-      title: `Zero-variance constant column(s): ${profile.constantColumns.join(", ")}`,
-      explanation: "Constant features provide zero variance and can safely be dropped.",
+      title: `Constant column(s): ${profile.constantColumns.join(", ")}`,
+      explanation: "Contains only a single unique value and adds no information.",
       evidence: `Only 1 unique value in: ${profile.constantColumns.join(", ")}`,
       columns: profile.constantColumns,
     });
@@ -1000,8 +996,8 @@ export function generateAutomatedInsights(profile: DatasetProfile): DataInsight[
       id: "potential_id_cols",
       category: "quality",
       severity: "info",
-      title: `Unique ID column(s): ${profile.potentialIdColumns.join(", ")}`,
-      explanation: "Columns with 100% unique identifiers index records rather than encoding general patterns.",
+      title: `Identifier column(s): ${profile.potentialIdColumns.join(", ")}`,
+      explanation: "Every value is unique; treat as a row ID rather than a predictive feature.",
       evidence: `100% uniqueness in ${profile.potentialIdColumns.join(", ")}`,
       columns: profile.potentialIdColumns,
     });

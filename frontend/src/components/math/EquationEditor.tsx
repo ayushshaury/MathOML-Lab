@@ -306,7 +306,7 @@ export function EquationEditor({
 
       {/* live preview */}
       {previewTex && (
-        <div className="rounded-lg bg-muted/50 dark:bg-muted/25 px-3 py-2 overflow-x-auto">
+        <div className="rounded-xl bg-zinc-50 border border-zinc-200/70 px-3 py-2 overflow-x-auto">
           <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Preview</p>
           <MathText tex={previewTex} className="text-base" />
         </div>

@@ -234,16 +234,16 @@ export function Plot2D({ spec, className, height = 400 }: Plot2DProps) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, size.w, size.h);
 
-    const dark = document.documentElement.classList.contains("dark");
-    const bg = dark ? "#0a0d14" : "#fcfdfd";
-    const gridMinor = dark ? "rgba(255, 255, 255, 0.04)" : "rgba(0, 0, 0, 0.035)";
-    const gridMajor = dark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)";
-    const axisColor = dark ? "rgba(255, 255, 255, 0.45)" : "rgba(0, 0, 0, 0.4)";
-    const textColor = dark ? "rgba(255, 255, 255, 0.65)" : "rgba(0, 0, 0, 0.65)";
+    const dark = false;
+    const bg = "#fafafa";
+    const gridMinor = "rgba(0, 0, 0, 0.035)";
+    const gridMajor = "rgba(0, 0, 0, 0.08)";
+    const axisColor = "rgba(0, 0, 0, 0.35)";
+    const textColor = "rgba(0, 0, 0, 0.65)";
 
-    // Clean gradient canvas background
+    // Clean Apple light canvas background
     const bgGrad = ctx.createRadialGradient(size.w / 2, size.h / 2, 10, size.w / 2, size.h / 2, size.w * 0.7);
-    bgGrad.addColorStop(0, dark ? "#0e131f" : "#ffffff");
+    bgGrad.addColorStop(0, "#ffffff");
     bgGrad.addColorStop(1, bg);
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, size.w, size.h);
@@ -715,7 +715,7 @@ export function Plot2D({ spec, className, height = 400 }: Plot2DProps) {
       />
 
       {/* Floating Modern Toolbar (Top Right) */}
-      <div className="absolute top-3 right-3 flex items-center gap-1.5 rounded-xl border bg-background/80 dark:bg-background/70 backdrop-blur-md p-1 shadow-md">
+      <div className="absolute top-3 right-3 flex items-center gap-1 rounded-xl border border-zinc-200/80 bg-white/90 backdrop-blur-md p-1 shadow-xs">
         <Button
           variant="ghost"
           size="icon"
@@ -747,7 +747,7 @@ export function Plot2D({ spec, className, height = 400 }: Plot2DProps) {
         <Button
           variant={showKeyPoints ? "secondary" : "ghost"}
           size="icon"
-          className={cn("h-8 w-8", showKeyPoints && "text-emerald-600 dark:text-emerald-400")}
+          className={cn("h-8 w-8", showKeyPoints && "text-[#0071e3] bg-zinc-100")}
           title="Toggle key feature points (roots, extrema, intercepts)"
           onClick={() => setShowKeyPoints(!showKeyPoints)}
         >
@@ -784,8 +784,8 @@ export function Plot2D({ spec, className, height = 400 }: Plot2DProps) {
 
       {/* Dynamic Parameter `a` Slider Bar */}
       {showParamSlider && (
-        <div className="absolute top-3 left-3 flex items-center gap-3 rounded-xl border bg-background/85 dark:bg-background/75 backdrop-blur-md px-3 py-1.5 shadow-md">
-          <span className="font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+        <div className="absolute top-3 left-3 flex items-center gap-3 rounded-xl border border-zinc-200/80 bg-white/90 backdrop-blur-md px-3 py-1.5 shadow-xs">
+          <span className="font-mono text-xs font-semibold text-zinc-800">
             a = {paramA.toFixed(2)}
           </span>
           <Slider
@@ -810,7 +810,7 @@ export function Plot2D({ spec, className, height = 400 }: Plot2DProps) {
 
       {/* Interactive Legend with toggleable visibility */}
       {rawCurves.length > 0 && (
-        <div className="absolute bottom-3 left-3 flex flex-wrap gap-2 rounded-xl border bg-background/85 dark:bg-background/75 backdrop-blur-md p-1.5 shadow-md max-w-[80%]">
+        <div className="absolute bottom-3 left-3 flex flex-wrap gap-1.5 rounded-xl border border-zinc-200/80 bg-white/90 backdrop-blur-md p-1.5 shadow-xs max-w-[80%]">
           {rawCurves.map((c, i) => {
             const isHidden = hiddenCurves[i];
             const color = c.color ?? PLOT_COLORS[i % PLOT_COLORS.length];
@@ -822,14 +822,14 @@ export function Plot2D({ spec, className, height = 400 }: Plot2DProps) {
                 className={cn(
                   "flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-mono transition-all",
                   isHidden
-                    ? "opacity-40 hover:opacity-70 bg-muted/30"
-                    : "hover:bg-muted/60"
+                    ? "opacity-40 hover:opacity-70 bg-zinc-100"
+                    : "hover:bg-zinc-100"
                 )}
                 title="Click to toggle visibility"
               >
                 <span className="h-2 w-2 rounded-full shrink-0" style={{ background: color }} />
-                <span className="truncate max-w-44">{c.label}</span>
-                {isHidden ? <EyeOff className="h-3 w-3 text-muted-foreground ml-1" /> : <Eye className="h-3 w-3 text-muted-foreground ml-1" />}
+                <span className="truncate max-w-44 text-zinc-800">{c.label}</span>
+                {isHidden ? <EyeOff className="h-3 w-3 text-zinc-400 ml-1" /> : <Eye className="h-3 w-3 text-zinc-400 ml-1" />}
               </button>
             );
           })}
@@ -837,9 +837,9 @@ export function Plot2D({ spec, className, height = 400 }: Plot2DProps) {
       )}
 
       {/* Coordinate & Hint Readout */}
-      <div className="absolute bottom-3 right-3 text-[11px] text-muted-foreground bg-background/80 dark:bg-background/60 backdrop-blur rounded-lg px-2.5 py-1 border shadow-xs pointer-events-none">
+      <div className="absolute bottom-3 right-3 text-[11px] text-zinc-500 bg-white/85 backdrop-blur rounded-lg px-2.5 py-1 border border-zinc-200/80 shadow-2xs pointer-events-none">
         {cursor ? (
-          <span className="font-mono">
+          <span className="font-mono text-zinc-800">
             x: {cursor.x.toFixed(3)}, y: {cursor.y.toFixed(3)}
           </span>
         ) : (

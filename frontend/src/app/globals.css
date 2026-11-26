@@ -1,7 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -43,134 +42,124 @@
 }
 
 :root {
-  --font-geist-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-geist-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
-  --radius: 0.85rem;
-  --background: oklch(0.985 0.005 260);
-  --foreground: oklch(0.145 0.02 260);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0.02 260);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0.02 260);
-  --primary: oklch(0.45 0.22 155);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.95 0.01 260);
-  --secondary-foreground: oklch(0.2 0.03 260);
-  --muted: oklch(0.95 0.01 260);
-  --muted-foreground: oklch(0.48 0.02 260);
-  --accent: oklch(0.94 0.02 260);
-  --accent-foreground: oklch(0.2 0.03 260);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.90 0.01 260);
-  --input: oklch(0.90 0.01 260);
-  --ring: oklch(0.55 0.2 160);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.98 0.005 260);
-  --sidebar-foreground: oklch(0.145 0.02 260);
-  --sidebar-primary: oklch(0.45 0.22 155);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.95 0.01 260);
-  --sidebar-accent-foreground: oklch(0.2 0.03 260);
-  --sidebar-border: oklch(0.90 0.01 260);
-  --sidebar-ring: oklch(0.55 0.2 160);
+  --font-geist-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", "Segoe UI", Roboto, sans-serif;
+  --font-geist-mono: "SF Mono", "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  --radius: 0.75rem;
+
+  /* Authentic Notion & Apple Light Tokens */
+  --background: #ffffff;
+  --foreground: #1d1d1f;
+
+  --card: #ffffff;
+  --card-foreground: #1d1d1f;
+
+  --popover: #ffffff;
+  --popover-foreground: #1d1d1f;
+
+  --primary: #1d1d1f;
+  --primary-foreground: #ffffff;
+
+  --secondary: #f5f5f7;
+  --secondary-foreground: #1d1d1f;
+
+  --muted: #f5f5f7;
+  --muted-foreground: #6e6e73;
+
+  --accent: #f2f2f4;
+  --accent-foreground: #1d1d1f;
+
+  --destructive: #e11d48;
+  --destructive-foreground: #ffffff;
+
+  --border: rgba(0, 0, 0, 0.08);
+  --input: rgba(0, 0, 0, 0.10);
+  --ring: #0071e3;
+
+  --chart-1: #0071e3;
+  --chart-2: #059669;
+  --chart-3: #6366f1;
+  --chart-4: #d97706;
+  --chart-5: #e11d48;
+
+  /* Notion Iconic Warm Sidebar */
+  --sidebar: #f7f7f5;
+  --sidebar-foreground: #37352f;
+  --sidebar-primary: #1d1d1f;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgba(55, 53, 47, 0.06);
+  --sidebar-accent-foreground: #1d1d1f;
+  --sidebar-border: rgba(0, 0, 0, 0.06);
+  --sidebar-ring: #0071e3;
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring/30;
+  }
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
   body {
-    @apply bg-background text-foreground transition-colors duration-300;
+    @apply bg-[#fbfbfa] text-[#1d1d1f] selection:bg-[#0071e3]/15 selection:text-[#0071e3];
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
 
-/* Glass and Modern Panel Utilities */
+/* Notion & Apple Glass Surfaces */
 .glass-panel {
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  background: rgba(255, 255, 255, 0.90);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.04), 0 1px 3px 0 rgba(0, 0, 0, 0.02);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 8px 24px -4px rgba(0, 0, 0, 0.04);
 }
 
 .glass-pill {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-pill:hover {
-  background: rgba(255, 255, 255, 1);
-  border-color: rgba(0, 0, 0, 0.18);
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.16);
 }
 
-.glow-emerald {
-  box-shadow: 0 0 25px -4px rgba(16, 185, 129, 0.35);
+.apple-surface {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.025), 0 4px 16px -2px rgba(0, 0, 0, 0.03);
 }
 
-.glow-cyan {
-  box-shadow: 0 0 25px -4px rgba(6, 182, 212, 0.35);
+.apple-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02), 0 4px 12px -2px rgba(0, 0, 0, 0.025);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
 }
 
-.glow-violet {
-  box-shadow: 0 0 25px -4px rgba(139, 92, 246, 0.35);
+.apple-card:hover {
+  border-color: rgba(0, 0, 0, 0.14);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04), 0 12px 28px -4px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
 }
 
-.glow-amber {
-  box-shadow: 0 0 25px -4px rgba(245, 158, 11, 0.35);
+/* Custom thin macOS scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
-
-.glow-indigo {
-  box-shadow: 0 0 25px -4px rgba(99, 102, 241, 0.35);
+::-webkit-scrollbar-track {
+  background: transparent;
 }
-
-.glow-rose {
-  box-shadow: 0 0 25px -4px rgba(244, 63, 94, 0.35);
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.14);
+  border-radius: 9999px;
 }
-
-/* Animated gradient text */
-.text-shimmer {
-  background: linear-gradient(
-    90deg,
-    #10b981 0%,
-    #06b6d4 25%,
-    #8b5cf6 50%,
-    #06b6d4 75%,
-    #10b981 100%
-  );
-  background-size: 200% auto;
-  color: transparent;
-  -webkit-background-clip: text;
-  background-clip: text;
-  animation: shimmer 6s linear infinite;
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.24);
 }
-
-@keyframes shimmer {
-  0% {
-    background-position: 0% 50%;
-  }
-  100% {
-    background-position: 200% 50%;
-  }
-}
-
-/* Subtle pulse animation */
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-6px);
-  }
-}
-
-.animate-float {
-  animation: float 5s ease-in-out infinite;
-}
-

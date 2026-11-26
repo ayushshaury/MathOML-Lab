@@ -3,16 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import {
-  Sigma, Search, Home, ArrowRight, Sparkles,
+  Sigma, Search, Home, ArrowRight,
   Equal, Shuffle, Layers, TrendingUp, SquareStack, MoveRight, GitBranch, Infinity as InfinityIcon,
   ListOrdered, Grid3x3, SquareDashed, Waves, Compass, Triangle, Shapes, BarChart3, Dice5,
-  LineChart, Mountain, Calculator, ScanLine, FlaskRound, BookOpen, ExternalLink, Play, Github,
-  Terminal, Zap, CheckCircle2, Cpu, Brain
+  LineChart, Mountain, Calculator, ScanLine, Github, Brain, ChevronRight, ChevronDown,
+  PanelLeft, PanelLeftClose, X, FlaskConical, Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMathLab } from "@/lib/store";
-import { CATEGORIES, TOOLS, searchTools, toolsByCategory, type Category } from "@/lib/tools";
+import { CATEGORIES, TOOLS, searchTools, toolsByCategory, getTool, type Category } from "@/lib/tools";
 import {
   CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
 } from "@/components/ui/command";
@@ -33,6 +33,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Sigma, Equal, Shuffle, Layers, TrendingUp, SquareStack, MoveRight, GitBranch,
   Infinity: InfinityIcon, ListOrdered, Grid3x3, SquareDashed, Waves, Compass,
   Triangle, Shapes, BarChart3, Dice5, LineChart, Mountain, Calculator, ScanLine, Brain,
+  FlaskConical, Eigenvector: Grid3x3,
 };
 
 function CatIcon({ name, className }: { name: string; className?: string }) {
@@ -40,32 +41,14 @@ function CatIcon({ name, className }: { name: string; className?: string }) {
   return <Cmp className={className} />;
 }
 
-/* Category Accent Styles */
-const CAT_STYLES: Record<string, { bg: string; text: string; border: string; glow: string; gradient: string }> = {
-  emerald: { bg: "bg-emerald-500", text: "text-emerald-500 dark:text-emerald-400", border: "hover:border-emerald-500/50", glow: "glow-emerald", gradient: "from-emerald-500/20 via-transparent to-transparent" },
-  amber: { bg: "bg-amber-500", text: "text-amber-500 dark:text-amber-400", border: "hover:border-amber-500/50", glow: "glow-amber", gradient: "from-amber-500/20 via-transparent to-transparent" },
-  rose: { bg: "bg-rose-500", text: "text-rose-500 dark:text-rose-400", border: "hover:border-rose-500/50", glow: "glow-rose", gradient: "from-rose-500/20 via-transparent to-transparent" },
-  cyan: { bg: "bg-cyan-500", text: "text-cyan-500 dark:text-cyan-400", border: "hover:border-cyan-500/50", glow: "glow-cyan", gradient: "from-cyan-500/20 via-transparent to-transparent" },
-  violet: { bg: "bg-violet-500", text: "text-violet-500 dark:text-violet-400", border: "hover:border-violet-500/50", glow: "glow-violet", gradient: "from-violet-500/20 via-transparent to-transparent" },
-  orange: { bg: "bg-orange-500", text: "text-orange-500 dark:text-orange-400", border: "hover:border-orange-500/50", glow: "glow-orange", gradient: "from-orange-500/20 via-transparent to-transparent" },
-  lime: { bg: "bg-lime-500", text: "text-lime-500 dark:text-lime-400", border: "hover:border-lime-500/50", glow: "glow-lime", gradient: "from-lime-500/20 via-transparent to-transparent" },
-  sky: { bg: "bg-sky-500", text: "text-sky-500 dark:text-sky-400", border: "hover:border-sky-500/50", glow: "glow-sky", gradient: "from-sky-500/20 via-transparent to-transparent" },
-  teal: { bg: "bg-teal-500", text: "text-teal-500 dark:text-teal-400", border: "hover:border-teal-500/50", glow: "glow-teal", gradient: "from-teal-500/20 via-transparent to-transparent" },
-  indigo: { bg: "bg-indigo-500", text: "text-indigo-500 dark:text-indigo-400", border: "hover:border-indigo-500/50", glow: "glow-indigo", gradient: "from-indigo-500/20 via-transparent to-transparent" },
-  slate: { bg: "bg-slate-500", text: "text-slate-500 dark:text-slate-400", border: "hover:border-slate-500/50", glow: "glow-slate", gradient: "from-slate-500/20 via-transparent to-transparent" },
-};
-
 /* ------------------------------------------------------------------ */
 /* Lazy Tool Loading                                                   */
 /* ------------------------------------------------------------------ */
 
 const loading = () => (
-  <div className="flex flex-col items-center justify-center py-28 gap-4">
-    <div className="relative">
-      <div className="h-12 w-12 rounded-full border-2 border-emerald-500/20 animate-ping" />
-      <span className="absolute inset-0 m-auto h-8 w-8 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
-    </div>
-    <span className="text-xs font-mono text-muted-foreground animate-pulse">Loading instrument…</span>
+  <div className="flex flex-col items-center justify-center py-28 gap-3">
+    <div className="h-7 w-7 animate-spin rounded-full border-2 border-zinc-900 border-t-transparent" />
+    <span className="text-xs font-medium text-zinc-400">Loading workspace…</span>
   </div>
 );
 
@@ -99,7 +82,7 @@ const TOOL_COMPONENTS: Record<string, React.ComponentType> = {
 };
 
 /* ------------------------------------------------------------------ */
-/* Search Palette                                                      */
+/* Search Palette (Spotlight / Raycast / Notion Quick Jump)           */
 /* ------------------------------------------------------------------ */
 
 function SearchPalette() {
@@ -138,22 +121,30 @@ function SearchPalette() {
       <CommandInput
         value={query}
         onValueChange={setQuery}
-        placeholder="Type any topic, equation, or instrument — e.g. matrix, integral, 3d, ocr…"
+        placeholder="Search tools, calculus, matrices, graphing, or EDA…"
+        className="text-sm font-sans"
       />
-      <CommandList className="max-h-[65vh] p-2">
-        <CommandEmpty>
-          {query ? `No tools match “${query}”.` : "Type to search the laboratory instruments."}
+      <CommandList className="max-h-[60vh] p-2">
+        <CommandEmpty className="py-8 text-center text-xs text-zinc-500">
+          {query ? `No tools match “${query}”.` : "Type to search all 26 tools."}
         </CommandEmpty>
         {[...grouped.entries()].map(([catId, tools]) => {
           const cat = CATEGORIES.find((c) => c.id === catId);
           if (!cat) return null;
           return (
-            <CommandGroup key={catId} heading={cat.name}>
+            <CommandGroup key={catId} heading={cat.name} className="text-xs font-medium text-zinc-500">
               {tools.map((t) => (
-                <CommandItem key={t.id} value={`${t.name} ${t.keywords.join(" ")}`} onSelect={() => pick(t.id)}>
-                  <CatIcon name={t.icon} className="mr-2 h-4 w-4 text-emerald-500" />
-                  <span className="font-semibold">{t.name}</span>
-                  <span className="ml-auto text-xs text-muted-foreground hidden sm:block truncate max-w-56">{t.description}</span>
+                <CommandItem
+                  key={t.id}
+                  value={`${t.name} ${t.keywords.join(" ")}`}
+                  onSelect={() => pick(t.id)}
+                  className="rounded-xl px-3 py-2 cursor-pointer aria-selected:bg-zinc-100"
+                >
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700 mr-2.5 shrink-0">
+                    <CatIcon name={t.icon} className="h-3.5 w-3.5" />
+                  </div>
+                  <span className="font-medium text-sm text-zinc-900">{t.name}</span>
+                  <span className="ml-auto text-xs text-zinc-400 hidden sm:block truncate max-w-56">{t.description}</span>
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -165,301 +156,445 @@ function SearchPalette() {
 }
 
 /* ------------------------------------------------------------------ */
-/* Header                                                              */
+/* Workspace Sidebar                                                  */
 /* ------------------------------------------------------------------ */
 
-function Header() {
-  const { view, goHome, openTool, setSearchOpen } = useMathLab();
+function WorkspaceSidebar({
+  open,
+  onCloseMobile,
+  onToggleDesktop,
+}: {
+  open: boolean;
+  onCloseMobile: () => void;
+  onToggleDesktop: () => void;
+}) {
+  const { view, goHome, openTool, setSearchOpen, history } = useMathLab();
+  const [expandedCats, setExpandedCats] = useState<Record<string, boolean>>({
+    "data-ml": true,
+    graphing: true,
+    calculus: false,
+    algebra: false,
+    stats: false,
+  });
+
+  useEffect(() => {
+    if (view === "home") return;
+    const activeTool = getTool(view);
+    if (activeTool) {
+      setExpandedCats((prev) => (prev[activeTool.category] ? prev : { ...prev, [activeTool.category]: true }));
+    }
+  }, [view]);
+
+  const toggleCat = (id: string) => {
+    setExpandedCats((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const navigate = (id: string) => {
+    if (id === "home") goHome();
+    else openTool(id);
+    onCloseMobile();
+  };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6">
-        {/* Brand Logo */}
-        <button className="flex items-center gap-3 shrink-0 group" onClick={goHome} aria-label="MathOML home">
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl group-hover:scale-105 transition-all">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.svg" alt="MathOML Logo" className="h-10 w-10 rounded-2xl shadow-lg shadow-emerald-500/20" />
-          </div>
-          <div className="flex flex-col text-left">
-            <span className="font-extrabold text-lg tracking-tight leading-none">
-              Math<span className="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent">OML</span>
-            </span>
-            <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase mt-0.5">
-              LABORATORY
-            </span>
-          </div>
+    <aside
+      className={cn(
+        "flex flex-col h-full bg-[#f7f7f5] border-r border-black/[0.06] text-[#37352f] select-none transition-all duration-200 ease-out",
+        open ? "w-64" : "w-0 overflow-hidden border-r-0"
+      )}
+    >
+      {/* Workspace Header */}
+      <div className="h-12 px-3.5 flex items-center justify-between border-b border-black/[0.05] shrink-0">
+        <button
+          onClick={() => navigate("home")}
+          className="flex items-center gap-2 hover:bg-black/[0.04] rounded-lg px-2 py-1 transition-colors"
+        >
+          <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[#1d1d1f] text-white shadow-2xs">
+            <Sigma className="h-3.5 w-3.5" />
+          </span>
+          <span className="font-semibold text-sm tracking-tight text-[#1d1d1f]">MathOML</span>
         </button>
 
-        {/* Top Flagship Quick Switcher */}
-        <div className="hidden lg:flex items-center gap-1.5 ml-3 border-l border-border/50 pl-3">
-          {[
-            { id: "eda-studio", label: "EDA Studio", icon: BarChart3, color: "text-sky-500" },
-            { id: "ml-arena", label: "ML Arena", icon: Brain, color: "text-indigo-400" },
-            { id: "graph-3d", label: "3D Surface", icon: Mountain, color: "text-cyan-400" },
-            { id: "graph-2d", label: "2D Grapher", icon: LineChart, color: "text-emerald-400" },
-            { id: "image-to-equation", label: "Photo OCR", icon: ScanLine, color: "text-violet-400" },
-            { id: "equation-solver", label: "Solver", icon: Equal, color: "text-amber-400" },
-            { id: "matrix-calculator", label: "Matrix", icon: Grid3x3, color: "text-rose-400" },
-          ].map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => openTool(item.id)}
-              className={cn(
-                "px-2.5 py-1 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5",
-                view === item.id
-                  ? "bg-foreground/10 text-foreground shadow-xs border border-border"
-                  : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
-              )}
-            >
-              <item.icon className={cn("h-3.5 w-3.5", item.color)} />
-              {item.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Search Bar Trigger */}
         <button
-          className="flex-1 max-w-sm flex items-center gap-2 rounded-2xl border border-border/70 bg-muted/30 px-3.5 py-2 text-sm text-muted-foreground hover:bg-muted/60 hover:border-emerald-500/40 transition-all ml-auto group"
-          onClick={() => setSearchOpen(true)}
+          onClick={onToggleDesktop}
+          className="hidden lg:flex h-7 w-7 items-center justify-center rounded-md text-[#37352f]/60 hover:text-[#1d1d1f] hover:bg-black/[0.05] transition-colors"
+          title="Collapse sidebar (⌘\)"
         >
-          <Search className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-emerald-500 transition-colors" />
-          <span className="truncate text-xs sm:text-sm">Search 25 math &amp; ML instruments…</span>
-          <kbd className="pointer-events-none hidden sm:inline-flex h-5 select-none items-center gap-1 rounded-lg border bg-background/80 px-1.5 font-mono text-[10px] font-semibold text-muted-foreground ml-auto">
+          <PanelLeftClose className="h-4 w-4" />
+        </button>
+
+        <button
+          onClick={onCloseMobile}
+          className="lg:hidden flex h-7 w-7 items-center justify-center rounded-md text-[#37352f]/60 hover:text-[#1d1d1f] hover:bg-black/[0.05]"
+          aria-label="Close sidebar"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Quick Search */}
+      <div className="p-2.5 shrink-0">
+        <button
+          onClick={() => setSearchOpen(true)}
+          className="w-full flex items-center gap-2 rounded-lg bg-white/80 hover:bg-white border border-black/[0.07] px-2.5 py-1.5 text-xs text-[#37352f]/70 hover:text-[#1d1d1f] shadow-2xs transition-all"
+        >
+          <Search className="h-3.5 w-3.5 text-[#37352f]/50 shrink-0" />
+          <span className="truncate font-medium">Search</span>
+          <kbd className="ml-auto font-mono text-[10px] text-[#37352f]/40 bg-black/[0.04] px-1.5 py-0.5 rounded">
             ⌘K
           </kbd>
         </button>
+      </div>
 
-        {/* Right Action Icons */}
-        <nav className="flex items-center gap-1.5" aria-label="Main navigation">
-          {view !== "home" && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={goHome}
-              className="gap-1.5 rounded-xl border-border/70 glass-pill"
-            >
-              <Home className="h-4 w-4" />
-              <span className="hidden sm:inline font-semibold">Home</span>
-            </Button>
+      {/* Scrollable Navigation Tree */}
+      <div className="flex-1 overflow-y-auto px-2 pb-6 space-y-4">
+        <button
+          onClick={() => navigate("home")}
+          className={cn(
+            "w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[13px] transition-colors text-left",
+            view === "home"
+              ? "bg-black/[0.07] text-[#1d1d1f] font-semibold"
+              : "text-[#37352f]/80 hover:bg-black/[0.04] font-medium"
           )}
+        >
+          <Home className={cn("h-4 w-4 shrink-0", view === "home" ? "text-[#0071e3]" : "text-[#37352f]/55")} />
+          <span>Overview</span>
+        </button>
 
-          {/* GitHub Link */}
-          <a
-            href="https://github.com/ayushshaury/MathOML-Lab"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/60 hover:bg-muted/70 transition-colors text-muted-foreground hover:text-foreground"
-            title="GitHub Repository"
+        <div className="space-y-1">
+          <div className="px-2.5 py-0.5 text-[11px] font-medium text-[#37352f]/50">
+            Categories
+          </div>
+          {CATEGORIES.map((cat) => {
+            const tools = toolsByCategory(cat.id);
+            const isExpanded = !!expandedCats[cat.id];
+            const hasActiveChild = tools.some((t) => t.id === view);
+
+            return (
+              <div key={cat.id}>
+                <button
+                  onClick={() => toggleCat(cat.id)}
+                  className={cn(
+                    "w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[13px] transition-colors text-left",
+                    hasActiveChild ? "text-[#1d1d1f] font-semibold" : "text-[#37352f]/80 hover:bg-black/[0.04] font-medium"
+                  )}
+                >
+                  {isExpanded ? (
+                    <ChevronDown className="h-3.5 w-3.5 text-[#37352f]/40 shrink-0" />
+                  ) : (
+                    <ChevronRight className="h-3.5 w-3.5 text-[#37352f]/40 shrink-0" />
+                  )}
+                  <CatIcon name={cat.icon} className="h-3.5 w-3.5 text-[#37352f]/55 shrink-0 mr-0.5" />
+                  <span className="truncate">{cat.name}</span>
+                </button>
+
+                {isExpanded && (
+                  <div className="pl-5 mt-0.5 space-y-0.5">
+                    {tools.map((t) => {
+                      const active = view === t.id;
+                      return (
+                        <button
+                          key={t.id}
+                          onClick={() => navigate(t.id)}
+                          className={cn(
+                            "w-full flex items-center gap-2 px-2.5 py-1 rounded-lg text-xs transition-colors text-left truncate",
+                            active
+                              ? "bg-black/[0.07] text-[#1d1d1f] font-semibold"
+                              : "text-[#37352f]/75 hover:bg-black/[0.04]"
+                          )}
+                        >
+                          <CatIcon name={t.icon} className={cn("h-3 w-3 shrink-0", active ? "text-[#0071e3]" : "text-[#37352f]/45")} />
+                          <span className="truncate">{t.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Recent History */}
+        {history.length > 0 && (
+          <div className="space-y-0.5 pt-2 border-t border-black/[0.05]">
+            <div className="px-2.5 py-1 text-[11px] font-medium text-[#37352f]/50 flex items-center gap-1.5">
+              <Clock className="h-3 w-3" /> Recent
+            </div>
+            {history.slice(0, 4).map((h, i) => {
+              const t = getTool(h.toolId);
+              if (!t) return null;
+              return (
+                <button
+                  key={`${h.toolId}-${i}`}
+                  onClick={() => navigate(h.toolId)}
+                  className="w-full flex items-center gap-2 px-2.5 py-1 rounded-lg text-xs text-[#37352f]/70 hover:bg-black/[0.04] truncate text-left"
+                >
+                  <CatIcon name={t.icon} className="h-3 w-3 text-[#37352f]/50 shrink-0" />
+                  <span className="truncate">{t.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </aside>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Sticky Top Breadcrumb Toolbar (Apple Finder / Notion Top Bar)      */
+/* ------------------------------------------------------------------ */
+
+function TopBar({
+  sidebarOpen,
+  onToggleSidebar,
+  onOpenMobileSidebar,
+}: {
+  sidebarOpen: boolean;
+  onToggleSidebar: () => void;
+  onOpenMobileSidebar: () => void;
+}) {
+  const { view, goHome, setSearchOpen } = useMathLab();
+  const activeTool = view !== "home" ? getTool(view) : undefined;
+  const activeCategory = activeTool ? CATEGORIES.find((c) => c.id === activeTool.category) : undefined;
+
+  return (
+    <header className="sticky top-0 z-30 h-12 w-full border-b border-black/[0.06] bg-white/85 backdrop-blur-xl flex items-center justify-between px-4 sm:px-6 shrink-0">
+      <div className="flex items-center gap-2 min-w-0">
+        {/* Desktop Collapse/Expand Toggle */}
+        {!sidebarOpen && (
+          <button
+            onClick={onToggleSidebar}
+            className="hidden lg:flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
+            title="Show sidebar (⌘\)"
           >
-            <Github className="h-4 w-4" />
-          </a>
-        </nav>
+            <PanelLeft className="h-4 w-4" />
+          </button>
+        )}
+
+        {/* Mobile Drawer Trigger */}
+        <button
+          onClick={onOpenMobileSidebar}
+          className="lg:hidden flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100"
+          aria-label="Open menu"
+        >
+          <PanelLeft className="h-4 w-4" />
+        </button>
+
+        {/* Breadcrumb Path */}
+        <div className="flex items-center gap-1.5 text-xs text-zinc-500 truncate">
+          <button
+            onClick={goHome}
+            className={cn(
+              "hover:bg-zinc-100 px-1.5 py-0.5 rounded-md transition-colors",
+              view === "home" ? "font-semibold text-zinc-900" : "text-zinc-500 hover:text-zinc-900"
+            )}
+          >
+            Home
+          </button>
+          {activeCategory && (
+            <>
+              <ChevronRight className="h-3.5 w-3.5 text-zinc-300 shrink-0" />
+              <span className="truncate hidden sm:inline text-zinc-500">{activeCategory.name}</span>
+            </>
+          )}
+          {activeTool && (
+            <>
+              <ChevronRight className="h-3.5 w-3.5 text-zinc-300 shrink-0" />
+              <span className="font-semibold text-zinc-900 truncate">{activeTool.name}</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Right Actions */}
+      <div className="flex items-center gap-2 shrink-0">
+        <button
+          onClick={() => setSearchOpen(true)}
+          className="hidden sm:flex items-center gap-2 rounded-full border border-zinc-200/80 bg-zinc-50 hover:bg-zinc-100 px-3 py-1 text-xs text-zinc-500 hover:text-zinc-800 transition-colors"
+        >
+          <Search className="h-3 w-3" />
+          <span>Search</span>
+          <kbd className="font-mono text-[10px] text-zinc-400">⌘K</kbd>
+        </button>
+
+        <a
+          href="https://github.com/ayushshaury/MathOML-Lab"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
+          title="GitHub Repository"
+        >
+          <Github className="h-4 w-4" />
+        </a>
       </div>
     </header>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* Interactive Hero Playground                                        */
+/* Interactive Preview Window                                         */
 /* ------------------------------------------------------------------ */
 
 function HeroPlayground({ onOpenTool }: { onOpenTool: (id: string) => void }) {
   const [tab, setTab] = useState<"3d" | "2d" | "solver" | "calc">("3d");
-
-  // 3D preset state
   const [expr3d, setExpr3d] = useState("(1 - (x^2 + y^2)/4) * exp(-(x^2 + y^2)/4)");
-  // 2D preset state
   const [expr2d, setExpr2d] = useState("sin(x) + cos(2*x)/2");
-  // Solver preset state
   const [problemType, setProblemType] = useState<"derivative" | "integral" | "equation">("derivative");
-
-  // Mini live expression solver state
   const [quickInput, setQuickInput] = useState("sin(pi/4) * sqrt(2)");
 
   const quickResult = useMemo(() => {
     if (!quickInput.trim()) return "";
     try {
       const res = math.evaluate(preprocess(quickInput));
-      if (typeof res === "number") {
-        return fmt(res, 6);
-      } else if (res && typeof res === "object" && "toString" in res) {
-        return res.toString();
-      } else {
-        return String(res);
-      }
+      if (typeof res === "number") return fmt(res, 6);
+      if (res && typeof res === "object" && "toString" in res) return res.toString();
+      return String(res);
     } catch {
       return "Invalid expression";
     }
   }, [quickInput]);
 
   const spec2d = useMemo(() => ({
-    curves: [
-      { label: `f(x) = ${expr2d}`, expr: expr2d, color: "#10b981" },
-    ],
+    curves: [{ label: `f(x) = ${expr2d}`, expr: expr2d, color: "#0071e3" }],
   }), [expr2d]);
 
   const liveSolution = useMemo(() => {
     try {
-      if (problemType === "derivative") {
-        return differentiateSteps("x^3 * sin(x)", "x", 1);
-      } else if (problemType === "integral") {
-        return integrateSteps("x^2 + 3*x", "x", false);
-      } else {
-        return solveEquation("x^2 - 5*x + 6 = 0");
-      }
+      if (problemType === "derivative") return differentiateSteps("x^3 * sin(x)", "x", 1);
+      if (problemType === "integral") return integrateSteps("x^2 + 3*x", "x", false);
+      return solveEquation("x^2 - 5*x + 6 = 0");
     } catch {
       return null;
     }
   }, [problemType]);
 
   return (
-    <div className="relative mt-8 w-full max-w-5xl mx-auto rounded-3xl glass-panel shadow-2xl overflow-hidden border border-white/10 dark:border-white/10 text-left">
-      {/* Glow highlight line */}
-      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-emerald-500 via-cyan-400 to-violet-500" />
+    <div className="w-full rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_4px_rgba(0,0,0,0.025),0_8px_24px_rgba(0,0,0,0.03)] overflow-hidden text-left">
+      {/* Toolbar Header */}
+      <div className="flex flex-wrap items-center justify-between border-b border-zinc-200/70 bg-zinc-50/70 px-4 sm:px-5 py-2.5 gap-3">
+        <span className="text-xs font-semibold text-zinc-700">Interactive Scratchpad</span>
 
-      {/* Terminal Bar Header */}
-      <div className="flex flex-wrap items-center justify-between border-b border-border/40 bg-muted/20 px-4 sm:px-6 py-3.5 gap-3">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 mr-2">
-            <span className="h-3 w-3 rounded-full bg-rose-500/80 inline-block" />
-            <span className="h-3 w-3 rounded-full bg-amber-500/80 inline-block" />
-            <span className="h-3 w-3 rounded-full bg-emerald-500/80 inline-block" />
-          </div>
-          <span className="text-xs font-mono font-bold tracking-wider text-muted-foreground hidden sm:inline">
-            MATH.TERMINAL://LIVE_WORKSPACE
-          </span>
-        </div>
-
-        {/* Tab Selector Pills */}
-        <div className="flex items-center gap-1 p-1 rounded-2xl bg-background/60 border border-border/50">
+        {/* Segmented Control */}
+        <div className="flex items-center gap-0.5 p-0.5 rounded-full bg-zinc-200/60 border border-zinc-200/70">
           {[
-            { id: "3d", label: "3D Surface", icon: Mountain, activeClass: "bg-cyan-500 text-slate-950 font-bold shadow-md" },
-            { id: "2d", label: "2D Grapher", icon: LineChart, activeClass: "bg-emerald-500 text-slate-950 font-bold shadow-md" },
-            { id: "solver", label: "Live Steps", icon: Equal, activeClass: "bg-amber-500 text-slate-950 font-bold shadow-md" },
-            { id: "calc", label: "Quick Calc", icon: Calculator, activeClass: "bg-violet-500 text-white font-bold shadow-md" },
+            { id: "3d", label: "3D Surface", icon: Mountain },
+            { id: "2d", label: "2D Graph", icon: LineChart },
+            { id: "solver", label: "Steps", icon: Equal },
+            { id: "calc", label: "Calculate", icon: Calculator },
           ].map((t) => (
             <button
               key={t.id}
               type="button"
               onClick={() => setTab(t.id as any)}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all",
-                tab === t.id ? t.activeClass : "text-muted-foreground hover:text-foreground"
+                "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all",
+                tab === t.id
+                  ? "bg-white text-zinc-900 shadow-2xs font-semibold"
+                  : "text-zinc-600 hover:text-zinc-900"
               )}
             >
-              <t.icon className="h-3.5 w-3.5" />
+              <t.icon className="h-3 w-3" />
               <span>{t.label}</span>
             </button>
           ))}
         </div>
 
-        {/* Direct Studio Jump */}
         <Button
           size="sm"
           variant="ghost"
           onClick={() => onOpenTool(
             tab === "3d" ? "graph-3d" : tab === "2d" ? "graph-2d" : tab === "solver" ? "equation-solver" : "calculator"
           )}
-          className="text-xs gap-1.5 font-bold text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-xl"
+          className="text-xs gap-1 font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/50 rounded-lg h-7 px-2.5"
         >
-          Open Dedicated Studio <ExternalLink className="h-3.5 w-3.5" />
+          {tab === "3d" ? "Open 3D Plotter" : tab === "2d" ? "Open 2D Grapher" : tab === "solver" ? "Open Solver" : "Open Calculator"}{" "}
+          <ArrowRight className="h-3 w-3" />
         </Button>
       </div>
 
       {/* Tab 1: 3D Surface */}
       {tab === "3d" && (
-        <div className="p-4 sm:p-6 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-              <span className="text-xs font-bold text-muted-foreground shrink-0">1-Click Topology:</span>
+        <div className="p-4 sm:p-5 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2.5">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+              <span className="text-xs font-medium text-zinc-400 shrink-0">Presets:</span>
               {[
-                { name: "Sombrero / Higgs", expr: "(1 - (x^2 + y^2)/4) * exp(-(x^2 + y^2)/4)" },
-                { name: "Ripple Wave", expr: "sin(sqrt(x^2 + y^2)) / (sqrt(x^2 + y^2) + 0.1)" },
-                { name: "Quantum Wavepacket", expr: "4 * x^2 * y^2 * exp(-(x^2 + y^2))" },
-                { name: "Rosenbrock Banana", expr: "log(1 + (1 - x)^2 + 10*(y - x^2)^2) / 3" },
-                { name: "Scherk Minimal", expr: "log(cos(x) / cos(y))" },
-                { name: "Ackley Multimodal", expr: "-10*exp(-0.2*sqrt(0.5*(x^2 + y^2))) - 0.5*(cos(2*pi*x) + cos(2*pi*y)) + 10" },
-                { name: "Vortex Spiral", expr: "sin(3*atan2(y, x) + sqrt(x^2 + y^2))" },
-                { name: "Monkey Saddle", expr: "x^3 - 3*x*y^2" },
+                { name: "Sombrero", expr: "(1 - (x^2 + y^2)/4) * exp(-(x^2 + y^2)/4)" },
+                { name: "Ripple", expr: "sin(sqrt(x^2 + y^2)) / (sqrt(x^2 + y^2) + 0.1)" },
+                { name: "Rosenbrock", expr: "log(1 + (1 - x)^2 + 10*(y - x^2)^2) / 3" },
+                { name: "Ackley", expr: "-10*exp(-0.2*sqrt(0.5*(x^2 + y^2))) - 0.5*(cos(2*pi*x) + cos(2*pi*y)) + 10" },
+                { name: "Saddle", expr: "x^3 - 3*x*y^2" },
               ].map((p) => (
                 <button
                   key={p.name}
                   type="button"
                   onClick={() => setExpr3d(p.expr)}
                   className={cn(
-                    "rounded-xl border px-3 py-1 text-xs font-mono transition-all shrink-0 active:scale-95",
+                    "rounded-full border px-3 py-1 text-xs font-medium transition-all shrink-0",
                     expr3d === p.expr
-                      ? "border-cyan-500 bg-cyan-500/20 text-cyan-400 font-bold shadow-xs"
-                      : "border-border/60 bg-background/50 hover:bg-muted text-muted-foreground"
+                      ? "border-zinc-900 bg-zinc-900 text-white shadow-2xs"
+                      : "border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-700"
                   )}
                 >
                   {p.name}
                 </button>
               ))}
             </div>
-            <div className="flex items-center gap-2 rounded-xl bg-muted/40 border border-border/50 px-3 py-1 text-xs font-mono text-cyan-400">
-              <span className="text-muted-foreground">z =</span> {expr3d}
+            <div className="rounded-lg bg-zinc-50 border border-zinc-200/70 px-2.5 py-1 text-xs font-mono text-zinc-700">
+              <span className="text-zinc-400">z =</span> {expr3d}
             </div>
           </div>
 
-          <div className="rounded-2xl overflow-hidden border border-border/60 bg-black/40 shadow-inner">
-            <Plot3D expr={expr3d} height={380} />
-          </div>
-          <div className="flex items-center justify-between text-[11px] text-muted-foreground font-mono">
-            <span>• DRAG TO ORBIT CAMERA • SCROLL TO ZOOM • SHADED WITH DIRECTIONAL LIGHTING</span>
-            <span className="text-cyan-400 font-semibold">60 FPS REAL-TIME CANVAS</span>
+          <div className="rounded-xl overflow-hidden border border-zinc-200/80 bg-white">
+            <Plot3D expr={expr3d} height={340} />
           </div>
         </div>
       )}
 
       {/* Tab 2: 2D Graph */}
       {tab === "2d" && (
-        <div className="p-4 sm:p-6 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-              <span className="text-xs font-bold text-muted-foreground shrink-0">1-Click Curves:</span>
+        <div className="p-4 sm:p-5 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2.5">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+              <span className="text-xs font-medium text-zinc-400 shrink-0">Presets:</span>
               {[
-                { name: "Harmonic Wave", expr: "sin(x) + cos(2*x)/2" },
-                { name: "Cubic Polynomial", expr: "x^3 - 3*x" },
+                { name: "Harmonic", expr: "sin(x) + cos(2*x)/2" },
+                { name: "Cubic", expr: "x^3 - 3*x" },
                 { name: "Damped Sine", expr: "exp(-0.2*x)*sin(3*x)" },
-                { name: "Gaussian Bell", expr: "exp(-x^2/2)" },
+                { name: "Gaussian", expr: "exp(-x^2/2)" },
               ].map((p) => (
                 <button
                   key={p.name}
                   type="button"
                   onClick={() => setExpr2d(p.expr)}
                   className={cn(
-                    "rounded-xl border px-3 py-1 text-xs font-mono transition-all shrink-0 active:scale-95",
+                    "rounded-full border px-3 py-1 text-xs font-medium transition-all shrink-0",
                     expr2d === p.expr
-                      ? "border-emerald-500 bg-emerald-500/20 text-emerald-400 font-bold shadow-xs"
-                      : "border-border/60 bg-background/50 hover:bg-muted text-muted-foreground"
+                      ? "border-zinc-900 bg-zinc-900 text-white shadow-2xs"
+                      : "border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-700"
                   )}
                 >
                   {p.name}
                 </button>
               ))}
             </div>
-            <div className="flex items-center gap-2 rounded-xl bg-muted/40 border border-border/50 px-3 py-1 text-xs font-mono text-emerald-400">
-              <span className="text-muted-foreground">f(x) =</span> {expr2d}
+            <div className="rounded-lg bg-zinc-50 border border-zinc-200/70 px-2.5 py-1 text-xs font-mono text-zinc-700">
+              <span className="text-zinc-400">f(x) =</span> {expr2d}
             </div>
           </div>
 
-          <div className="rounded-2xl overflow-hidden border border-border/60 bg-black/40 shadow-inner">
-            <Plot2D spec={spec2d} height={380} />
-          </div>
-          <div className="flex items-center justify-between text-[11px] text-muted-foreground font-mono">
-            <span>• HOVER TO TRACE TANGENT &amp; SLOPE • DRAG TO PAN • PINCH/SCROLL TO SCALE</span>
-            <span className="text-emerald-400 font-semibold">DYNAMIC CROSSHAIR ACTIVE</span>
+          <div className="rounded-xl overflow-hidden border border-zinc-200/80 bg-white">
+            <Plot2D spec={spec2d} height={340} />
           </div>
         </div>
       )}
 
-      {/* Tab 3: Step-by-Step Derivation */}
+      {/* Tab 3: Derivation Steps */}
       {tab === "solver" && (
-        <div className="p-4 sm:p-6 space-y-4">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-muted-foreground">Choose Problem:</span>
+        <div className="p-4 sm:p-5 space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium text-zinc-400">Example:</span>
             {[
               { type: "derivative" as const, label: "d/dx [x³ · sin(x)]" },
               { type: "integral" as const, label: "∫ (x² + 3x) dx" },
@@ -470,10 +605,10 @@ function HeroPlayground({ onOpenTool }: { onOpenTool: (id: string) => void }) {
                 type="button"
                 onClick={() => setProblemType(p.type)}
                 className={cn(
-                  "rounded-xl border px-3 py-1 text-xs font-mono transition-all active:scale-95",
+                  "rounded-full border px-3 py-1 text-xs font-mono transition-all",
                   problemType === p.type
-                    ? "border-amber-500 bg-amber-500/20 text-amber-400 font-bold shadow-xs"
-                    : "border-border/60 bg-background/50 hover:bg-muted text-muted-foreground"
+                    ? "border-zinc-900 bg-zinc-900 text-white shadow-2xs"
+                    : "border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-700"
                 )}
               >
                 {p.label}
@@ -482,7 +617,7 @@ function HeroPlayground({ onOpenTool }: { onOpenTool: (id: string) => void }) {
           </div>
 
           {liveSolution && (
-            <div className="rounded-2xl border border-border/60 bg-card/70 p-4 max-h-[380px] overflow-y-auto shadow-inner">
+            <div className="rounded-xl border border-zinc-200/70 bg-zinc-50/40 p-4 max-h-[340px] overflow-y-auto">
               <StepsView solution={liveSolution} />
             </div>
           )}
@@ -491,44 +626,32 @@ function HeroPlayground({ onOpenTool }: { onOpenTool: (id: string) => void }) {
 
       {/* Tab 4: Quick Calculator */}
       {tab === "calc" && (
-        <div className="p-4 sm:p-6 space-y-6">
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider font-mono">
-              Live Expression Evaluation (Type anything):
-            </label>
-            <div className="flex gap-2">
-              <Input
-                value={quickInput}
-                onChange={(e) => setQuickInput(e.target.value)}
-                placeholder="e.g. sqrt(144) * 5 + sin(pi/6)"
-                className="font-mono text-base bg-background/70 rounded-xl border-border/70 h-12"
-              />
-            </div>
+        <div className="p-4 sm:p-5 space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-zinc-500">Expression Evaluation</label>
+            <Input
+              value={quickInput}
+              onChange={(e) => setQuickInput(e.target.value)}
+              placeholder="e.g. sqrt(144) * 5 + sin(pi/6)"
+              className="font-mono text-base bg-white rounded-xl border-zinc-200 h-11"
+            />
           </div>
 
-          <div className="rounded-2xl border border-violet-500/30 bg-violet-500/5 p-6 space-y-2">
-            <div className="text-xs font-mono text-violet-400 uppercase tracking-widest font-semibold">
-              Computed Result:
-            </div>
-            <div className="text-3xl font-mono font-extrabold text-foreground tracking-tight">
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50/70 p-5 space-y-1">
+            <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Result</div>
+            <div className="text-2xl sm:text-3xl font-mono font-bold text-zinc-900 tabular-nums">
               {quickResult || "0"}
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold text-muted-foreground">Try Instant Formulas:</span>
-            {[
-              "sin(pi/3)",
-              "sqrt(256) / 4",
-              "2^10 - 1000",
-              "log(100, 10)",
-              "cos(pi/4)^2 + sin(pi/4)^2",
-            ].map((f) => (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs font-medium text-zinc-400 mr-1">Try:</span>
+            {["sin(pi/3)", "sqrt(256) / 4", "2^10 - 1000", "log(100, 10)", "cos(pi/4)^2 + sin(pi/4)^2"].map((f) => (
               <button
                 key={f}
                 type="button"
                 onClick={() => setQuickInput(f)}
-                className="rounded-lg border border-border/60 bg-background/40 px-2.5 py-1 text-xs font-mono hover:border-violet-500/50 hover:text-violet-400 transition-colors"
+                className="rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 px-2.5 py-1 text-xs font-mono text-zinc-600 transition-colors"
               >
                 {f}
               </button>
@@ -541,7 +664,7 @@ function HeroPlayground({ onOpenTool }: { onOpenTool: (id: string) => void }) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Hero Search Bar                                                     */
+/* Quick Search Bar                                                   */
 /* ------------------------------------------------------------------ */
 
 function HeroSearch({ onSearch }: { onSearch: (q: string) => void }) {
@@ -549,37 +672,37 @@ function HeroSearch({ onSearch }: { onSearch: (q: string) => void }) {
   const results = useMemo(() => searchTools(value).slice(0, 6), [value]);
 
   return (
-    <div className="relative w-full max-w-2xl mx-auto">
+    <div className="relative w-full">
       <form
-        className="flex items-center gap-2 rounded-2xl glass-panel border border-white/10 dark:border-white/15 shadow-2xl px-4 py-2.5 focus-within:ring-2 focus-within:ring-emerald-500/50 transition-all"
+        className="flex items-center gap-2 rounded-xl border border-zinc-200/90 bg-white shadow-2xs px-3.5 py-1 focus-within:border-zinc-400 focus-within:ring-2 focus-within:ring-[#0071e3]/15 transition-all"
         onSubmit={(e) => {
           e.preventDefault();
           if (results.length) onSearch(results[0].id);
           else if (value.trim()) onSearch("equation-solver");
         }}
       >
-        <Search className="h-5 w-5 text-emerald-500 shrink-0" />
+        <Search className="h-4 w-4 text-zinc-400 shrink-0" />
         <Input
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder="Ask any math question or tool name (e.g. integral, eigenvalues, 3D, OCR)..."
-          className="border-0 shadow-none focus-visible:ring-0 h-11 text-base bg-transparent"
-          aria-label="Search mathematics laboratory"
+          placeholder="Search EDA, machine learning, derivatives, matrices, OCR..."
+          className="border-0 shadow-none focus-visible:ring-0 h-9 text-sm bg-transparent placeholder:text-zinc-400 text-zinc-900"
+          aria-label="Search workspace"
         />
         <Button
           type="submit"
           size="sm"
-          className="shrink-0 gap-1.5 rounded-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md"
+          className="shrink-0 gap-1 rounded-lg font-medium bg-[#1d1d1f] hover:bg-zinc-800 text-white h-7 px-3 text-xs"
         >
-          Explore <ArrowRight className="h-4 w-4" />
+          Open <ArrowRight className="h-3 w-3" />
         </Button>
       </form>
 
       {value && (
-        <div className="absolute z-30 mt-2 w-full rounded-2xl border border-border/80 glass-panel shadow-2xl overflow-hidden backdrop-blur-2xl">
+        <div className="absolute z-30 mt-2 w-full rounded-xl border border-zinc-200 bg-white shadow-xl overflow-hidden text-left">
           {results.length === 0 ? (
-            <p className="p-4 text-sm text-muted-foreground">
-              No direct tool name matched — press Enter to launch the Equation Solver with your input.
+            <p className="p-4 text-xs text-zinc-500">
+              Press Enter to open Equation Solver.
             </p>
           ) : (
             results.map((t) => {
@@ -587,17 +710,17 @@ function HeroSearch({ onSearch }: { onSearch: (q: string) => void }) {
               return (
                 <button
                   key={t.id}
-                  className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-muted/60 transition-colors border-b border-border/40 last:border-0"
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-zinc-50 transition-colors border-b border-zinc-100 last:border-0"
                   onClick={() => onSearch(t.id)}
                 >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500 shrink-0">
-                    <CatIcon name={t.icon} className="h-4 w-4" />
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700 shrink-0">
+                    <CatIcon name={t.icon} className="h-3.5 w-3.5" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-bold truncate">{t.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{t.description}</p>
+                    <p className="text-xs font-semibold text-zinc-900 truncate">{t.name}</p>
+                    <p className="text-[11px] text-zinc-500 truncate">{t.description}</p>
                   </div>
-                  <span className="ml-auto text-[10px] font-mono uppercase tracking-wider text-muted-foreground shrink-0 border rounded-md px-2 py-0.5">
+                  <span className="ml-auto text-[10px] font-medium text-zinc-400 shrink-0 border border-zinc-200 rounded px-1.5 py-0.5">
                     {cat?.name}
                   </span>
                 </button>
@@ -611,58 +734,38 @@ function HeroSearch({ onSearch }: { onSearch: (q: string) => void }) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Tool Card with Glowing Cyber Effect                                */
+/* Compact Notion Tool Card                                           */
 /* ------------------------------------------------------------------ */
 
 function ToolCard({ toolId, onOpen }: { toolId: string; onOpen: (id: string) => void }) {
   const tool = TOOLS.find((t) => t.id === toolId)!;
-  const cat = CATEGORIES.find((c) => c.id === tool.category)!;
-  const styles = CAT_STYLES[cat.color] ?? CAT_STYLES.emerald;
 
   return (
     <button
       onClick={() => onOpen(tool.id)}
-      className={cn(
-        "group relative flex flex-col items-start gap-3 rounded-3xl border border-border/60 bg-card/60 backdrop-blur-xl p-5 text-left shadow-sm transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 hover:border-emerald-500/40 active:scale-[0.98] overflow-hidden"
-      )}
+      className="group flex items-start gap-3 rounded-xl border border-zinc-200/80 bg-white p-3.5 text-left hover:border-zinc-300 hover:shadow-xs transition-all"
     >
-      {/* Top ambient color reflection on hover */}
-      <div className={cn("absolute -top-12 -right-12 h-28 w-28 rounded-full blur-2xl opacity-0 group-hover:opacity-30 transition-opacity", styles.bg)} />
+      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700 group-hover:bg-[#1d1d1f] group-hover:text-white transition-colors shrink-0 mt-0.5">
+        <CatIcon name={tool.icon} className="h-4 w-4" />
+      </span>
 
-      <div className="flex items-center justify-between w-full">
-        <span className={cn("flex h-11 w-11 items-center justify-center rounded-2xl text-white shadow-md transition-transform group-hover:scale-110 duration-300", styles.bg)}>
-          <CatIcon name={tool.icon} className="h-5 w-5" />
-        </span>
-        <span className="rounded-full bg-muted/60 border border-border/50 px-2.5 py-0.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider font-mono">
-          {cat.name}
-        </span>
-      </div>
-
-      <div className="min-w-0 mt-1">
-        <p className="font-bold text-base leading-snug group-hover:text-emerald-400 transition-colors">
-          {tool.name}
-        </p>
-        <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed line-clamp-2">
-          {tool.description}
-        </p>
-      </div>
-
-      <div className="mt-auto pt-3 w-full border-t border-border/40 flex items-center justify-between text-xs font-semibold text-muted-foreground group-hover:text-foreground transition-colors">
-        <span className="flex items-center gap-1 font-mono text-[11px] text-emerald-500">
-          Open Tool
-        </span>
-        <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1 text-emerald-500" />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-2">
+          <p className="font-semibold text-sm text-zinc-900 truncate">{tool.name}</p>
+          <ArrowRight className="h-3.5 w-3.5 text-zinc-300 group-hover:text-zinc-700 group-hover:translate-x-0.5 transition-all shrink-0" />
+        </div>
+        <p className="text-xs text-zinc-500 mt-0.5 leading-snug line-clamp-1">{tool.description}</p>
       </div>
     </button>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* Home View                                                           */
+/* Home View                                                          */
 /* ------------------------------------------------------------------ */
 
 function HomeView() {
-  const { openTool, setSearchOpen } = useMathLab();
+  const { openTool } = useMathLab();
   const [selectedCat, setSelectedCat] = useState<string>("all");
 
   const filteredCategories = useMemo(() => {
@@ -671,332 +774,138 @@ function HomeView() {
   }, [selectedCat]);
 
   return (
-    <div className="space-y-16 sm:space-y-24">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden rounded-[36px] glass-panel border border-white/10 dark:border-white/10 px-4 sm:px-10 py-14 sm:py-24 text-center shadow-2xl">
-        <div className="pointer-events-none absolute -top-40 -right-40 h-[450px] w-[450px] rounded-full bg-emerald-500/15 blur-[120px]" aria-hidden />
-        <div className="pointer-events-none absolute -bottom-40 -left-40 h-[450px] w-[450px] rounded-full bg-cyan-500/15 blur-[120px]" aria-hidden />
-
-        <div className="relative max-w-5xl mx-auto">
-          <h1 className="mx-auto max-w-4xl text-3xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.08]">
-            Compute. Visualize.{" "}
-            <span className="text-shimmer">Master Mathematics.</span>
+    <div className="space-y-10 pb-12 max-w-5xl mx-auto">
+      {/* Header & Search */}
+      <section className="pt-2 sm:pt-4 space-y-5">
+        <div className="space-y-1.5">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1d1d1f]">
+            MathOML
           </h1>
-
-          <p className="mx-auto mt-6 max-w-2xl text-muted-foreground text-sm sm:text-lg leading-relaxed">
-            Interactive 3D surfaces, 2D curves, step-by-step calculus, matrix algebra, and machine learning.
-          </p>
-
-          {/* Search Bar */}
-          <div className="mt-8">
-            <HeroSearch onSearch={(id) => openTool(id)} />
-          </div>
-
-          {/* Quick Launcher Dock */}
-          <div className="mt-8 pt-6 border-t border-border/40">
-            <p className="text-xs font-mono font-bold tracking-widest text-muted-foreground uppercase mb-3.5">
-              Quick Launch:
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              {[
-                { label: "EDA Studio", tool: "eda-studio", color: "hover:border-sky-500/50 hover:bg-sky-500/10 hover:text-sky-600 font-bold" },
-                { label: "ML Arena", tool: "ml-arena", color: "hover:border-indigo-500/50 hover:bg-indigo-500/10 hover:text-indigo-400 font-bold" },
-                { label: "Ripple Wave 3D", tool: "graph-3d", color: "hover:border-cyan-500/50 hover:bg-cyan-500/10 hover:text-cyan-400" },
-                { label: "Harmonic Wave 2D", tool: "graph-2d", color: "hover:border-emerald-500/50 hover:bg-emerald-500/10 hover:text-emerald-400" },
-                { label: "Derivative Steps", tool: "derivative", color: "hover:border-amber-500/50 hover:bg-amber-500/10 hover:text-amber-400" },
-                { label: "Photo OCR", tool: "image-to-equation", color: "hover:border-violet-500/50 hover:bg-violet-500/10 hover:text-violet-400" },
-                { label: "Matrix Inversion", tool: "determinant", color: "hover:border-rose-500/50 hover:bg-rose-500/10 hover:text-rose-400" },
-                { label: "Probability & Stats", tool: "statistics", color: "hover:border-sky-500/50 hover:bg-sky-500/10 hover:text-sky-400" },
-              ].map((item) => (
-                <button
-                  key={item.label}
-                  type="button"
-                  onClick={() => openTool(item.tool)}
-                  className={cn(
-                    "rounded-xl border border-border/60 bg-background/50 backdrop-blur-md px-3.5 py-2 text-xs font-semibold transition-all active:scale-95 shadow-xs",
-                    item.color
-                  )}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Centerpiece: Interactive Hero Playground */}
-          <HeroPlayground onOpenTool={(id) => openTool(id)} />
-        </div>
-      </section>
-
-      {/* Core Tools Showcase */}
-      <section className="space-y-6">
-        <div className="text-center max-w-2xl mx-auto">
-          <h2 className="text-2xl sm:text-4xl font-black tracking-tight">Core Laboratories</h2>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-2">
-            Mathematical computing, step-by-step calculus, and interactive machine learning.
+          <p className="text-sm text-zinc-500 max-w-2xl">
+            Exploratory data analysis, interactive machine learning, 2D/3D graphing, and step-by-step symbolic mathematics.
           </p>
         </div>
 
-        {/* Machine Learning Arena */}
-        <div
-          onClick={() => openTool("ml-arena")}
-          className="group relative cursor-pointer overflow-hidden rounded-[32px] glass-panel p-6 sm:p-8 border border-indigo-500/40 shadow-2xl transition-all duration-300 hover:shadow-indigo-500/10 hover:border-indigo-500/70 hover:-translate-y-1"
-        >
-          <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl group-hover:scale-125 transition-transform duration-700" aria-hidden />
-          <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-            <div className="space-y-3 max-w-2xl">
-              <div className="flex items-center gap-3">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/30">
-                  <Brain className="h-6 w-6" />
+        <HeroSearch onSearch={(id) => openTool(id)} />
+      </section>
+
+      {/* Primary Workspaces */}
+      <section className="space-y-3">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+          Primary Workspaces
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            {
+              id: "eda-studio",
+              title: "EDA Studio",
+              desc: "Upload CSV files, inspect statistics, render 2D/3D Plotly charts, clean data, and export PDFs.",
+              icon: BarChart3,
+              accent: "bg-sky-50 text-[#0071e3] border-sky-100",
+            },
+            {
+              id: "ml-arena",
+              title: "Machine Learning",
+              desc: "Regression, SVM, KNN, optimizers, K-Means, PCA, and Q-Learning simulations.",
+              icon: Brain,
+              accent: "bg-indigo-50 text-indigo-600 border-indigo-100",
+            },
+            {
+              id: "graph-3d",
+              title: "3D & 2D Graphing",
+              desc: "Multivariable surface plotting, parameter sliders, contour maps, and implicit curves.",
+              icon: Mountain,
+              accent: "bg-emerald-50 text-emerald-700 border-emerald-100",
+            },
+            {
+              id: "image-to-equation",
+              title: "Image to Equation",
+              desc: "Extract handwritten or printed expressions and matrices from photos.",
+              icon: ScanLine,
+              accent: "bg-amber-50 text-amber-700 border-amber-100",
+            },
+          ].map((card) => (
+            <button
+              key={card.id}
+              onClick={() => openTool(card.id)}
+              className="group rounded-2xl border border-zinc-200/80 bg-white p-5 text-left apple-card flex flex-col justify-between"
+            >
+              <div className="space-y-3">
+                <span className={cn("flex h-9 w-9 items-center justify-center rounded-xl border", card.accent)}>
+                  <card.icon className="h-4.5 w-4.5" />
                 </span>
                 <div>
-                  <h3 className="text-xl sm:text-2xl font-black tracking-tight">Machine Learning Arena</h3>
+                  <h3 className="text-sm font-semibold text-zinc-900">{card.title}</h3>
+                  <p className="text-xs text-zinc-500 mt-1 leading-relaxed">{card.desc}</p>
                 </div>
               </div>
-              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                Explore Regression, Classification, Optimization (Gradient Descent, SGD, Adam, 3D loss landscapes), Unsupervised Learning (K-Means, PCA), and Tabular Q-Learning with step-by-step mathematical derivations.
-              </p>
-            </div>
-
-            <div className="flex sm:flex-col items-center sm:items-end gap-3 shrink-0 w-full sm:w-auto justify-between sm:justify-start">
-              <Button className="w-full sm:w-auto gap-2 rounded-2xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-xl shadow-indigo-950/30 px-6 h-12">
-                Launch ML Arena <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* EDA Studio Showcase */}
-        <div
-          onClick={() => openTool("eda-studio")}
-          className="group relative cursor-pointer overflow-hidden rounded-[32px] glass-panel p-6 sm:p-8 border border-sky-500/40 shadow-2xl transition-all duration-300 hover:shadow-sky-500/10 hover:border-sky-500/70 hover:-translate-y-1"
-        >
-          <div className="pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-sky-500/15 blur-3xl group-hover:scale-125 transition-transform duration-700" aria-hidden />
-          <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-            <div className="space-y-3 max-w-2xl">
-              <div className="flex items-center gap-3">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-teal-600 text-white shadow-lg shadow-sky-500/30">
-                  <BarChart3 className="h-6 w-6" />
-                </span>
-                <div>
-                  <h3 className="text-xl sm:text-2xl font-black tracking-tight">EDA Studio (Exploratory Data Analysis)</h3>
-                  <p className="text-xs text-muted-foreground font-mono">
-                    BOX PLOTS • GAUSSIAN KDE • VIOLIN ENVELOPES • CORRELATION HEATMAP • MISSING VALUE &amp; OUTLIER FIXER
-                  </p>
-                </div>
+              <div className="mt-4 pt-3 border-t border-zinc-100 flex items-center justify-between text-xs font-medium text-zinc-500 group-hover:text-zinc-900 transition-colors">
+                <span>Open</span>
+                <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
               </div>
-              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                Profile continuous and categorical variables with Box Plots, Gaussian KDE, and Violin density envelopes. Diagnose skewness, detect 1.5×IQR outliers, impute missing values (mean, median, mode), and follow the full data-type decision matrix.
-              </p>
-            </div>
-
-            <div className="flex sm:flex-col items-center sm:items-end gap-3 shrink-0 w-full sm:w-auto justify-between sm:justify-start">
-              <Button className="w-full sm:w-auto gap-2 rounded-2xl font-bold bg-gradient-to-r from-sky-600 via-teal-600 to-emerald-600 hover:from-sky-500 hover:to-teal-500 text-white shadow-xl shadow-sky-950/30 px-6 h-12">
-                Launch EDA Studio <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {/* Card 1: 3D Surface */}
-          <div
-            onClick={() => openTool("graph-3d")}
-            className="group relative cursor-pointer overflow-hidden rounded-3xl glass-panel p-6 shadow-md transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 hover:border-cyan-500/50 flex flex-col justify-between"
-          >
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-500 text-slate-950 shadow-lg">
-                  <Mountain className="h-6 w-6" />
-                </span>
-                <span className="rounded-full bg-cyan-500/10 border border-cyan-500/30 px-2.5 py-0.5 text-[10px] font-mono font-bold text-cyan-400 uppercase">
-                  3D View
-                </span>
-              </div>
-              <h3 className="text-lg font-bold">3D Surface Studio</h3>
-              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                Interactive 3D mathematical surfaces with customizable colormaps and orbital rotation.
-              </p>
-            </div>
-            <div className="mt-6 flex items-center gap-1.5 text-xs font-bold text-cyan-400 group-hover:translate-x-1 transition-transform">
-              Launch Studio <ArrowRight className="h-3.5 w-3.5" />
-            </div>
-          </div>
-
-          {/* Card 2: 2D Grapher */}
-          <div
-            onClick={() => openTool("graph-2d")}
-            className="group relative cursor-pointer overflow-hidden rounded-3xl glass-panel p-6 shadow-md transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 hover:border-emerald-500/50 flex flex-col justify-between"
-          >
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500 text-slate-950 shadow-lg">
-                  <LineChart className="h-6 w-6" />
-                </span>
-                <span className="rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 text-[10px] font-mono font-bold text-emerald-400 uppercase">
-                  Grapher
-                </span>
-              </div>
-              <h3 className="text-lg font-bold">2D Graphing Calculator</h3>
-              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                Plot 2D functions with roots, extrema, tangent lines, and definite integrals.
-              </p>
-            </div>
-            <div className="mt-6 flex items-center gap-1.5 text-xs font-bold text-emerald-400 group-hover:translate-x-1 transition-transform">
-              Launch Grapher <ArrowRight className="h-3.5 w-3.5" />
-            </div>
-          </div>
-
-          {/* Card 3: Multi-OCR */}
-          <div
-            onClick={() => openTool("image-to-equation")}
-            className="group relative cursor-pointer overflow-hidden rounded-3xl glass-panel p-6 shadow-md transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 hover:border-violet-500/50 flex flex-col justify-between"
-          >
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-500 text-white shadow-lg">
-                  <ScanLine className="h-6 w-6" />
-                </span>
-                <span className="rounded-full bg-violet-500/10 border border-violet-500/30 px-2.5 py-0.5 text-[10px] font-mono font-bold text-violet-400 uppercase">
-                  OCR
-                </span>
-              </div>
-              <h3 className="text-lg font-bold">Photo Worksheet OCR</h3>
-              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                Scan multiple numbered equations from worksheets and solve step-by-step.
-              </p>
-            </div>
-            <div className="mt-6 flex items-center gap-1.5 text-xs font-bold text-violet-400 group-hover:translate-x-1 transition-transform">
-              Launch OCR Queue <ArrowRight className="h-3.5 w-3.5" />
-            </div>
-          </div>
-
-          {/* Card 4: Matrix & Linear */}
-          <div
-            onClick={() => openTool("matrix-calculator")}
-            className="group relative cursor-pointer overflow-hidden rounded-3xl glass-panel p-6 shadow-md transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 hover:border-rose-500/50 flex flex-col justify-between"
-          >
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-500 text-white shadow-lg">
-                  <Grid3x3 className="h-6 w-6" />
-                </span>
-                <span className="rounded-full bg-rose-500/10 border border-rose-500/30 px-2.5 py-0.5 text-[10px] font-mono font-bold text-rose-400 uppercase">
-                  Matrix Lab
-                </span>
-              </div>
-              <h3 className="text-lg font-bold">Matrix &amp; Linear Algebra</h3>
-              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                Determinants, eigenvalues, eigenvectors, matrix inverses, and systems of linear equations.
-              </p>
-            </div>
-            <div className="mt-6 flex items-center gap-1.5 text-xs font-bold text-rose-400 group-hover:translate-x-1 transition-transform">
-              Launch Matrix Lab <ArrowRight className="h-3.5 w-3.5" />
-            </div>
-          </div>
+            </button>
+          ))}
         </div>
       </section>
 
-      {/* Complete Tools Laboratory */}
-      <section className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/50 pb-5">
-          <div>
-            <h2 className="text-xl sm:text-3xl font-black tracking-tight">Tools &amp; Calculators</h2>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1">Select a discipline or explore the complete suite.</p>
-          </div>
+      {/* Interactive Scratchpad */}
+      <section>
+        <HeroPlayground onOpenTool={(id) => openTool(id)} />
+      </section>
 
-          {/* Category Chips */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+      {/* Categorized Tools Directory */}
+      <section className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-200/70 pb-3">
+          <h2 className="text-base font-bold tracking-tight text-zinc-900">All Tools</h2>
+
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
             <button
               type="button"
               onClick={() => setSelectedCat("all")}
               className={cn(
-                "rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all shrink-0",
+                "rounded-full px-3 py-1 text-xs font-medium transition-all shrink-0",
                 selectedCat === "all"
-                  ? "bg-foreground text-background shadow-md font-bold"
-                  : "border border-border/60 bg-card/60 hover:bg-muted text-muted-foreground"
+                  ? "bg-zinc-900 text-white shadow-2xs"
+                  : "bg-zinc-100 text-zinc-600 hover:text-zinc-900"
               )}
             >
-              All Tools ({TOOLS.length})
+              All ({TOOLS.length})
             </button>
-            {CATEGORIES.map((cat) => {
-              const count = toolsByCategory(cat.id).length;
-              return (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => setSelectedCat(cat.id)}
-                  className={cn(
-                    "rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all shrink-0 flex items-center gap-1.5",
-                    selectedCat === cat.id
-                      ? "bg-foreground text-background shadow-md font-bold"
-                      : "border border-border/60 bg-card/60 hover:bg-muted text-muted-foreground"
-                  )}
-                >
-                  <CatIcon name={cat.icon} className="h-3 w-3" />
-                  {cat.name} ({count})
-                </button>
-              );
-            })}
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setSelectedCat(cat.id)}
+                className={cn(
+                  "rounded-full px-3 py-1 text-xs font-medium transition-all shrink-0",
+                  selectedCat === cat.id
+                    ? "bg-zinc-900 text-white shadow-2xs"
+                    : "bg-zinc-100 text-zinc-600 hover:text-zinc-900"
+                )}
+              >
+                {cat.name}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Categories Grid */}
-        {filteredCategories.map((cat: Category) => {
-          const tools = toolsByCategory(cat.id);
-          const styles = CAT_STYLES[cat.color] ?? CAT_STYLES.emerald;
-          return (
-            <div key={cat.id} className="space-y-3.5 pt-2">
-              <div className="flex items-center gap-3">
-                <span className={cn("flex h-8 w-8 items-center justify-center rounded-xl text-white shadow-sm", styles.bg)}>
-                  <CatIcon name={cat.icon} className="h-4 w-4" />
-                </span>
-                <div>
-                  <h3 className="text-base font-bold tracking-tight">{cat.name}</h3>
-                  <p className="text-xs text-muted-foreground">{cat.description}</p>
+        <div className="space-y-6">
+          {filteredCategories.map((cat: Category) => {
+            const tools = toolsByCategory(cat.id);
+            return (
+              <div key={cat.id} className="space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <CatIcon name={cat.icon} className="h-3.5 w-3.5 text-zinc-400" />
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">{cat.name}</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {tools.map((t) => (
+                    <ToolCard key={t.id} toolId={t.id} onOpen={openTool} />
+                  ))}
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {tools.map((t) => (
-                  <ToolCard key={t.id} toolId={t.id} onOpen={openTool} />
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </section>
-
-      {/* Cyber Photo OCR Callout Banner */}
-      <section className="relative overflow-hidden rounded-[32px] glass-panel p-8 sm:p-12 border border-violet-500/30 shadow-2xl flex flex-col md:flex-row items-center gap-8 justify-between">
-        <div className="pointer-events-none absolute -top-24 -left-24 h-64 w-64 rounded-full bg-violet-500/15 blur-3xl" aria-hidden />
-
-        <div className="relative z-10 max-w-xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-xs font-mono font-bold text-violet-400 mb-3">
-            <ScanLine className="h-3.5 w-3.5" />
-            <span>OPTICAL MATHEMATICAL RECOGNITION</span>
-          </div>
-          <h2 className="font-black text-2xl sm:text-3xl tracking-tight">
-            Have handwritten math questions on paper?
-          </h2>
-          <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-            Snap a photo of worksheets with multiple questions. MathOML identifies every equation, queues them sequentially, and computes step-by-step solutions with laser scan animations.
-          </p>
-        </div>
-
-        <div className="relative z-10 flex flex-wrap gap-3 shrink-0">
-          <Button
-            variant="outline"
-            className="rounded-2xl glass-pill px-5 h-12"
-            onClick={() => setSearchOpen(true)}
-          >
-            Browse All Tools
-          </Button>
-          <Button
-            className="gap-2 rounded-2xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-xl shadow-violet-950/20 px-6 h-12"
-            onClick={() => openTool("image-to-equation")}
-          >
-            <ScanLine className="h-4 w-4" /> Launch Photo OCR Queue
-          </Button>
+            );
+          })}
         </div>
       </section>
     </div>
@@ -1004,46 +913,86 @@ function HomeView() {
 }
 
 /* ------------------------------------------------------------------ */
-/* Main Page Export                                                   */
+/* Main Application Shell (Desktop Sidebar + Sticky Workspace)        */
 /* ------------------------------------------------------------------ */
 
 export default function Page() {
   const { view, viewNonce } = useMathLab();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const Tool = TOOL_COMPONENTS[view];
+
+  // Keyboard shortcut ⌘\ or Ctrl+\ to toggle sidebar cleanly (just like Notion & VS Code)
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "\\" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setSidebarOpen((prev) => !prev);
+      }
+    };
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [view]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-transparent">
-      <Header />
-      <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 py-8 sm:py-12">
-        {view === "home" ? <HomeView /> : Tool ? <Tool key={`${view}-${viewNonce}`} /> : <HomeView />}
-      </main>
-      <footer className="mt-auto border-t border-border/50 bg-background/60 backdrop-blur-xl">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 flex flex-col sm:flex-row items-center gap-4 justify-between text-xs text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
-              <Sigma className="h-3.5 w-3.5" />
-            </span>
-            <span className="font-semibold text-foreground">MathOML Laboratory</span>
-            <span>— Interactive Mathematics Studio</span>
+    <div className="flex min-h-screen w-full bg-[#fbfbfa]">
+      {/* Desktop Sticky Collapsible Notion Sidebar */}
+      <div className="hidden lg:block sticky top-0 h-screen shrink-0">
+        <WorkspaceSidebar
+          open={sidebarOpen}
+          onCloseMobile={() => setMobileDrawerOpen(false)}
+          onToggleDesktop={() => setSidebarOpen((p) => !p)}
+        />
+      </div>
+
+      {/* Mobile Drawer Sidebar */}
+      {mobileDrawerOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          <div className="fixed inset-0 bg-black/20 backdrop-blur-xs" onClick={() => setMobileDrawerOpen(false)} />
+          <div className="relative z-10 h-full">
+            <WorkspaceSidebar
+              open={true}
+              onCloseMobile={() => setMobileDrawerOpen(false)}
+              onToggleDesktop={() => {}}
+            />
           </div>
-          <div className="flex items-center gap-4">
+        </div>
+      )}
+
+      {/* Main Content Area */}
+      <div className="flex-1 min-w-0 flex flex-col min-h-screen">
+        <TopBar
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen((p) => !p)}
+          onOpenMobileSidebar={() => setMobileDrawerOpen(true)}
+        />
+
+        <main className="flex-1 w-full px-4 sm:px-8 py-6 sm:py-8">
+          {view === "home" ? <HomeView /> : Tool ? <Tool key={`${view}-${viewNonce}`} /> : <HomeView />}
+        </main>
+
+        <footer className="mt-auto border-t border-black/[0.05] bg-white/60">
+          <div className="max-w-5xl mx-auto px-4 sm:px-8 py-5 flex flex-col sm:flex-row items-center gap-3 justify-between text-xs text-zinc-400">
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-zinc-700">MathOML</span>
+              <span>— Mathematics, Data Analysis &amp; Machine Learning</span>
+            </div>
             <a
               href="https://github.com/ayushshaury/MathOML-Lab"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-foreground flex items-center gap-1 transition-colors"
+              className="hover:text-zinc-900 flex items-center gap-1 transition-colors"
             >
-              <Github className="h-3.5 w-3.5" /> GitHub Repository
+              <Github className="h-3.5 w-3.5" /> Source
             </a>
-            <span>•</span>
-            <span>Open Source</span>
           </div>
-        </div>
-      </footer>
+        </footer>
+      </div>
+
       <SearchPalette />
     </div>
   );

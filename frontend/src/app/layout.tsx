@@ -8,12 +8,18 @@ const geistSans = { variable: "--font-geist-sans" };
 const geistMono = { variable: "--font-geist-mono" };
 
 export const metadata: Metadata = {
-  title: "MathOML — The Interactive Digital Mathematics Laboratory",
+  title: "MathOML — Mathematics, Data Analysis & Machine Learning",
   description:
-    "Next-generation mathematics studio: live 3D surface shaders, interactive 2D curve tracing, multi-question photo OCR queue, and exact step-by-step computer algebra systems.",
+    "Interactive math solvers, 2D and 3D graphing, automated exploratory data analysis, and machine learning workspaces.",
   keywords: [
-    "math solver", "3d graphing", "step by step calculus", "matrix algebra", "latex ocr", "interactive mathematics",
-    "eigenvalues", "multivariate surface", "mathoml", "derivatives", "integrals"
+    "math solver",
+    "eda",
+    "exploratory data analysis",
+    "3d graphing",
+    "calculus",
+    "matrix algebra",
+    "machine learning",
+    "ocr",
   ],
   icons: {
     icon: [
@@ -32,7 +38,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground min-h-screen selection:bg-emerald-500/20 selection:text-emerald-700`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#fbfbfa] text-[#1d1d1f] min-h-screen selection:bg-[#0071e3]/15 selection:text-[#0071e3]`}>
         <InteractiveBackground />
         <div className="relative z-10 flex min-h-screen flex-col">
           {children}

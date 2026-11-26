@@ -203,9 +203,10 @@ export function ImageToEquationTool() {
           if (p) {
             const eigenRes = eigenSteps(p.matrix);
             sol = {
-              title: "Eigenvalues & Eigenvectors",
-              resultTex: eigenRes.eigenvalues.map((v, i) => `\\lambda_{${i + 1}} = ${v}`).join(", "),
-              steps: eigenRes.steps,
+              ...eigenRes,
+              resultTex:
+                eigenRes.resultTex ||
+                eigenRes.eigen.map((e, i) => `\\lambda_{${i + 1}} = ${e.tex}`).join(", "),
             };
             return { ...item, status: "solved", solution: sol };
           }
@@ -500,80 +501,75 @@ export function ImageToEquationTool() {
           <div
             onClick={() => fileRef.current?.click()}
             className={cn(
-              "group relative w-full rounded-3xl border-2 border-dashed border-muted-foreground/25 hover:border-emerald-500/60 p-8 flex flex-col items-center gap-3.5 text-center cursor-pointer transition-all bg-card/60 hover:bg-emerald-500/5 shadow-xs",
-              loading && "pointer-events-none opacity-80"
+              "group relative w-full rounded-2xl border-2 border-dashed border-zinc-300 hover:border-zinc-500 p-8 flex flex-col items-center gap-3 text-center cursor-pointer transition-all bg-zinc-50/50 hover:bg-zinc-100/50",
+              loading && "pointer-events-none opacity-75"
             )}
           >
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/15 to-teal-500/10 text-emerald-600 dark:text-emerald-400 group-hover:scale-105 transition-transform shadow-xs">
-              {loading ? <Scan className="h-8 w-8 animate-pulse text-emerald-500" /> : <Upload className="h-8 w-8" />}
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-100 text-zinc-700 group-hover:scale-105 transition-transform border border-zinc-200">
+              {loading ? <Scan className="h-6 w-6 animate-pulse text-[#0071e3]" /> : <Upload className="h-6 w-6" />}
             </div>
             <div>
-              <p className="font-bold text-base">
-                {loading ? "Scanning & Parsing Mathematical Expressions…" : "Upload or Snap a Picture"}
+              <p className="font-semibold text-sm text-zinc-900">
+                {loading ? "Extracting mathematical expressions…" : "Upload a worksheet or equation photo"}
               </p>
-              <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-                Notebooks, worksheets, test papers, or whiteboard equations (JPG, PNG, WebP)
+              <p className="text-xs text-zinc-500 mt-1 max-w-sm">
+                Notebooks, printed worksheets, or whiteboard photos (JPG, PNG, WebP)
               </p>
             </div>
           </div>
 
-          {/* 1-Click Interactive Demo Worksheets */}
+          {/* Preset Test Sheets */}
           <div className="space-y-2">
-            <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-              Pre-loaded Test Sheets (1-Click Instant Scan):
+            <span className="text-xs font-medium text-zinc-500 flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-zinc-400" />
+              Example Worksheets:
             </span>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <button
                 type="button"
                 onClick={() => loadDemoWorksheet("algebra")}
-                className="rounded-2xl border bg-card hover:bg-accent p-3 text-left text-xs font-medium transition-all hover:border-emerald-500/50 shadow-2xs"
+                className="rounded-xl border border-zinc-200/80 bg-white hover:bg-zinc-50 p-3 text-left text-xs transition-all hover:border-zinc-300"
               >
-                <p className="font-bold text-foreground">Algebra Exam</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5 truncate">3 Questions</p>
+                <p className="font-semibold text-zinc-900">Algebra</p>
+                <p className="text-[11px] text-zinc-400 mt-0.5 truncate">3 Questions</p>
               </button>
               <button
                 type="button"
                 onClick={() => loadDemoWorksheet("calculus")}
-                className="rounded-2xl border bg-card hover:bg-accent p-3 text-left text-xs font-medium transition-all hover:border-cyan-500/50 shadow-2xs"
+                className="rounded-xl border border-zinc-200/80 bg-white hover:bg-zinc-50 p-3 text-left text-xs transition-all hover:border-zinc-300"
               >
-                <p className="font-bold text-foreground">Calculus Sheet</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5 truncate">3 Questions</p>
+                <p className="font-semibold text-zinc-900">Calculus</p>
+                <p className="text-[11px] text-zinc-400 mt-0.5 truncate">3 Questions</p>
               </button>
               <button
                 type="button"
                 onClick={() => loadDemoWorksheet("matrix")}
-                className="rounded-2xl border bg-card hover:bg-accent p-3 text-left text-xs font-medium transition-all hover:border-rose-500/50 shadow-2xs"
+                className="rounded-xl border border-zinc-200/80 bg-white hover:bg-zinc-50 p-3 text-left text-xs transition-all hover:border-zinc-300"
               >
-                <p className="font-bold text-foreground">Matrix Sheet</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5 truncate">3 Questions</p>
+                <p className="font-semibold text-zinc-900">Matrices</p>
+                <p className="text-[11px] text-zinc-400 mt-0.5 truncate">3 Questions</p>
               </button>
               <button
                 type="button"
                 onClick={() => loadDemoWorksheet("mixed")}
-                className="rounded-2xl border bg-card hover:bg-accent p-3 text-left text-xs font-medium transition-all hover:border-amber-500/50 shadow-2xs"
+                className="rounded-xl border border-zinc-200/80 bg-white hover:bg-zinc-50 p-3 text-left text-xs transition-all hover:border-zinc-300"
               >
-                <p className="font-bold text-foreground">Mixed Test</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5 truncate">3 Questions</p>
+                <p className="font-semibold text-zinc-900">Mixed Exam</p>
+                <p className="text-[11px] text-zinc-400 mt-0.5 truncate">3 Questions</p>
               </button>
             </div>
           </div>
 
-          {/* Image Preview with Sci-Fi Laser Scan Animation */}
+          {/* Image Preview */}
           {preview && (
-            <div className="relative rounded-3xl border overflow-hidden bg-background shadow-md">
-              <img src={preview} alt="Uploaded math worksheet" className="max-h-64 w-full object-contain bg-background" />
+            <div className="relative rounded-2xl border border-zinc-200/80 overflow-hidden bg-zinc-50 shadow-2xs">
+              <img src={preview} alt="Uploaded math worksheet" className="max-h-64 w-full object-contain bg-white" />
 
-              {/* Animated Laser Beam & Diagnostic HUD */}
               {loading && (
-                <div className="absolute inset-0 bg-emerald-950/20 backdrop-blur-[1px] flex flex-col justify-between p-4">
-                  {/* Glowing Laser Sweep */}
-                  <div className="w-full h-1.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_20px_#10b981] animate-bounce" />
-
-                  {/* Status HUD Pill */}
-                  <div className="mx-auto mt-auto flex items-center gap-2 rounded-full border border-emerald-500/30 bg-background/95 px-4 py-1.5 shadow-lg">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-500" />
-                    <span className="text-xs font-medium text-foreground">
+                <div className="absolute inset-0 bg-white/60 backdrop-blur-xs flex flex-col justify-end p-4">
+                  <div className="mx-auto flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-4 py-1.5 shadow-sm">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-[#0071e3]" />
+                    <span className="text-xs font-medium text-zinc-800">
                       {SCAN_STAGES[scanStageIndex]}
                     </span>
                   </div>
@@ -588,14 +584,14 @@ export function ImageToEquationTool() {
           {queue.length > 0 ? (
             <>
               {/* Queue Header & Batch Action */}
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card p-4 sm:p-5 shadow-xs">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-4 shadow-2xs">
                 <div>
                   <div className="flex items-center gap-2">
-                    <ListOrdered className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                    <h3 className="font-bold text-base">Questions Queue ({queue.length} Detected)</h3>
+                    <ListOrdered className="h-4 w-4 text-zinc-600" />
+                    <h3 className="font-semibold text-sm text-zinc-900">Detected Questions ({queue.length})</h3>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {solvedCount} of {queue.length} questions solved
+                  <p className="text-xs text-zinc-500 mt-0.5">
+                    {solvedCount} of {queue.length} solved
                   </p>
                 </div>
 
@@ -604,22 +600,22 @@ export function ImageToEquationTool() {
                     variant="outline"
                     size="sm"
                     onClick={addManualQuestion}
-                    className="rounded-xl text-xs gap-1"
+                    className="rounded-xl border-zinc-200 bg-white text-xs font-medium gap-1 h-8"
                   >
-                    <Plus className="h-3.5 w-3.5" /> Add Question
+                    <Plus className="h-3.5 w-3.5" /> Add
                   </Button>
                   <Button
                     onClick={solveAllQueue}
                     disabled={isSolvingAll || solvedCount === queue.length}
-                    className="gap-2 rounded-xl shadow-xs font-semibold"
+                    className="gap-1.5 rounded-xl text-xs font-medium bg-zinc-900 hover:bg-zinc-800 text-white h-8 px-3.5"
                   >
                     {isSolvingAll ? (
                       <>
-                        <Loader2 className="h-4 w-4 animate-spin" /> Solving One by One…
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Solving…
                       </>
                     ) : (
                       <>
-                        <Play className="h-4 w-4" /> Solve All Questions
+                        <Play className="h-3.5 w-3.5" /> Solve All
                       </>
                     )}
                   </Button>
@@ -632,28 +628,28 @@ export function ImageToEquationTool() {
                   <div
                     key={item.id}
                     className={cn(
-                      "rounded-3xl border bg-card p-4 sm:p-5 shadow-xs transition-all space-y-3.5",
-                      currentlySolvingId === item.id && "border-emerald-500 ring-4 ring-emerald-500/20 scale-[1.01]",
-                      item.status === "solved" && "border-emerald-500/40 bg-emerald-500/[0.015]"
+                      "rounded-2xl border border-zinc-200/80 bg-white p-4 sm:p-5 shadow-2xs transition-all space-y-3.5",
+                      currentlySolvingId === item.id && "border-[#0071e3] ring-2 ring-[#0071e3]/15",
+                      item.status === "solved" && "border-zinc-300"
                     )}
                   >
                     {/* Header */}
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2.5">
-                        <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-muted text-xs font-bold shadow-2xs">
-                          #{item.index}
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-100 border border-zinc-200 text-xs font-semibold text-zinc-700">
+                          {item.index}
                         </span>
-                        <div className="flex gap-1">
+                        <div className="flex flex-wrap gap-1">
                           {(["equation", "derivative", "integral", "matrix", "algebra"] as const).map((t) => (
                             <button
                               key={t}
                               type="button"
                               onClick={() => updateType(item.id, t)}
                               className={cn(
-                                "px-2.5 py-0.5 rounded-lg text-[10px] uppercase font-bold tracking-wider transition-all",
+                                "px-2.5 py-0.5 rounded-full text-[11px] capitalize font-medium transition-all",
                                 item.type === t
-                                  ? "bg-primary text-primary-foreground shadow-2xs"
-                                  : "bg-muted text-muted-foreground hover:bg-accent"
+                                  ? "bg-zinc-900 text-white shadow-2xs"
+                                  : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200/70"
                               )}
                             >
                               {t}
@@ -664,14 +660,14 @@ export function ImageToEquationTool() {
 
                       <div className="flex items-center gap-1.5">
                         {item.status === "solved" && (
-                          <span className="flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 mr-1.5">
-                            <CheckCircle2 className="h-4 w-4" /> Solved
+                          <span className="flex items-center gap-1 text-xs font-medium text-emerald-700 mr-1">
+                            <CheckCircle2 className="h-3.5 w-3.5" /> Solved
                           </span>
                         )}
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          className="h-7 w-7 text-zinc-400 hover:text-rose-600 hover:bg-rose-50"
                           title="Remove question"
                           onClick={() => removeItem(item.id)}
                         >
@@ -680,33 +676,29 @@ export function ImageToEquationTool() {
                       </div>
                     </div>
 
-                    {/* Attractive Math Readability: Large KaTeX Display Card */}
-                    <div className="rounded-2xl border bg-muted/20 p-3.5 flex flex-col items-center justify-center min-h-[56px] shadow-inner overflow-x-auto space-y-1.5">
+                    {/* LaTeX Display Card */}
+                    <div className="rounded-xl border border-zinc-200/70 bg-zinc-50/70 p-3.5 flex flex-col items-center justify-center min-h-[52px] overflow-x-auto space-y-1.5">
                       {item.raw && item.raw !== item.equation && (
-                        <div className="text-[11px] font-mono text-muted-foreground self-start truncate max-w-full flex items-center gap-1.5">
-                          <span className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-                            Scanned
+                        <div className="text-[11px] font-mono text-zinc-500 self-start truncate max-w-full flex items-center gap-1.5">
+                          <span className="text-[10px] font-medium text-zinc-700 bg-zinc-200/70 px-1.5 py-0.5 rounded">
+                            Extracted
                           </span>
                           <span>&quot;{item.raw}&quot;</span>
                         </div>
                       )}
-                      <MathText tex={item.formattedTex || toDisplayTex(item.equation)} display className="text-base sm:text-lg font-medium" />
+                      <MathText tex={item.formattedTex || toDisplayTex(item.equation)} display className="text-base sm:text-lg font-medium text-zinc-900" />
                     </div>
 
-                    {/* Editable Formula Input with Quick Operator Chips */}
+                    {/* Editable Formula Input */}
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Input
-                          value={item.equation}
-                          onChange={(e) => updateEquation(item.id, e.target.value)}
-                          className="font-mono text-xs sm:text-sm h-9"
-                          placeholder="Edit detected mathematical formula..."
-                        />
-                      </div>
-                      <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                        <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground/60 mr-1">
-                          Quick edit:
-                        </span>
+                      <Input
+                        value={item.equation}
+                        onChange={(e) => updateEquation(item.id, e.target.value)}
+                        className="font-mono text-xs sm:text-sm h-9 rounded-xl border-zinc-200 bg-zinc-50/70 focus:bg-white"
+                        placeholder="Edit detected expression..."
+                      />
+                      <div className="flex flex-wrap items-center gap-1 text-xs text-zinc-500">
+                        <span className="text-[11px] font-medium text-zinc-400 mr-1">Insert:</span>
                         {[
                           { label: "x²", insert: "^2" },
                           { label: "x³", insert: "^3" },
@@ -723,7 +715,7 @@ export function ImageToEquationTool() {
                             key={chip.label}
                             type="button"
                             onClick={() => updateEquation(item.id, `${item.equation}${chip.insert}`)}
-                            className="px-2 py-0.5 rounded-md text-[11px] font-mono bg-muted/60 hover:bg-muted border border-border/50 text-foreground transition-all hover:border-emerald-500/40"
+                            className="px-2 py-0.5 rounded-md text-[11px] font-mono bg-zinc-100 hover:bg-zinc-200 border border-zinc-200/70 text-zinc-700 transition-colors"
                           >
                             {chip.label}
                           </button>
@@ -732,46 +724,46 @@ export function ImageToEquationTool() {
                     </div>
 
                     {/* Action Bar */}
-                    <div className="flex flex-wrap items-center gap-2 pt-1 border-t">
+                    <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-100">
                       <Button
                         size="sm"
                         onClick={() => solveSingle(item.id)}
                         disabled={currentlySolvingId === item.id}
-                        className="gap-1.5 text-xs font-semibold rounded-xl"
+                        className="gap-1.5 text-xs font-medium rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white h-8"
                       >
                         {currentlySolvingId === item.id ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         ) : (
                           <Sparkles className="h-3.5 w-3.5" />
                         )}
-                        {item.status === "solved" ? "Re-Solve" : "Solve This Question"}
+                        {item.status === "solved" ? "Re-Solve" : "Solve"}
                       </Button>
 
                       <Button
                         variant="outline"
                         size="sm"
-                        className="text-xs gap-1.5 rounded-xl"
+                        className="text-xs gap-1.5 rounded-xl border-zinc-200 h-8"
                         onClick={() => openTool("graph-2d", item.equation)}
                       >
-                        <LineChart className="h-3.5 w-3.5" /> Plot in 2D
+                        <LineChart className="h-3.5 w-3.5" /> Plot 2D
                       </Button>
 
                       {item.solution?.resultText && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-xs gap-1 ml-auto rounded-xl"
+                          className="text-xs gap-1 ml-auto rounded-xl h-8 text-zinc-600 hover:text-zinc-900"
                           onClick={() => {
                             navigator.clipboard.writeText(item.solution?.resultText ?? "");
-                            toast.success("Solution copied to clipboard!");
+                            toast.success("Answer copied to clipboard!");
                           }}
                         >
-                          <Copy className="h-3.5 w-3.5" /> Copy Answer
+                          <Copy className="h-3.5 w-3.5" /> Copy
                         </Button>
                       )}
                     </div>
 
-                    {/* Full Step-by-Step Derivation */}
+                    {/* Step-by-Step Solution */}
                     {item.solution && (
                       <div className="pt-2">
                         <StepsView solution={item.solution} />
@@ -782,14 +774,14 @@ export function ImageToEquationTool() {
               </div>
             </>
           ) : (
-            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3 text-center rounded-3xl border border-dashed bg-card/40 p-8">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/60">
-                <ImageIcon className="h-8 w-8 opacity-45" />
+            <div className="flex flex-col items-center justify-center py-20 text-zinc-400 gap-3 text-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/50 p-8">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-100 text-zinc-400">
+                <ImageIcon className="h-6 w-6" />
               </div>
               <div>
-                <p className="font-bold text-foreground text-base">No Questions in Queue</p>
-                <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-                  Upload an image or tap one of the <strong>Pre-loaded Test Sheets</strong> on the left to see multi-question OCR detection and sequential queue answering in action.
+                <p className="font-semibold text-zinc-800 text-sm">No questions detected yet</p>
+                <p className="text-xs text-zinc-500 mt-1 max-w-sm">
+                  Upload a photo or select one of the example worksheets to extract and solve equations step by step.
                 </p>
               </div>
             </div>

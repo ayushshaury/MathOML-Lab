@@ -405,7 +405,7 @@ def lasso_coordinate_descent(X: np.ndarray, y: np.ndarray, alpha: float = 0.1, i
       { step: 1, phase: "Linear Logit", badge: "Dot Product", mathExpression: "z = \\mathbf{w}^T \\mathbf{x} + b", insight: "Evaluates raw scalar classification score from -∞ to +∞." },
       { step: 2, phase: "Sigmoid Squash", badge: "Activation", mathExpression: "\\sigma(z) = \\frac{1}{1 + e^{-z}} \\in (0, 1)", insight: "Binds scores strictly into probability range P(Y=1|X)." },
       { step: 3, phase: "Cross-Entropy", badge: "Penalty", mathExpression: "J = -\\frac{1}{m}\\sum [y\\log(\\hat{y}) + (1-y)\\log(1-\\hat{y})]", insight: "Asymptotically infinite penalty for confident mispredictions." },
-      { step: 4, phase: "Decision Boundary", badge: "Separation", mathExpression: "\\mathbf{w}^T \\mathbf{x} + b = 0 \\iff P = 0.50", insight: "Linear hyperplane isolating Amber vs Cyan probability regions." },
+      { step: 4, phase: "Decision Boundary", badge: "Separation", mathExpression: "\\mathbf{w}^T \\mathbf{x} + b = 0 \\iff P = 0.50", insight: "Linear hyperplane separating predicted class regions." },
     ],
     math: {
       objective: "J(w, b) = -\\frac{1}{m} \\sum_{i=1}^m \\left[ y^{(i)} \\log(\\sigma(z^{(i)})) + (1 - y^{(i)}) \\log(1 - \\sigma(z^{(i)})) \\right]",
@@ -451,7 +451,7 @@ class LogisticRegressionFromScratch:
     lossSurfaceName: "Hinge Loss Margin Valley",
     pipelineStages: [
       { step: 1, phase: "Margin Definition", badge: "Geometry", mathExpression: "\\text{Margin Width} = \\frac{2}{\\|\\mathbf{w}\\|}", insight: "Maximizing separation distance between supporting gutters." },
-      { step: 2, phase: "Support Vectors", badge: "Critical Points", mathExpression: "y_i(\\mathbf{w}^T \\mathbf{x}_i + b) = 1", insight: "Pulsing neon rings lock onto the only points governing the boundary." },
+      { step: 2, phase: "Support Vectors", badge: "Critical Points", mathExpression: "y_i(\\mathbf{w}^T \\mathbf{x}_i + b) = 1", insight: "Highlighted boundary rings indicate the active support vectors governing the hyperplane." },
       { step: 3, phase: "Hinge Loss Slack", badge: "Soft Margin (C)", mathExpression: "\\xi_i = \\max(0, 1 - y_i(\\mathbf{w}^T \\mathbf{x}_i + b))", insight: "Tolerates controlled misclassifications in non-separable data." },
       { step: 4, phase: "Hyperplane Lock", badge: "Convergence", mathExpression: "\\min \\frac{1}{2}\\|w\\|^2 + C\\sum\\xi_i", insight: "Optimal compromise between margin width and classification fidelity." },
     ],
@@ -545,7 +545,7 @@ def best_split(X, y):
     pipelineStages: [
       { step: 1, phase: "Query Probe", badge: "Coordinates", mathExpression: "\\mathbf{x}_q = (x_p, y_p)", insight: "User-positioned target reticle anywhere on the continuous plane." },
       { step: 2, phase: "Metric Distance", badge: "L2 Norm", mathExpression: "d_2(\\mathbf{x}_q, \\mathbf{x}_i) = \\|\\mathbf{x}_q - \\mathbf{x}_i\\|_2", insight: "Computes exact Euclidean distance from probe to every data point." },
-      { step: 3, phase: "Neighborhood Radar", badge: "K Selection", mathExpression: "N_K(\\mathbf{x}_q) = \\text{top } K \\text{ nearest}", insight: "Dynamic laser beams connect to the K closest instances." },
+      { step: 3, phase: "Nearest Neighbors", badge: "K Selection", mathExpression: "N_K(\\mathbf{x}_q) = \\text{top } K \\text{ nearest}", insight: "Identifies the K closest training points by Euclidean distance." },
       { step: 4, phase: "Majority Vote", badge: "Output", mathExpression: "\\hat{y} = \\arg\\max_c \\sum_{i \\in N_K} \\mathbb{I}(y_i = c)", insight: "Tally decides predicted class label and confidence fraction." },
     ],
     math: {
@@ -836,7 +836,7 @@ class KMeans:
     pipelineStages: [
       { step: 1, phase: "Zero-Mean Centering", badge: "Shift", mathExpression: "\\tilde{\\mathbf{x}} = \\mathbf{x} - \\bar{\\mathbf{x}}", insight: "Aligns center of mass of user data cloud to origin (0, 0)." },
       { step: 2, phase: "Covariance Matrix", badge: "Cov(X, Y)", mathExpression: "\\Sigma = \\frac{1}{m} \\tilde{X}^T \\tilde{X}", insight: "Measures feature variances and mutual cross-correlations." },
-      { step: 3, phase: "Eigenvectors", badge: "Eigendecomposition", mathExpression: "\\Sigma \\mathbf{v}_1 = \\lambda_1 \\mathbf{v}_1, \\quad \\mathbf{v}_1 \\perp \\mathbf{v}_2", insight: "Green axis (PC1) rotates to line up with maximum data spread." },
+      { step: 3, phase: "Eigenvectors", badge: "Eigendecomposition", mathExpression: "\\Sigma \\mathbf{v}_1 = \\lambda_1 \\mathbf{v}_1, \\quad \\mathbf{v}_1 \\perp \\mathbf{v}_2", insight: "Primary axis (PC1) aligns with maximum data variance." },
       { step: 4, phase: "Orthogonal Drop", badge: "2D → 1D", mathExpression: "z_i = \\tilde{\\mathbf{x}}_i^T \\mathbf{v}_1", insight: "Perpendicular lines project points onto PC1, preserving variance." },
     ],
     math: {
@@ -877,7 +877,7 @@ class PCA:
     pipelineStages: [
       { step: 1, phase: "State Observation", badge: "Grid Coordinate", mathExpression: "s_t = (r, c) \\in \\{0, \\dots, 24\\}", insight: "Agent reads current location in maze with traps and goal." },
       { step: 2, phase: "Action Selection", badge: "ε-Greedy", mathExpression: "a = \\text{Random} \\text{ (prob } \\epsilon) \\text{ or } \\arg\\max Q", insight: "Balances exploratory discoveries with greedy exploitation." },
-      { step: 3, phase: "Reward Feedback", badge: "Environment", mathExpression: "R \\in \\{+10, -10, -0.1\\}", insight: "+10 for Target 🎯, -10 for Lava 🔥, -0.1 step penalty." },
+      { step: 3, phase: "Reward Feedback", badge: "Environment", mathExpression: "R \\in \\{+10, -10, -0.1\\}", insight: "+10 for Goal, -10 for Trap, and -0.1 step penalty." },
       { step: 4, phase: "Bellman TD Update", badge: "Value Convergence", mathExpression: "Q(s, a) \\leftarrow Q + \\alpha [R + \\gamma \\max Q' - Q]", insight: "Action values propagate backward, lighting up safe paths." },
     ],
     math: {
@@ -923,7 +923,6 @@ export function DynamicModelCanvas({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Dynamic User Points
   const [points, setPoints] = useState<Point2D[]>([
     { id: "1", x: -3.5, y: -2.1, label: 0 },
     { id: "2", x: -2.7, y: -1.3, label: 0 },
@@ -939,14 +938,10 @@ export function DynamicModelCanvas({
     { id: "12", x: 1.1, y: -0.8, label: 0 },
   ]);
 
-  // Point placement tool: 0 (Soft Ivory #FAF6F3) or 1 (Neon Lime Green #CDF22B)
   const [activeLabel, setActiveLabel] = useState<0 | 1>(1);
-
-  // Probe Reticle for KNN
   const [probe, setProbe] = useState({ x: 0.5, y: 0.8 });
   const isDraggingProbe = useRef(false);
 
-  // Animation Cycle & Hyperparameters
   const [isParallelRunning, setIsParallelRunning] = useState(true);
   const [animTime, setAnimTime] = useState(0);
   const [degree, setDegree] = useState(3);
@@ -955,16 +950,14 @@ export function DynamicModelCanvas({
   const [knnK, setKnnK] = useState(3);
   const [kmeansK, setKmeansK] = useState(3);
 
-  // Telemetry HUD
   const [telemetry, setTelemetry] = useState({
     metricA: "0.000",
     nameA: "Loss",
     metricB: "N/A",
     nameB: "Params",
-    status: "READY",
+    status: "Ready",
   });
 
-  // Reset to Presets
   const applyPreset = (presetName: string) => {
     if (presetName === "linear") {
       setPoints([
@@ -1003,7 +996,6 @@ export function DynamicModelCanvas({
     }
   };
 
-  // Continuous animation cycle
   useEffect(() => {
     if (!isParallelRunning) return;
     const interval = setInterval(() => {
@@ -1012,7 +1004,6 @@ export function DynamicModelCanvas({
     return () => clearInterval(interval);
   }, [isParallelRunning]);
 
-  // Click & Drag Canvas handling
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -1030,7 +1021,6 @@ export function DynamicModelCanvas({
       }
     }
 
-    // Add point at click
     setPoints((prev) => [
       ...prev,
       { id: String(Date.now() + Math.random()), x: mathX, y: mathY, label: activeLabel },
@@ -1053,9 +1043,6 @@ export function DynamicModelCanvas({
     isDraggingProbe.current = false;
   };
 
-  // ------------------------------------------------------------------
-  // Main Mathematical Render Loop (Runs on REAL User Points)
-  // ------------------------------------------------------------------
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -1077,12 +1064,12 @@ export function DynamicModelCanvas({
     const cy = h / 2;
     const scale = Math.min(w, h) / 10.5;
 
-    // Tactical Chassis Background
-    ctx.fillStyle = "#08090B";
+    // Pure Crisp White Canvas
+    ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, w, h);
 
-    // Instrument Grid
-    ctx.strokeStyle = "rgba(250, 246, 243, 0.05)";
+    // Subtle Apple Hairline Grid
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.045)";
     ctx.lineWidth = 1;
     for (let x = -5; x <= 5; x += 1) {
       ctx.beginPath();
@@ -1097,9 +1084,9 @@ export function DynamicModelCanvas({
       ctx.stroke();
     }
 
-    // Origin Axes
-    ctx.strokeStyle = "rgba(250, 246, 243, 0.22)";
-    ctx.lineWidth = 1.5;
+    // Crisp Coordinate Origin Axes
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.18)";
+    ctx.lineWidth = 1.25;
     ctx.beginPath();
     ctx.moveTo(0, cy);
     ctx.lineTo(w, cy);
@@ -1107,22 +1094,18 @@ export function DynamicModelCanvas({
     ctx.lineTo(cx, h);
     ctx.stroke();
 
-    // ----------------------------------------------------------------
-    // 1. LINEAR REGRESSION (Exact OLS on User Points)
-    // ----------------------------------------------------------------
+    // 1. LINEAR REGRESSION
     if (topic.id === "linear-regression") {
       const coeffs = fitPolynomial(points, 1);
       const intercept = coeffs[0] || 0;
       const slope = coeffs[1] || 0;
 
-      // Animate gradient descent progression
-      const wobble = isParallelRunning ? Math.sin(animTime * 2) * 0.08 : 0;
+      const wobble = isParallelRunning ? Math.sin(animTime * 2) * 0.06 : 0;
       const activeSlope = slope + wobble;
 
-      // Draw Residuals (Neon Lime dashed bars from each user point)
-      ctx.strokeStyle = "rgba(205, 242, 43, 0.4)";
-      ctx.lineWidth = 1.6;
-      ctx.setLineDash([3, 3]);
+      ctx.strokeStyle = "rgba(0, 113, 227, 0.35)";
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
       let totalMse = 0;
       points.forEach((p) => {
         const predY = activeSlope * p.x + intercept;
@@ -1135,38 +1118,30 @@ export function DynamicModelCanvas({
       ctx.setLineDash([]);
       const mse = points.length ? totalMse / points.length : 0;
 
-      // Draw Optimal Line (Neon Lime Green #CDF22B)
-      ctx.strokeStyle = "#CDF22B";
-      ctx.lineWidth = 3.5;
-      ctx.shadowColor = "#CDF22B";
-      ctx.shadowBlur = 12;
+      ctx.strokeStyle = "#0071e3";
+      ctx.lineWidth = 3;
       ctx.beginPath();
       const x1 = -5, y1 = activeSlope * x1 + intercept;
       const x2 = 5, y2 = activeSlope * x2 + intercept;
       ctx.moveTo(cx + x1 * scale, cy - y1 * scale);
       ctx.lineTo(cx + x2 * scale, cy - y2 * scale);
       ctx.stroke();
-      ctx.shadowBlur = 0;
 
       setTelemetry({
         metricA: mse.toFixed(4),
         nameA: "MSE Loss J(w)",
-        metricB: `w: ${activeSlope.toFixed(3)}, b: ${intercept.toFixed(3)}`,
-        nameB: "Fitted Normal Eq",
-        status: points.length < 2 ? "ADD ≥2 POINTS" : "OPTIMAL LEAST-SQUARES",
+        metricB: `w = ${activeSlope.toFixed(3)}, b = ${intercept.toFixed(3)}`,
+        nameB: "Normal Equation",
+        status: points.length < 2 ? "Add 2+ points" : "Converged (OLS)",
       });
 
-    // ----------------------------------------------------------------
-    // 2. POLYNOMIAL REGRESSION (Exact Normal Equation Fit on User Points)
-    // ----------------------------------------------------------------
+    // 2. POLYNOMIAL REGRESSION
     } else if (topic.id === "polynomial-regression") {
       const coeffs = fitPolynomial(points, degree);
       const isOverfit = degree >= 5;
 
-      ctx.strokeStyle = isOverfit ? "rgba(250, 246, 243, 0.55)" : "#CDF22B";
-      ctx.lineWidth = 3.5;
-      ctx.shadowColor = isOverfit ? "rgba(250, 246, 243, 0.3)" : "#CDF22B";
-      ctx.shadowBlur = 12;
+      ctx.strokeStyle = isOverfit ? "#e11d48" : "#0071e3";
+      ctx.lineWidth = 3;
       ctx.beginPath();
       let totalErr = 0;
 
@@ -1178,7 +1153,6 @@ export function DynamicModelCanvas({
         else ctx.lineTo(px, py);
       }
       ctx.stroke();
-      ctx.shadowBlur = 0;
 
       points.forEach((p) => {
         totalErr += (p.y - evalPolynomial(coeffs, p.x)) ** 2;
@@ -1188,18 +1162,15 @@ export function DynamicModelCanvas({
       setTelemetry({
         metricA: mse.toFixed(4),
         nameA: "Train MSE",
-        metricB: `Degree: ${degree} / ${points.length - 1} max`,
-        nameB: "Polynomial Vandermonde",
-        status: isOverfit ? "RUNGE OSCILLATION / OVERFIT" : "BALANCED FIT",
+        metricB: `Degree: ${degree}`,
+        nameB: "Polynomial Order",
+        status: isOverfit ? "Overfitting Risk" : "Balanced Fit",
       });
 
-    // ----------------------------------------------------------------
-    // 3. RIDGE & LASSO (Shrinkage on User Points)
-    // ----------------------------------------------------------------
+    // 3. RIDGE & LASSO
     } else if (topic.id === "ridge-lasso") {
-      // Unconstrained OLS Line (Soft Ivory dashed)
       const olsCoeffs = fitPolynomial(points, 1, 0);
-      ctx.strokeStyle = "rgba(250, 246, 243, 0.25)";
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.22)";
       ctx.lineWidth = 1.5;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
@@ -1208,40 +1179,31 @@ export function DynamicModelCanvas({
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Ridge Regularized Line (#CDF22B Neon Lime or #FAF6F3 Soft Ivory for zeroed)
       const ridgeCoeffs = fitPolynomial(points, 1, l2Reg * 5);
       const isLassoZero = l2Reg > 5.5;
       const displaySlope = isLassoZero ? 0 : ridgeCoeffs[1];
 
-      ctx.strokeStyle = isLassoZero ? "#FAF6F3" : "#CDF22B";
-      ctx.lineWidth = 3.5;
-      ctx.shadowColor = ctx.strokeStyle;
-      ctx.shadowBlur = 12;
+      ctx.strokeStyle = isLassoZero ? "#e11d48" : "#0071e3";
+      ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.moveTo(cx - 5 * scale, cy - (displaySlope * -5 + ridgeCoeffs[0]) * scale);
       ctx.lineTo(cx + 5 * scale, cy - (displaySlope * 5 + ridgeCoeffs[0]) * scale);
       ctx.stroke();
-      ctx.shadowBlur = 0;
 
       setTelemetry({
         metricA: l2Reg.toFixed(2),
         nameA: "Penalty (λ)",
-        metricB: `w: ${displaySlope.toFixed(3)} ${isLassoZero ? "(EXACT SPARSITY)" : ""}`,
-        nameB: "Shrunk Weights",
-        status: isLassoZero ? "L1 ZEROED OUT" : "L2 TIKHONOV SHRINKAGE",
+        metricB: `w = ${displaySlope.toFixed(3)}`,
+        nameB: "Regularized Weight",
+        status: isLassoZero ? "Sparse (Zeroed)" : "Shrinkage Active",
       });
 
-    // ----------------------------------------------------------------
-    // 4. LOGISTIC REGRESSION (Live Dynamic Sigmoid Field on Points)
-    // ----------------------------------------------------------------
+    // 4. LOGISTIC REGRESSION
     } else if (topic.id === "logistic-regression") {
       const { w1, w2, b } = fitLogisticRegression(points);
 
-      // Decision boundary where w1*x + w2*y + b = 0 => y = -(w1*x + b)/w2
-      ctx.strokeStyle = "#CDF22B";
-      ctx.lineWidth = 3.5;
-      ctx.shadowColor = "#CDF22B";
-      ctx.shadowBlur = 12;
+      ctx.strokeStyle = "#0071e3";
+      ctx.lineWidth = 3;
       ctx.beginPath();
       if (Math.abs(w2) > 1e-4) {
         const yAtMinus5 = -(w1 * -5 + b) / w2;
@@ -1254,9 +1216,7 @@ export function DynamicModelCanvas({
         ctx.lineTo(cx + xCut * scale, h);
       }
       ctx.stroke();
-      ctx.shadowBlur = 0;
 
-      // Accuracy
       let correct = 0;
       points.forEach((p) => {
         const z = w1 * p.x + w2 * p.y + b;
@@ -1267,35 +1227,28 @@ export function DynamicModelCanvas({
 
       setTelemetry({
         metricA: `${acc}%`,
-        nameA: "Classification Accuracy",
-        metricB: `w: [${w1.toFixed(2)}, ${w2.toFixed(2)}], b: ${b.toFixed(2)}`,
-        nameB: "Hyperplane Weights",
-        status: "MAXIMUM LIKELIHOOD ACTIVE",
+        nameA: "Accuracy",
+        metricB: `w = [${w1.toFixed(2)}, ${w2.toFixed(2)}]`,
+        nameB: "Decision Boundary",
+        status: "Maximum Likelihood",
       });
 
-    // ----------------------------------------------------------------
-    // 5. SUPPORT VECTOR MACHINES (Live Hinge Subgradients on Points)
-    // ----------------------------------------------------------------
+    // 5. SUPPORT VECTOR MACHINES
     } else if (topic.id === "svm") {
       const { w1, w2, b } = fitLinearSVM(points, svmC);
       const normW = Math.hypot(w1, w2) || 1;
       const marginPx = (1.0 / normW) * scale;
 
-      // Hyperplane
-      ctx.strokeStyle = "#CDF22B";
-      ctx.lineWidth = 3.5;
-      ctx.shadowColor = "#CDF22B";
-      ctx.shadowBlur = 12;
+      ctx.strokeStyle = "#18181b";
+      ctx.lineWidth = 3;
       ctx.beginPath();
       if (Math.abs(w2) > 1e-4) {
         ctx.moveTo(cx - 5 * scale, cy - (-(w1 * -5 + b) / w2) * scale);
         ctx.lineTo(cx + 5 * scale, cy - (-(w1 * 5 + b) / w2) * scale);
       }
       ctx.stroke();
-      ctx.shadowBlur = 0;
 
-      // Margin Gutters (Neon Lime tint)
-      ctx.strokeStyle = "rgba(205, 242, 43, 0.35)";
+      ctx.strokeStyle = "rgba(0, 113, 227, 0.45)";
       ctx.lineWidth = 1.5;
       ctx.setLineDash([4, 4]);
       if (Math.abs(w2) > 1e-4) {
@@ -1308,39 +1261,34 @@ export function DynamicModelCanvas({
       }
       ctx.setLineDash([]);
 
-      // Highlight Real Support Vectors (points near/inside margin)
       let svCount = 0;
       points.forEach((p) => {
         const ySigned = p.label === 1 ? 1 : -1;
         const functionalMargin = ySigned * (w1 * p.x + w2 * p.y + b);
         if (functionalMargin <= 1.2) {
           svCount++;
-          ctx.strokeStyle = "#CDF22B";
-          ctx.lineWidth = 2.5;
+          ctx.strokeStyle = "#0071e3";
+          ctx.lineWidth = 2;
           ctx.beginPath();
-          ctx.arc(cx + p.x * scale, cy - p.y * scale, 12 + Math.sin(animTime * 3) * 2, 0, Math.PI * 2);
+          ctx.arc(cx + p.x * scale, cy - p.y * scale, 11 + Math.sin(animTime * 3) * 1.5, 0, Math.PI * 2);
           ctx.stroke();
         }
       });
 
       setTelemetry({
         metricA: (2 / normW).toFixed(2),
-        nameA: "Margin Width (2/||w||)",
-        metricB: `Support Vectors: ${svCount} / ${points.length}`,
-        nameB: "Active SV Count",
-        status: "MAXIMAL GEOMETRIC MARGIN",
+        nameA: "Margin Width",
+        metricB: `${svCount} / ${points.length}`,
+        nameB: "Support Vectors",
+        status: "Maximal Margin",
       });
 
-    // ----------------------------------------------------------------
-    // 6. DECISION TREES (Real Gini Scanline on User Points)
-    // ----------------------------------------------------------------
+    // 6. DECISION TREES
     } else if (topic.id === "decision-tree") {
       const { axis, threshold, giniGain } = findBestSplit(points);
 
-      ctx.strokeStyle = "#CDF22B";
-      ctx.lineWidth = 3.5;
-      ctx.shadowColor = "#CDF22B";
-      ctx.shadowBlur = 12;
+      ctx.strokeStyle = "#0071e3";
+      ctx.lineWidth = 3;
       ctx.beginPath();
       if (axis === "x") {
         ctx.moveTo(cx + threshold * scale, 0);
@@ -1350,19 +1298,16 @@ export function DynamicModelCanvas({
         ctx.lineTo(w, cy - threshold * scale);
       }
       ctx.stroke();
-      ctx.shadowBlur = 0;
 
       setTelemetry({
         metricA: giniGain.toFixed(4),
-        nameA: "Information Gain (ΔGini)",
-        metricB: `Split: ${axis.toUpperCase()} = ${threshold.toFixed(2)}`,
-        nameB: "Optimal Decision Cut",
-        status: "GREEDY CART PARTITION",
+        nameA: "Gini Gain",
+        metricB: `${axis.toUpperCase()} = ${threshold.toFixed(2)}`,
+        nameB: "Optimal Split",
+        status: "CART Partition",
       });
 
-    // ----------------------------------------------------------------
-    // 7. K-NEAREST NEIGHBORS (Real Dynamic Euclidean Distance on Points)
-    // ----------------------------------------------------------------
+    // 7. K-NEAREST NEIGHBORS
     } else if (topic.id === "knn") {
       const probePx = cx + probe.x * scale;
       const probePy = cy - probe.y * scale;
@@ -1374,8 +1319,7 @@ export function DynamicModelCanvas({
       const kNearest = sorted.slice(0, knnK);
       const maxKDist = kNearest[kNearest.length - 1]?.dist || 1;
 
-      // Pulsing radar circle
-      ctx.strokeStyle = "rgba(205, 242, 43, 0.4)";
+      ctx.strokeStyle = "rgba(0, 113, 227, 0.35)";
       ctx.lineWidth = 1.5;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
@@ -1383,23 +1327,21 @@ export function DynamicModelCanvas({
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Laser lines connecting probe to K nearest neighbors
       kNearest.forEach((nb) => {
-        ctx.strokeStyle = nb.label === 1 ? "rgba(205, 242, 43, 0.85)" : "rgba(250, 246, 243, 0.85)";
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = nb.label === 1 ? "rgba(0, 113, 227, 0.7)" : "rgba(225, 29, 72, 0.7)";
+        ctx.lineWidth = 1.8;
         ctx.beginPath();
         ctx.moveTo(probePx, probePy);
         ctx.lineTo(cx + nb.x * scale, cy - nb.y * scale);
         ctx.stroke();
       });
 
-      // Probe Target Crosshair
-      ctx.fillStyle = "#CDF22B";
+      ctx.fillStyle = "#18181b";
       ctx.beginPath();
       ctx.arc(probePx, probePy, 7, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = "#FAF6F3";
-      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2;
       ctx.stroke();
 
       const vote1 = kNearest.filter((nb) => nb.label === 1).length;
@@ -1407,26 +1349,22 @@ export function DynamicModelCanvas({
       const pred = vote1 >= vote0 ? 1 : 0;
 
       setTelemetry({
-        metricA: `Class ${pred} (${pred === 1 ? "Neon Lime" : "Soft Ivory"})`,
-        nameA: "Majority Vote Output",
-        metricB: `Votes: [0: ${vote0}, 1: ${vote1}] | K = ${knnK}`,
-        nameB: "Neighbor Tally",
-        status: "DRAG PROBE ON CANVAS",
+        metricA: `Class ${pred}`,
+        nameA: "Prediction",
+        metricB: `0: ${vote0} | 1: ${vote1} (K=${knnK})`,
+        nameB: "Neighbor Votes",
+        status: "Drag probe point",
       });
 
-    // ----------------------------------------------------------------
-    // 8. K-MEANS CLUSTERING (Real Lloyd's on User Points)
-    // ----------------------------------------------------------------
+    // 8. K-MEANS CLUSTERING
     } else if (topic.id === "kmeans") {
-      // Divide points into K groups with Neon Lime & Soft Ivory anchors
-      const colors = ["#CDF22B", "#FAF6F3", "rgba(205, 242, 43, 0.75)", "rgba(250, 246, 243, 0.75)"];
+      const colors = ["#0071e3", "#e11d48", "#059669", "#d97706"];
       const centroids: Array<{ x: number; y: number; count: number }> = Array.from({ length: kmeansK }, (_, i) => ({
         x: Math.cos((i * 2 * Math.PI) / kmeansK) * 2,
         y: Math.sin((i * 2 * Math.PI) / kmeansK) * 2,
         count: 0,
       }));
 
-      // 1 iteration of Lloyd update on user points
       if (points.length > 0) {
         const sumX = new Array(kmeansK).fill(0);
         const sumY = new Array(kmeansK).fill(0);
@@ -1453,51 +1391,43 @@ export function DynamicModelCanvas({
         }
       }
 
-      // Draw Centroid Anchors
       centroids.forEach((c, idx) => {
         ctx.fillStyle = colors[idx % colors.length];
         ctx.beginPath();
-        ctx.arc(cx + c.x * scale, cy - c.y * scale, 10, 0, Math.PI * 2);
+        ctx.arc(cx + c.x * scale, cy - c.y * scale, 9, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = "#08090B";
+        ctx.strokeStyle = "#ffffff";
         ctx.lineWidth = 2.5;
         ctx.stroke();
 
         ctx.strokeStyle = colors[idx % colors.length];
         ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.arc(cx + c.x * scale, cy - c.y * scale, 16 + Math.sin(animTime * 3) * 3, 0, Math.PI * 2);
+        ctx.arc(cx + c.x * scale, cy - c.y * scale, 15 + Math.sin(animTime * 3) * 2, 0, Math.PI * 2);
         ctx.stroke();
       });
 
       setTelemetry({
         metricA: `${kmeansK} Clusters`,
-        nameA: "Active Partitions",
-        metricB: `Points: ${points.length}`,
-        nameB: "Sample Size",
-        status: "LLOYD ITERATION ACTIVE",
+        nameA: "Partitions",
+        metricB: `${points.length} samples`,
+        nameB: "Dataset",
+        status: "Lloyd's Update",
       });
 
-    // ----------------------------------------------------------------
-    // 9. PRINCIPAL COMPONENT ANALYSIS (Analytical Eigendecomposition on Points)
-    // ----------------------------------------------------------------
+    // 9. PRINCIPAL COMPONENT ANALYSIS
     } else if (topic.id === "pca") {
       const { meanX, meanY, v1, v2, varRatio } = compute2DPCA(points);
 
-      // Primary Eigenvector PC1 (Neon Lime Green #CDF22B)
-      ctx.strokeStyle = "#CDF22B";
-      ctx.lineWidth = 3.5;
-      ctx.shadowColor = "#CDF22B";
-      ctx.shadowBlur = 12;
+      ctx.strokeStyle = "#0071e3";
+      ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.moveTo(cx + (meanX - v1[0] * 5) * scale, cy - (meanY - v1[1] * 5) * scale);
       ctx.lineTo(cx + (meanX + v1[0] * 5) * scale, cy - (meanY + v1[1] * 5) * scale);
       ctx.stroke();
-      ctx.shadowBlur = 0;
 
-      // Secondary Eigenvector PC2 (Soft Ivory #FAF6F3 dashed)
-      ctx.strokeStyle = "rgba(250, 246, 243, 0.6)";
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.35)";
+      ctx.lineWidth = 1.8;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
       ctx.moveTo(cx + (meanX - v2[0] * 3) * scale, cy - (meanY - v2[1] * 3) * scale);
@@ -1505,8 +1435,7 @@ export function DynamicModelCanvas({
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Perpendicular Projection drops
-      ctx.strokeStyle = "rgba(205, 242, 43, 0.25)";
+      ctx.strokeStyle = "rgba(0, 113, 227, 0.25)";
       ctx.lineWidth = 1.2;
       points.forEach((p) => {
         const dx = p.x - meanX;
@@ -1522,20 +1451,20 @@ export function DynamicModelCanvas({
 
       setTelemetry({
         metricA: `${(varRatio * 100).toFixed(1)}%`,
-        nameA: "PC1 Explained Variance",
-        metricB: `v1 = [${v1[0].toFixed(2)}, ${v1[1].toFixed(2)}]`,
-        nameB: "Primary Eigenvector",
-        status: "ORTHOGONAL DECOMPOSITION",
+        nameA: "PC1 Variance",
+        metricB: `[${v1[0].toFixed(2)}, ${v1[1].toFixed(2)}]`,
+        nameB: "Eigenvector",
+        status: "Orthogonal Basis",
       });
     }
 
-    // Render Data Points on top (Class 1: Neon Lime Green, Class 0: Soft Ivory)
+    // Crisp Data Points (Apple Blue for Class 1, Coral Rose for Class 0)
     points.forEach((p) => {
-      ctx.fillStyle = p.label === 1 ? "#CDF22B" : "#FAF6F3";
+      ctx.fillStyle = p.label === 1 ? "#0071e3" : "#e11d48";
       ctx.beginPath();
       ctx.arc(cx + p.x * scale, cy - p.y * scale, 6, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = "#08090B";
+      ctx.strokeStyle = "#ffffff";
       ctx.lineWidth = 2;
       ctx.stroke();
     });
@@ -1547,44 +1476,42 @@ export function DynamicModelCanvas({
 
   return (
     <div className="space-y-4">
-      {/* ⚡ High-Precision Telemetry Diode Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-2xl bg-[#08090B] border border-[#1E2227] font-mono text-xs">
-        <div>
-          <span className="text-[10px] text-[#FAF6F3]/50 uppercase tracking-wider block">{telemetry.nameA}</span>
-          <span className="font-bold text-[#CDF22B] text-sm tracking-tight">{telemetry.metricA}</span>
+      {/* Apple Metric Bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-zinc-200/70 rounded-xl border border-zinc-200/80 bg-zinc-50/70 font-mono text-xs overflow-hidden">
+        <div className="p-3">
+          <span className="text-[10px] font-sans font-medium text-zinc-500 uppercase tracking-wider block">{telemetry.nameA}</span>
+          <span className="font-semibold text-[#0071e3] text-sm tabular-nums">{telemetry.metricA}</span>
         </div>
-        <div>
-          <span className="text-[10px] text-[#FAF6F3]/50 uppercase tracking-wider block">{telemetry.nameB}</span>
-          <span className="font-bold text-[#FAF6F3] text-xs truncate block">{telemetry.metricB}</span>
+        <div className="p-3">
+          <span className="text-[10px] font-sans font-medium text-zinc-500 uppercase tracking-wider block">{telemetry.nameB}</span>
+          <span className="font-semibold text-zinc-900 text-xs truncate block tabular-nums">{telemetry.metricB}</span>
         </div>
-        <div>
-          <span className="text-[10px] text-[#FAF6F3]/50 uppercase tracking-wider block">Total Samples</span>
-          <span className="font-bold text-[#CDF22B] text-sm">{points.length} points</span>
+        <div className="p-3">
+          <span className="text-[10px] font-sans font-medium text-zinc-500 uppercase tracking-wider block">Samples</span>
+          <span className="font-semibold text-zinc-900 text-sm tabular-nums">{points.length}</span>
         </div>
-        <div>
-          <span className="text-[10px] text-[#FAF6F3]/50 uppercase tracking-wider block">Engine State</span>
-          <span className="font-bold text-[#FAF6F3] text-xs flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#CDF22B] animate-pulse shadow-[0_0_8px_#CDF22B]" />
+        <div className="p-3">
+          <span className="text-[10px] font-sans font-medium text-zinc-500 uppercase tracking-wider block">Status</span>
+          <span className="font-medium text-zinc-800 text-xs flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
             {telemetry.status}
           </span>
         </div>
       </div>
 
-      {/* 🎬 Parallel Pipeline Stepper (Auto-Updating Narrative) */}
-      <div className="rounded-3xl border border-[#1E2227] bg-[#0C0E12] p-5 shadow-2xl space-y-3 relative overflow-hidden backdrop-blur-2xl">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1E2227] pb-3">
+      {/* Stage Stepper */}
+      <div className="rounded-xl border border-zinc-200/80 bg-zinc-50/60 p-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200/60 pb-2.5">
           <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#CDF22B] text-[#08090B] font-mono text-xs font-black shadow-[0_0_10px_rgba(205,242,43,0.3)]">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-900 text-white font-mono text-xs font-semibold">
               {activeStage.step}
             </span>
-            <div>
-              <span className="text-xs font-mono font-bold text-[#CDF22B] uppercase tracking-wider mr-2">
-                Phase {activeStage.step} of {topic.pipelineStages.length}: {activeStage.phase}
-              </span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#14171A] border border-[#1E2227] text-[#FAF6F3]/70">
-                {activeStage.badge}
-              </span>
-            </div>
+            <span className="text-xs font-semibold text-zinc-900">
+              {activeStage.phase}
+            </span>
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white border border-zinc-200 text-zinc-600">
+              {activeStage.badge}
+            </span>
           </div>
 
           <div className="flex items-center gap-1.5 ml-auto">
@@ -1593,7 +1520,7 @@ export function DynamicModelCanvas({
               variant="outline"
               disabled={activePipelineStep === 0}
               onClick={() => onStepChange(Math.max(0, activePipelineStep - 1))}
-              className="h-7 px-2.5 text-xs font-mono rounded-xl border-[#1E2227] bg-[#14171A] text-[#FAF6F3] hover:bg-[#1E2227]"
+              className="h-7 px-2.5 text-xs rounded-lg border-zinc-200 bg-white"
             >
               <ChevronLeft className="h-3 w-3" /> Prev
             </Button>
@@ -1601,7 +1528,7 @@ export function DynamicModelCanvas({
               size="sm"
               disabled={activePipelineStep >= topic.pipelineStages.length - 1}
               onClick={() => onStepChange(Math.min(topic.pipelineStages.length - 1, activePipelineStep + 1))}
-              className="h-7 px-3 text-xs font-mono rounded-xl bg-[#CDF22B] hover:bg-[#bde024] text-[#08090B] font-bold shadow-[0_0_15px_rgba(205,242,43,0.3)]"
+              className="h-7 px-3 text-xs rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white"
             >
               Next <ChevronRight className="h-3 w-3" />
             </Button>
@@ -1609,17 +1536,15 @@ export function DynamicModelCanvas({
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <p className="text-xs text-[#FAF6F3]/85 font-sans leading-relaxed">
-            {activeStage.insight}
-          </p>
-          <div className="p-2 rounded-xl bg-[#040506] border border-[#1E2227] font-mono text-xs text-[#CDF22B] shrink-0">
+          <p className="text-xs text-zinc-600 leading-relaxed">{activeStage.insight}</p>
+          <div className="px-3 py-1.5 rounded-lg bg-white border border-zinc-200 font-mono text-xs text-zinc-900 shrink-0">
             <MathText tex={activeStage.mathExpression} />
           </div>
         </div>
       </div>
 
-      {/* Canvas Viewport with Presets and Point Placing Tools */}
-      <div className="relative rounded-3xl border border-[#1E2227] bg-[#08090B] overflow-hidden shadow-2xl">
+      {/* Crisp Light Canvas Viewport */}
+      <div className="relative rounded-2xl border border-zinc-200/80 bg-white overflow-hidden shadow-2xs">
         <canvas
           ref={canvasRef}
           onMouseDown={handleCanvasMouseDown}
@@ -1628,105 +1553,101 @@ export function DynamicModelCanvas({
           className="w-full cursor-crosshair block"
         />
 
-        {/* Top Floating Point Palette */}
-        <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5 p-1 rounded-2xl bg-[#08090B]/90 border border-[#1E2227] backdrop-blur-md text-[11px] font-mono">
-          <span className="px-2 text-[#FAF6F3]/60 font-semibold">Click to Add:</span>
+        {/* Top Floating Class Picker */}
+        <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1 p-1 rounded-full bg-white/90 border border-zinc-200/80 backdrop-blur-md text-xs shadow-xs">
+          <span className="px-2 text-zinc-500 font-medium">Add Point:</span>
           <button
             onClick={() => setActiveLabel(1)}
             className={cn(
-              "px-2.5 py-1 rounded-xl transition-all flex items-center gap-1.5",
-              activeLabel === 1
-                ? "bg-[#CDF22B] text-[#08090B] font-bold shadow-[0_0_12px_rgba(205,242,43,0.3)]"
-                : "text-[#FAF6F3]/70 hover:text-[#FAF6F3]"
+              "px-2.5 py-0.5 rounded-full transition-all flex items-center gap-1.5 font-medium",
+              activeLabel === 1 ? "bg-[#0071e3] text-white shadow-2xs" : "text-zinc-600 hover:bg-zinc-100"
             )}
           >
-            <span className={cn("h-2 w-2 rounded-full", activeLabel === 1 ? "bg-[#08090B]" : "bg-[#CDF22B]")} /> Class 1
+            <span className={cn("h-2 w-2 rounded-full", activeLabel === 1 ? "bg-white" : "bg-[#0071e3]")} /> Class 1
           </button>
           <button
             onClick={() => setActiveLabel(0)}
             className={cn(
-              "px-2.5 py-1 rounded-xl transition-all flex items-center gap-1.5",
-              activeLabel === 0
-                ? "bg-[#FAF6F3] text-[#08090B] font-bold shadow-[0_0_12px_rgba(250,246,243,0.2)]"
-                : "text-[#FAF6F3]/70 hover:text-[#FAF6F3]"
+              "px-2.5 py-0.5 rounded-full transition-all flex items-center gap-1.5 font-medium",
+              activeLabel === 0 ? "bg-rose-600 text-white shadow-2xs" : "text-zinc-600 hover:bg-zinc-100"
             )}
           >
-            <span className={cn("h-2 w-2 rounded-full", activeLabel === 0 ? "bg-[#08090B]" : "bg-[#FAF6F3]")} /> Class 0
+            <span className={cn("h-2 w-2 rounded-full", activeLabel === 0 ? "bg-white" : "bg-rose-600")} /> Class 0
           </button>
         </div>
 
-        {/* Preset Shapes Trigger Bar */}
-        <div className="absolute bottom-3 left-3 right-3 flex flex-wrap items-center justify-between gap-2 p-2 rounded-2xl bg-[#08090B]/90 border border-[#1E2227] backdrop-blur-md text-xs font-mono">
-          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-            <span className="text-[10px] text-[#FAF6F3]/50 uppercase px-1">Presets:</span>
-            <button onClick={() => applyPreset("linear")} className="px-2 py-0.5 rounded-lg bg-[#14171A] border border-[#1E2227] hover:border-[#CDF22B]/40 hover:text-[#CDF22B] text-[#FAF6F3]/80 text-[11px]">Linear</button>
-            <button onClick={() => applyPreset("curved")} className="px-2 py-0.5 rounded-lg bg-[#14171A] border border-[#1E2227] hover:border-[#CDF22B]/40 hover:text-[#CDF22B] text-[#FAF6F3]/80 text-[11px]">Curved</button>
-            <button onClick={() => applyPreset("clusters")} className="px-2 py-0.5 rounded-lg bg-[#14171A] border border-[#1E2227] hover:border-[#CDF22B]/40 hover:text-[#CDF22B] text-[#FAF6F3]/80 text-[11px]">Clusters</button>
-            <button onClick={() => applyPreset("clear")} className="px-2 py-0.5 rounded-lg bg-[#1A1214] border border-[#3A1E24] hover:bg-[#2A161B] text-[#F87171] text-[11px] flex items-center gap-1">
-              <Trash2 className="h-2.5 w-2.5" /> Clear
+        {/* Bottom Presets & Controls */}
+        <div className="absolute bottom-3 left-3 right-3 flex flex-wrap items-center justify-between gap-2 p-1.5 rounded-xl bg-white/90 border border-zinc-200/80 backdrop-blur-md text-xs shadow-xs">
+          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
+            <span className="text-[11px] text-zinc-400 font-medium px-1.5">Presets:</span>
+            <button onClick={() => applyPreset("linear")} className="px-2.5 py-1 rounded-lg hover:bg-zinc-100 text-zinc-700 font-medium">Linear</button>
+            <button onClick={() => applyPreset("curved")} className="px-2.5 py-1 rounded-lg hover:bg-zinc-100 text-zinc-700 font-medium">Curved</button>
+            <button onClick={() => applyPreset("clusters")} className="px-2.5 py-1 rounded-lg hover:bg-zinc-100 text-zinc-700 font-medium">Clusters</button>
+            <button onClick={() => applyPreset("clear")} className="px-2.5 py-1 rounded-lg hover:bg-rose-50 text-rose-600 font-medium flex items-center gap-1">
+              <Trash2 className="h-3 w-3" /> Clear
             </button>
           </div>
 
-          <div className="flex items-center gap-2 ml-auto">
-            <button
-              onClick={() => setIsParallelRunning(!isParallelRunning)}
-              className="px-2.5 py-1 rounded-lg bg-[#CDF22B] hover:bg-[#bde024] text-[#08090B] font-bold text-[11px] flex items-center gap-1.5 shadow-[0_0_12px_rgba(205,242,43,0.3)] transition-all"
-            >
-              {isParallelRunning ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
-              {isParallelRunning ? "Pause Parallel Sim" : "Run Parallel Sim"}
-            </button>
-          </div>
+          <button
+            onClick={() => setIsParallelRunning(!isParallelRunning)}
+            className="px-3 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-xs flex items-center gap-1.5 ml-auto"
+          >
+            {isParallelRunning ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+            {isParallelRunning ? "Pause" : "Animate"}
+          </button>
         </div>
       </div>
 
-      {/* Model-Specific Hyperparameter Tuning Dials */}
-      <div className="p-3.5 rounded-2xl bg-[#08090B] border border-[#1E2227] text-xs font-mono space-y-2">
-        {topic.id === "polynomial-regression" && (
-          <div className="flex items-center gap-3">
-            <span className="text-[#FAF6F3] font-semibold">Degree (d = {degree}):</span>
-            <div className="w-48">
-              <Slider value={[degree]} min={1} max={6} step={1} onValueChange={([v]) => setDegree(v)} />
+      {/* Hyperparameter Slider */}
+      {(topic.id === "polynomial-regression" || topic.id === "ridge-lasso" || topic.id === "svm" || topic.id === "knn" || topic.id === "kmeans") && (
+        <div className="p-3.5 rounded-xl bg-zinc-50/70 border border-zinc-200/80 text-xs">
+          {topic.id === "polynomial-regression" && (
+            <div className="flex items-center gap-3">
+              <span className="text-zinc-800 font-medium whitespace-nowrap">Degree ({degree}):</span>
+              <div className="w-48">
+                <Slider value={[degree]} min={1} max={6} step={1} onValueChange={([v]) => setDegree(v)} />
+              </div>
+              <span className="text-zinc-500 text-xs">Controls polynomial curve complexity.</span>
             </div>
-            <span className="text-[#FAF6F3]/50 text-[11px]">Dynamically inverting Vandermonde matrix on user points.</span>
-          </div>
-        )}
-        {topic.id === "ridge-lasso" && (
-          <div className="flex items-center gap-3">
-            <span className="text-[#FAF6F3] font-semibold">Regularization (λ = {l2Reg.toFixed(1)}):</span>
-            <div className="w-48">
-              <Slider value={[l2Reg]} min={0} max={10} step={0.2} onValueChange={([v]) => setL2Reg(v)} />
+          )}
+          {topic.id === "ridge-lasso" && (
+            <div className="flex items-center gap-3">
+              <span className="text-zinc-800 font-medium whitespace-nowrap">Regularization (λ = {l2Reg.toFixed(1)}):</span>
+              <div className="w-48">
+                <Slider value={[l2Reg]} min={0} max={10} step={0.2} onValueChange={([v]) => setL2Reg(v)} />
+              </div>
+              <span className="text-zinc-500 text-xs">Adjusts penalty strength on weights.</span>
             </div>
-            <span className="text-[#FAF6F3]/50 text-[11px]">Adjusts diagonal Tikhonov shrinkage term in real time.</span>
-          </div>
-        )}
-        {topic.id === "svm" && (
-          <div className="flex items-center gap-3">
-            <span className="text-[#FAF6F3] font-semibold">Slack Penalty (C = {svmC.toFixed(1)}):</span>
-            <div className="w-48">
-              <Slider value={[svmC]} min={0.2} max={15} step={0.5} onValueChange={([v]) => setSvmC(v)} />
+          )}
+          {topic.id === "svm" && (
+            <div className="flex items-center gap-3">
+              <span className="text-zinc-800 font-medium whitespace-nowrap">Penalty (C = {svmC.toFixed(1)}):</span>
+              <div className="w-48">
+                <Slider value={[svmC]} min={0.2} max={15} step={0.5} onValueChange={([v]) => setSvmC(v)} />
+              </div>
+              <span className="text-zinc-500 text-xs">Controls soft-margin tolerance.</span>
             </div>
-            <span className="text-[#FAF6F3]/50 text-[11px]">Recomputes hinge margin boundaries on user coordinates.</span>
-          </div>
-        )}
-        {topic.id === "knn" && (
-          <div className="flex items-center gap-3">
-            <span className="text-[#FAF6F3] font-semibold">Neighbors (K = {knnK}):</span>
-            <div className="w-48">
-              <Slider value={[knnK]} min={1} max={7} step={2} onValueChange={([v]) => setKnnK(v)} />
+          )}
+          {topic.id === "knn" && (
+            <div className="flex items-center gap-3">
+              <span className="text-zinc-800 font-medium whitespace-nowrap">Neighbors (K = {knnK}):</span>
+              <div className="w-48">
+                <Slider value={[knnK]} min={1} max={7} step={2} onValueChange={([v]) => setKnnK(v)} />
+              </div>
+              <span className="text-[#0071e3] text-xs font-medium">Drag the dark probe point across the canvas.</span>
             </div>
-            <span className="text-[#CDF22B] text-[11px]">(Click &amp; drag target probe on canvas)</span>
-          </div>
-        )}
-        {topic.id === "kmeans" && (
-          <div className="flex items-center gap-3">
-            <span className="text-[#FAF6F3] font-semibold">Partitions (K = {kmeansK}):</span>
-            <div className="w-48">
-              <Slider value={[kmeansK]} min={2} max={4} step={1} onValueChange={([v]) => setKmeansK(v)} />
+          )}
+          {topic.id === "kmeans" && (
+            <div className="flex items-center gap-3">
+              <span className="text-zinc-800 font-medium whitespace-nowrap">Clusters (K = {kmeansK}):</span>
+              <div className="w-48">
+                <Slider value={[kmeansK]} min={2} max={4} step={1} onValueChange={([v]) => setKmeansK(v)} />
+              </div>
+              <span className="text-zinc-500 text-xs">Updates cluster centroids dynamically.</span>
             </div>
-            <span className="text-[#FAF6F3]/50 text-[11px]">Recalculates centroids dynamically as points move.</span>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -1748,23 +1669,20 @@ export function GradientDescentLab({
   const isSGD = topic.id === "stochastic-gradient-descent";
   const isAdam = topic.id === "adam-optimizer";
 
-  // Landscape selection
   const [landscape, setLandscape] = useState<"bowl" | "rosenbrock" | "saddle" | "beale">(
     isSGD ? "saddle" : isAdam ? "rosenbrock" : "bowl"
   );
 
-  // Hyperparameters
   const [learningRate, setLearningRate] = useState<number>(isSGD ? 0.08 : 0.05);
-  const [noiseVariance, setNoiseVariance] = useState<number>(0.35); // for SGD
-  const [decayEnabled, setDecayEnabled] = useState<boolean>(true); // Robbins-Monro
+  const [noiseVariance, setNoiseVariance] = useState<number>(0.35);
+  const [decayEnabled, setDecayEnabled] = useState<boolean>(true);
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [stepCount, setStepCount] = useState<number>(0);
 
-  // Initial coordinates
   const defaultStart = useMemo(() => {
     if (landscape === "bowl") return { x: -2.4, y: 1.8 };
     if (landscape === "rosenbrock") return { x: -1.5, y: 1.5 };
-    if (landscape === "saddle") return { x: 0.06, y: 0.12 }; // Close to saddle (0,0) to demonstrate escape
+    if (landscape === "saddle") return { x: 0.06, y: 0.12 };
     return { x: 1.0, y: 1.5 };
   }, [landscape]);
 
@@ -1772,13 +1690,11 @@ export function GradientDescentLab({
   const [path, setPath] = useState<Array<{ x: number; y: number }>>([defaultStart]);
   const [recentGrad, setRecentGrad] = useState<{ gx: number; gy: number; norm: number }>({ gx: 0, gy: 0, norm: 0 });
   const [lastNoiseVector, setLastNoiseVector] = useState<{ nx: number; ny: number }>({ nx: 0, ny: 0 });
-  const [status, setStatus] = useState<"READY" | "DESCENDING" | "CONVERGED" | "SADDLE ESCAPED" | "OSCILLATING">("READY");
+  const [status, setStatus] = useState<"Ready" | "Descending" | "Converged" | "Escaped Saddle" | "Oscillating">("Ready");
 
-  // Adam momentum state
   const [mVec, setMVec] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [vVec, setVVec] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  // Reset landscape & coordinates when algorithm changes
   useEffect(() => {
     const initLandscape = topic.id === "stochastic-gradient-descent" ? "saddle" : topic.id === "adam-optimizer" ? "rosenbrock" : "bowl";
     setLandscape(initLandscape);
@@ -1787,53 +1703,31 @@ export function GradientDescentLab({
     setPath([initStart]);
     setStepCount(0);
     setIsRunning(false);
-    setStatus("READY");
+    setStatus("Ready");
     setMVec({ x: 0, y: 0 });
     setVVec({ x: 0, y: 0 });
   }, [topic.id]);
 
-  // Mathematical surfaces and analytical gradients
   const evalLandscape = useCallback((x: number, y: number) => {
     if (landscape === "bowl") {
-      // Convex Elliptic Paraboloid: 0.5 * x^2 + 2 * y^2
       const loss = 0.5 * x * x + 2 * y * y;
-      const gx = x;
-      const gy = 4 * y;
-      return { loss, gx, gy, minX: 0, minY: 0 };
+      return { loss, gx: x, gy: 4 * y, minX: 0, minY: 0 };
     } else if (landscape === "rosenbrock") {
-      // Rosenbrock Banana Ravine: (1 - x)^2 + 10 * (y - x^2)^2
       const loss = Math.pow(1 - x, 2) + 10 * Math.pow(y - x * x, 2);
       const gx = -2 * (1 - x) - 40 * x * (y - x * x);
       const gy = 20 * (y - x * x);
-      return {
-        loss,
-        gx: Math.max(-40, Math.min(40, gx)),
-        gy: Math.max(-40, Math.min(40, gy)),
-        minX: 1,
-        minY: 1,
-      };
+      return { loss, gx: Math.max(-40, Math.min(40, gx)), gy: Math.max(-40, Math.min(40, gy)), minX: 1, minY: 1 };
     } else if (landscape === "saddle") {
-      // Non-Convex Double Well Saddle: x^2 - y^2 + 0.1*(x^4 + y^4)
       const loss = x * x - y * y + 0.1 * (Math.pow(x, 4) + Math.pow(y, 4));
-      const gx = 2 * x + 0.4 * Math.pow(x, 3);
-      const gy = -2 * y + 0.4 * Math.pow(y, 3);
-      return { loss, gx, gy, minX: 0, minY: 2.236 };
+      return { loss, gx: 2 * x + 0.4 * Math.pow(x, 3), gy: -2 * y + 0.4 * Math.pow(y, 3), minX: 0, minY: 2.236 };
     } else {
-      // Beale Surface: (1.5 - x + xy)^2 + (2.25 - x + xy^2)^2
       const loss = Math.pow(1.5 - x + x * y, 2) + Math.pow(2.25 - x + x * y * y, 2);
       const gx = 2 * (1.5 - x + x * y) * (y - 1) + 2 * (2.25 - x + x * y * y) * (y * y - 1);
       const gy = 2 * (1.5 - x + x * y) * x + 4 * (2.25 - x + x * y * y) * x * y;
-      return {
-        loss,
-        gx: Math.max(-30, Math.min(30, gx)),
-        gy: Math.max(-30, Math.min(30, gy)),
-        minX: 3,
-        minY: 0.5,
-      };
+      return { loss, gx: Math.max(-30, Math.min(30, gx)), gy: Math.max(-30, Math.min(30, gy)), minX: 3, minY: 0.5 };
     }
   }, [landscape]);
 
-  // Execute one discrete descent step
   const performStep = useCallback(() => {
     setW((currW) => {
       const { gx, gy } = evalLandscape(currW.x, currW.y);
@@ -1841,14 +1735,13 @@ export function GradientDescentLab({
       setRecentGrad({ gx, gy, norm });
 
       if (norm < 0.02 && !isSGD) {
-        setStatus("CONVERGED");
+        setStatus("Converged");
         setIsRunning(false);
         return currW;
       }
 
       let effLr = learningRate;
       if (isSGD && decayEnabled) {
-        // Robbins-Monro schedule: alpha_t = alpha_0 / (1 + 0.015 * t)
         effLr = learningRate / (1 + 0.015 * stepCount);
       }
 
@@ -1856,7 +1749,6 @@ export function GradientDescentLab({
       let stepY = 0;
 
       if (isSGD) {
-        // Stochastic perturbation (Box-Muller gaussian noise)
         const u1 = Math.max(1e-6, Math.random());
         const u2 = Math.random();
         const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
@@ -1866,18 +1758,11 @@ export function GradientDescentLab({
         const noiseY = z1 * noiseMag;
         setLastNoiseVector({ nx: noiseX, ny: noiseY });
 
-        const stochGx = gx + noiseX;
-        const stochGy = gy + noiseY;
-        stepX = -effLr * stochGx;
-        stepY = -effLr * stochGy;
+        stepX = -effLr * (gx + noiseX);
+        stepY = -effLr * (gy + noiseY);
 
-        if (landscape === "saddle" && Math.abs(currW.y) > 0.8) {
-          setStatus("SADDLE ESCAPED");
-        } else {
-          setStatus("DESCENDING");
-        }
+        setStatus(landscape === "saddle" && Math.abs(currW.y) > 0.8 ? "Escaped Saddle" : "Descending");
       } else if (isAdam) {
-        // Adam optimization
         const t = stepCount + 1;
         const nm_x = 0.9 * mVec.x + 0.1 * gx;
         const nm_y = 0.9 * mVec.y + 0.1 * gy;
@@ -1891,22 +1776,15 @@ export function GradientDescentLab({
         const v_hat_y = nv_y / (1 - Math.pow(0.999, t));
         stepX = -effLr * (m_hat_x / (Math.sqrt(v_hat_x) + 1e-8));
         stepY = -effLr * (m_hat_y / (Math.sqrt(v_hat_y) + 1e-8));
-        setStatus(norm < 0.03 ? "CONVERGED" : "DESCENDING");
+        setStatus(norm < 0.03 ? "Converged" : "Descending");
       } else {
-        // Deterministic Batch Gradient Descent
         stepX = -effLr * gx;
         stepY = -effLr * gy;
-
-        if (norm > 30) {
-          setStatus("OSCILLATING");
-        } else {
-          setStatus("DESCENDING");
-        }
+        setStatus(norm > 30 ? "Oscillating" : "Descending");
       }
 
       const nextX = Math.max(-3.5, Math.min(3.5, currW.x + stepX));
       const nextY = Math.max(-3.5, Math.min(3.5, currW.y + stepY));
-
       const newPoint = { x: nextX, y: nextY };
       setPath((prev) => [...prev.slice(-100), newPoint]);
       setStepCount((s) => s + 1);
@@ -1914,42 +1792,34 @@ export function GradientDescentLab({
     });
   }, [evalLandscape, learningRate, isSGD, isAdam, decayEnabled, noiseVariance, stepCount, landscape, mVec, vVec]);
 
-  // Continuous animation cycle
   useEffect(() => {
     if (!isRunning) return;
     const interval = setInterval(performStep, isSGD ? 40 : 45);
     return () => clearInterval(interval);
   }, [isRunning, performStep, isSGD]);
 
-  // Click on contour canvas to reposition starting parameters
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
     const px = e.clientX - rect.left;
     const py = e.clientY - rect.top;
-    const wCanvas = rect.width;
-    const hCanvas = rect.height;
-    const cx = wCanvas / 2;
-    const cy = hCanvas / 2;
-    const scale = Math.min(wCanvas, hCanvas) / 7.0;
+    const cx = rect.width / 2;
+    const cy = rect.height / 2;
+    const scale = Math.min(rect.width, rect.height) / 7.0;
 
-    const mathX = (px - cx) / scale;
-    const mathY = -(py - cy) / scale;
+    const mathX = Math.max(-3.2, Math.min(3.2, (px - cx) / scale));
+    const mathY = Math.max(-3.2, Math.min(3.2, -(py - cy) / scale));
 
-    const clampedX = Math.max(-3.2, Math.min(3.2, mathX));
-    const clampedY = Math.max(-3.2, Math.min(3.2, mathY));
-
-    setW({ x: clampedX, y: clampedY });
-    setPath([{ x: clampedX, y: clampedY }]);
+    setW({ x: mathX, y: mathY });
+    setPath([{ x: mathX, y: mathY }]);
     setStepCount(0);
     setMVec({ x: 0, y: 0 });
     setVVec({ x: 0, y: 0 });
-    setStatus("READY");
-    toast.success(`Position placed at (${clampedX.toFixed(2)}, ${clampedY.toFixed(2)})`);
+    setStatus("Ready");
+    toast.success(`Start point placed at (${mathX.toFixed(2)}, ${mathY.toFixed(2)})`);
   };
 
-  // Render 2D contour isolines and trajectory
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -1972,12 +1842,11 @@ export function GradientDescentLab({
     const cy = height / 2;
     const scale = Math.min(width, height) / 7.0;
 
-    // Background: Midnight Black #08090B
-    ctx.fillStyle = "#08090B";
+    // Pure Crisp White Surface
+    ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, width, height);
 
-    // Subtle coordinate axes
-    ctx.strokeStyle = "rgba(250, 246, 243, 0.08)";
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.05)";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(0, cy);
@@ -1986,12 +1855,11 @@ export function GradientDescentLab({
     ctx.lineTo(cx, height);
     ctx.stroke();
 
-    // Contour Isolines
     const levels = [0.15, 0.45, 1.0, 2.2, 4.0, 7.5, 12.0, 18.0, 26.0, 36.0];
     const { minX, minY } = evalLandscape(0, 0);
 
     levels.forEach((lvl, idx) => {
-      ctx.strokeStyle = `rgba(250, 246, 243, ${0.04 + idx * 0.02})`;
+      ctx.strokeStyle = `rgba(0, 113, 227, ${0.06 + idx * 0.015})`;
       ctx.lineWidth = 1;
       ctx.beginPath();
       const numSteps = 72;
@@ -2022,30 +1890,25 @@ export function GradientDescentLab({
       ctx.stroke();
     });
 
-    // Optimum Target 🎯
     const targetPx = cx + minX * scale;
     const targetPy = cy - minY * scale;
-    ctx.fillStyle = "#CDF22B";
+    ctx.fillStyle = "#059669";
     ctx.beginPath();
-    ctx.arc(targetPx, targetPy, 5, 0, Math.PI * 2);
+    ctx.arc(targetPx, targetPy, 5.5, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = "#08090B";
+    ctx.strokeStyle = "#ffffff";
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Pulse ring around target
-    ctx.strokeStyle = "rgba(205, 242, 43, 0.4)";
+    ctx.strokeStyle = "rgba(5, 150, 105, 0.35)";
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.arc(targetPx, targetPy, 10, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Trajectory History Path
     if (path.length > 1) {
-      ctx.strokeStyle = "#CDF22B";
+      ctx.strokeStyle = "#0071e3";
       ctx.lineWidth = isSGD ? 1.8 : 2.5;
-      ctx.shadowColor = "#CDF22B";
-      ctx.shadowBlur = 8;
       ctx.beginPath();
       path.forEach((pt, idx) => {
         const px = cx + pt.x * scale;
@@ -2054,14 +1917,12 @@ export function GradientDescentLab({
         else ctx.lineTo(px, py);
       });
       ctx.stroke();
-      ctx.shadowBlur = 0;
 
-      // Dots along trajectory
       path.forEach((pt, idx) => {
         if (idx % 2 === 0 || idx === path.length - 1) {
           const px = cx + pt.x * scale;
           const py = cy - pt.y * scale;
-          ctx.fillStyle = idx === path.length - 1 ? "#CDF22B" : "rgba(250, 246, 243, 0.5)";
+          ctx.fillStyle = idx === path.length - 1 ? "#0071e3" : "rgba(0, 113, 227, 0.35)";
           ctx.beginPath();
           ctx.arc(px, py, idx === path.length - 1 ? 5 : 2, 0, Math.PI * 2);
           ctx.fill();
@@ -2069,7 +1930,6 @@ export function GradientDescentLab({
       });
     }
 
-    // Directional Gradient Vector Arrow (-α ∇J)
     const currPx = cx + w.x * scale;
     const currPy = cy - w.y * scale;
     const { gx, gy } = evalLandscape(w.x, w.y);
@@ -2078,21 +1938,20 @@ export function GradientDescentLab({
     if (gradNorm > 1e-4) {
       const arrowLength = Math.min(50, Math.max(16, gradNorm * (learningRate * 90)));
       const dirX = -gx / gradNorm;
-      const dirY = gy / gradNorm; // Inverted for canvas y-axis
-
+      const dirY = gy / gradNorm;
       const tipX = currPx + dirX * arrowLength;
       const tipY = currPy + dirY * arrowLength;
 
-      ctx.strokeStyle = "#CDF22B";
-      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = "#18181b";
+      ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(currPx, currPy);
       ctx.lineTo(tipX, tipY);
       ctx.stroke();
 
       const angle = Math.atan2(dirY, dirX);
-      const headLen = 7;
-      ctx.fillStyle = "#CDF22B";
+      const headLen = 6;
+      ctx.fillStyle = "#18181b";
       ctx.beginPath();
       ctx.moveTo(tipX, tipY);
       ctx.lineTo(tipX - headLen * Math.cos(angle - Math.PI / 6), tipY - headLen * Math.sin(angle - Math.PI / 6));
@@ -2100,11 +1959,10 @@ export function GradientDescentLab({
       ctx.closePath();
       ctx.fill();
 
-      // For SGD: also draw noisy sample direction
       if (isSGD && (lastNoiseVector.nx !== 0 || lastNoiseVector.ny !== 0)) {
         const noiseTipX = currPx + (dirX * arrowLength + lastNoiseVector.nx * 7);
         const noiseTipY = currPy + (dirY * arrowLength - lastNoiseVector.ny * 7);
-        ctx.strokeStyle = "rgba(250, 246, 243, 0.45)";
+        ctx.strokeStyle = "rgba(225, 29, 72, 0.5)";
         ctx.setLineDash([3, 3]);
         ctx.beginPath();
         ctx.moveTo(currPx, currPy);
@@ -2114,11 +1972,10 @@ export function GradientDescentLab({
       }
     }
 
-    // Starting marker
     const startPt = path[0] || w;
     const startPx = cx + startPt.x * scale;
     const startPy = cy - startPt.y * scale;
-    ctx.strokeStyle = "#FAF6F3";
+    ctx.strokeStyle = "#18181b";
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(startPx, startPy, 6, 0, Math.PI * 2);
@@ -2132,15 +1989,15 @@ export function GradientDescentLab({
 
   return (
     <div className="space-y-4">
-      {/* Landscape & Execution Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-[#08090B] border border-[#1E2227] text-xs">
+      {/* Surface & Transport Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-zinc-50/70 border border-zinc-200/80 text-xs">
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="font-mono text-[#FAF6F3]/50 font-semibold mr-1">Landscape:</span>
+          <span className="text-zinc-500 font-medium mr-1">Surface:</span>
           {[
-            { id: "bowl", label: "Elliptic Bowl (κ=4)" },
+            { id: "bowl", label: "Elliptic Bowl" },
             { id: "saddle", label: "Saddle Point" },
-            { id: "rosenbrock", label: "Rosenbrock Valley" },
-            { id: "beale", label: "Beale Surface" },
+            { id: "rosenbrock", label: "Rosenbrock" },
+            { id: "beale", label: "Beale" },
           ].map((l) => (
             <button
               key={l.id}
@@ -2151,13 +2008,13 @@ export function GradientDescentLab({
                 setPath([nextStart]);
                 setStepCount(0);
                 setIsRunning(false);
-                setStatus("READY");
+                setStatus("Ready");
               }}
               className={cn(
-                "px-2.5 py-1 rounded-xl font-mono text-xs transition-all",
+                "px-2.5 py-1 rounded-full text-xs font-medium transition-all",
                 landscape === l.id
-                  ? "bg-[#CDF22B] text-[#08090B] font-bold shadow-[0_0_12px_rgba(205,242,43,0.3)]"
-                  : "bg-[#14171A] border border-[#1E2227] text-[#FAF6F3]/70 hover:text-[#FAF6F3]"
+                  ? "bg-zinc-900 text-white shadow-2xs"
+                  : "bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-100"
               )}
             >
               {l.label}
@@ -2169,10 +2026,10 @@ export function GradientDescentLab({
           <Button
             size="sm"
             onClick={() => setIsRunning(!isRunning)}
-            className="h-8 text-xs font-mono font-bold bg-[#CDF22B] text-[#08090B] hover:bg-[#bde024] shadow-[0_0_12px_rgba(205,242,43,0.3)] gap-1.5"
+            className="h-8 text-xs font-medium bg-[#0071e3] text-white hover:bg-[#0077ed] rounded-xl gap-1.5"
           >
             {isRunning ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-            {isRunning ? "Pause" : isSGD ? "Run SGD" : "Run Descent"}
+            {isRunning ? "Pause" : isSGD ? "Run SGD" : "Start"}
           </Button>
           <Button
             size="sm"
@@ -2181,10 +2038,9 @@ export function GradientDescentLab({
               setIsRunning(false);
               performStep();
             }}
-            className="h-8 text-xs font-mono border-[#1E2227] bg-[#14171A] text-[#FAF6F3] hover:text-[#CDF22B] hover:border-[#CDF22B]/40 gap-1.5"
+            className="h-8 text-xs font-medium rounded-xl border-zinc-200 bg-white gap-1"
           >
-            <FastForward className="h-3.5 w-3.5" />
-            Step 1 Iter
+            <FastForward className="h-3.5 w-3.5" /> Step
           </Button>
           <Button
             size="sm"
@@ -2196,108 +2052,65 @@ export function GradientDescentLab({
               setStepCount(0);
               setMVec({ x: 0, y: 0 });
               setVVec({ x: 0, y: 0 });
-              setStatus("READY");
+              setStatus("Ready");
             }}
-            className="h-8 text-xs font-mono text-[#FAF6F3]/70 hover:text-[#FAF6F3] border border-[#1E2227] bg-[#14171A] gap-1"
+            className="h-8 text-xs font-medium rounded-xl text-zinc-600 hover:bg-zinc-100 gap-1"
           >
             <RotateCcw className="h-3 w-3" /> Reset
           </Button>
         </div>
       </div>
 
-      {/* Interactive 2D Contour Canvas */}
-      <div className="relative rounded-3xl border border-[#1E2227] bg-[#08090B] overflow-hidden shadow-2xl">
+      {/* Crisp Light Contour Canvas */}
+      <div className="relative rounded-2xl border border-zinc-200/80 bg-white overflow-hidden shadow-2xs">
         <canvas
           ref={canvasRef}
           onClick={handleCanvasClick}
           className="w-full block cursor-crosshair"
-          title="Click anywhere to place initial parameter w"
         />
-        <div className="absolute top-3 left-3 text-[10px] font-mono px-2.5 py-1 rounded-lg bg-[#08090B]/90 border border-[#1E2227] text-[#FAF6F3]/70 flex items-center gap-2 backdrop-blur-md">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#CDF22B] animate-pulse" />
-          <span>Step {stepCount} • Click anywhere to drop start position (w₁, w₂)</span>
+        <div className="absolute top-3 left-3 text-[11px] font-medium px-2.5 py-1 rounded-full bg-white/90 border border-zinc-200 text-zinc-700 flex items-center gap-2 backdrop-blur-md shadow-2xs">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#0071e3]" />
+          <span>Step {stepCount} • Click anywhere to place start</span>
         </div>
-        <div className="absolute top-3 right-3 text-[10px] font-mono px-2.5 py-1 rounded-lg bg-[#08090B]/90 border border-[#1E2227] text-[#FAF6F3]/70 backdrop-blur-md">
-          🎯 Target: Global Minimum
-        </div>
-      </div>
-
-      {/* Real-Time Telemetry HUD */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-xs">
-        <div className="p-3 rounded-2xl border border-[#1E2227] bg-[#0C0E12] flex flex-col gap-1">
-          <span className="text-[10px] text-[#FAF6F3]/50 uppercase tracking-wider">Parameters (w₁, w₂)</span>
-          <span className="text-sm font-bold text-[#FAF6F3]">
-            ({w.x.toFixed(3)}, {w.y.toFixed(3)})
-          </span>
-          <span className="text-[10px] text-[#FAF6F3]/40">Dimension: 2D Plane</span>
-        </div>
-
-        <div className="p-3 rounded-2xl border border-[#1E2227] bg-[#0C0E12] flex flex-col gap-1">
-          <span className="text-[10px] text-[#FAF6F3]/50 uppercase tracking-wider">Current Loss J(w)</span>
-          <span className="text-sm font-bold text-[#CDF22B]">
-            {currEval.loss.toFixed(4)}
-          </span>
-          <span className="text-[10px] text-[#FAF6F3]/40">Objective Cost</span>
-        </div>
-
-        <div className="p-3 rounded-2xl border border-[#1E2227] bg-[#0C0E12] flex flex-col gap-1">
-          <span className="text-[10px] text-[#FAF6F3]/50 uppercase tracking-wider">Gradient Norm ||∇J||</span>
-          <span className="text-sm font-bold text-[#FAF6F3]">
-            {recentGrad.norm.toFixed(4)}
-          </span>
-          <span className="text-[10px] text-[#FAF6F3]/40">First-Order Sensitivity</span>
-        </div>
-
-        <div className="p-3 rounded-2xl border border-[#1E2227] bg-[#0C0E12] flex flex-col gap-1">
-          <span className="text-[10px] text-[#FAF6F3]/50 uppercase tracking-wider">Trajectory Status</span>
-          <span
-            className={cn(
-              "text-xs font-bold truncate",
-              status === "CONVERGED" || status === "SADDLE ESCAPED"
-                ? "text-[#CDF22B]"
-                : status === "OSCILLATING"
-                ? "text-amber-400"
-                : "text-[#FAF6F3]"
-            )}
-          >
-            {status}
-          </span>
-          <span className="text-[10px] text-[#FAF6F3]/40">
-            {isSGD ? (decayEnabled ? "Annealed Schedule" : "Constant α") : "Monotonic Batch"}
-          </span>
+        <div className="absolute top-3 right-3 text-[11px] font-medium px-2.5 py-1 rounded-full bg-white/90 border border-zinc-200 text-emerald-700 backdrop-blur-md shadow-2xs">
+          Target Optimum
         </div>
       </div>
 
-      {/* Hyperparameter Tuning Sliders */}
-      <div className="p-3.5 rounded-2xl bg-[#08090B] border border-[#1E2227] text-xs font-mono space-y-3">
+      {/* Apple Metric Strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-zinc-200/70 rounded-xl border border-zinc-200/80 bg-zinc-50/70 font-mono text-xs overflow-hidden">
+        <div className="p-3">
+          <span className="text-[10px] font-sans font-medium text-zinc-500 uppercase tracking-wider block">Parameters</span>
+          <span className="font-semibold text-zinc-900 tabular-nums">({w.x.toFixed(3)}, {w.y.toFixed(3)})</span>
+        </div>
+        <div className="p-3">
+          <span className="text-[10px] font-sans font-medium text-zinc-500 uppercase tracking-wider block">Loss J(w)</span>
+          <span className="font-semibold text-[#0071e3] tabular-nums">{currEval.loss.toFixed(4)}</span>
+        </div>
+        <div className="p-3">
+          <span className="text-[10px] font-sans font-medium text-zinc-500 uppercase tracking-wider block">Gradient Norm</span>
+          <span className="font-semibold text-zinc-900 tabular-nums">{recentGrad.norm.toFixed(4)}</span>
+        </div>
+        <div className="p-3">
+          <span className="text-[10px] font-sans font-medium text-zinc-500 uppercase tracking-wider block">State</span>
+          <span className="font-semibold text-zinc-800">{status}</span>
+        </div>
+      </div>
+
+      {/* Hyperparameters */}
+      <div className="p-3.5 rounded-xl bg-zinc-50/70 border border-zinc-200/80 text-xs space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="text-[#FAF6F3] font-semibold whitespace-nowrap">
-              Learning Rate (α = {learningRate.toFixed(3)}):
+            <span className="text-zinc-800 font-medium whitespace-nowrap">
+              Learning Rate (α = {learningRate.toFixed(3)})
             </span>
-            <Slider
-              value={[learningRate]}
-              min={0.005}
-              max={0.35}
-              step={0.005}
-              onValueChange={([val]) => setLearningRate(val)}
-              className="w-36 sm:w-48"
-            />
+            <Slider value={[learningRate]} min={0.005} max={0.35} step={0.005} onValueChange={([val]) => setLearningRate(val)} className="w-36 sm:w-44" />
           </div>
 
           {isSGD && (
             <div className="flex items-center gap-3">
-              <span className="text-[#FAF6F3] font-semibold whitespace-nowrap">
-                Mini-Batch Noise (σ = {noiseVariance.toFixed(2)}):
-              </span>
-              <Slider
-                value={[noiseVariance]}
-                min={0.05}
-                max={0.9}
-                step={0.05}
-                onValueChange={([val]) => setNoiseVariance(val)}
-                className="w-32 sm:w-40"
-              />
+              <span className="text-zinc-800 font-medium whitespace-nowrap">Noise (σ = {noiseVariance.toFixed(2)})</span>
+              <Slider value={[noiseVariance]} min={0.05} max={0.9} step={0.05} onValueChange={([val]) => setNoiseVariance(val)} className="w-32" />
             </div>
           )}
 
@@ -2306,61 +2119,51 @@ export function GradientDescentLab({
               type="button"
               onClick={() => setDecayEnabled(!decayEnabled)}
               className={cn(
-                "px-3 py-1 rounded-xl text-xs font-mono transition-all border",
-                decayEnabled
-                  ? "bg-[#CDF22B]/15 border-[#CDF22B] text-[#CDF22B] font-bold shadow-[0_0_8px_rgba(205,242,43,0.2)]"
-                  : "bg-[#14171A] border-[#1E2227] text-[#FAF6F3]/60 hover:text-[#FAF6F3]"
+                "px-3 py-1 rounded-full text-xs font-medium transition-all border",
+                decayEnabled ? "bg-zinc-900 text-white border-zinc-900" : "bg-white border-zinc-200 text-zinc-600"
               )}
             >
-              Robbins-Monro Decay: {decayEnabled ? "ENABLED" : "OFF"}
+              LR Decay: {decayEnabled ? "On" : "Off"}
             </button>
           )}
         </div>
       </div>
 
-      {/* 4-Phase Pipeline Stages Sync */}
-      <div className="flex items-center justify-between p-3 rounded-2xl bg-[#08090B] border border-[#1E2227]">
-        <div className="flex items-center gap-2">
-          <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#CDF22B]/15 text-[#CDF22B] font-mono text-xs font-bold border border-[#CDF22B]/30">
-            {activeStage.step}
-          </span>
-          <div>
-            <span className="text-xs font-mono font-bold text-[#CDF22B] uppercase tracking-wider mr-2">
-              Phase {activeStage.step} of {topic.pipelineStages.length}: {activeStage.phase}
+      {/* Stage Stepper */}
+      <div className="rounded-xl border border-zinc-200/80 bg-zinc-50/60 p-4 space-y-2.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-900 text-white font-mono text-xs font-semibold">
+              {activeStage.step}
             </span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#14171A] border border-[#1E2227] text-[#FAF6F3]/70">
-              {activeStage.badge}
-            </span>
+            <span className="text-xs font-semibold text-zinc-900">{activeStage.phase}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={activePipelineStep === 0}
+              onClick={() => onStepChange(Math.max(0, activePipelineStep - 1))}
+              className="h-7 px-2 text-xs rounded-lg border-zinc-200 bg-white"
+            >
+              Prev
+            </Button>
+            <Button
+              size="sm"
+              disabled={activePipelineStep >= topic.pipelineStages.length - 1}
+              onClick={() => onStepChange(Math.min(topic.pipelineStages.length - 1, activePipelineStep + 1))}
+              className="h-7 px-2.5 text-xs rounded-lg bg-zinc-900 text-white"
+            >
+              Next
+            </Button>
           </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={activePipelineStep === 0}
-            onClick={() => onStepChange(Math.max(0, activePipelineStep - 1))}
-            className="h-7 px-2.5 text-xs font-mono text-[#FAF6F3]/70 hover:text-[#FAF6F3] border border-[#1E2227] bg-[#14171A]"
-          >
-            <ChevronLeft className="h-3 w-3" /> Prev
-          </Button>
-          <Button
-            size="sm"
-            disabled={activePipelineStep >= topic.pipelineStages.length - 1}
-            onClick={() => onStepChange(Math.min(topic.pipelineStages.length - 1, activePipelineStep + 1))}
-            className="h-7 px-3 text-xs font-mono rounded-xl bg-[#CDF22B] hover:bg-[#bde024] text-[#08090B] font-bold shadow-[0_0_15px_rgba(205,242,43,0.3)]"
-          >
-            Next <ChevronRight className="h-3 w-3" />
-          </Button>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <p className="text-xs text-zinc-600">{activeStage.insight}</p>
+          <div className="px-2.5 py-1 rounded-lg bg-white border border-zinc-200 font-mono text-xs text-zinc-900 shrink-0">
+            <MathText tex={activeStage.mathExpression} />
+          </div>
         </div>
-      </div>
-
-      <div className="p-3.5 rounded-2xl bg-[#0C0E12] border border-[#1E2227] text-left space-y-1">
-        <div className="text-xs font-mono text-[#FAF6F3]">
-          <MathText tex={activeStage.mathExpression} />
-        </div>
-        <p className="text-xs text-[#FAF6F3]/70 leading-relaxed font-sans">
-          {activeStage.insight}
-        </p>
       </div>
     </div>
   );
@@ -2390,15 +2193,15 @@ interface OptimizerParticle {
 export function OptimizationLossLab() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [lossFunc, setLossFunc] = useState<"rosenbrock" | "saddle" | "bowl" | "beale">("rosenbrock");
-  const [learningRate, setLearningRate] = useState<number>(0.02);
+  const [learningRate] = useState<number>(0.02);
   const [isRacing, setIsRacing] = useState<boolean>(true);
   const [stepCount, setStepCount] = useState<number>(0);
 
   const [particles, setParticles] = useState<OptimizerParticle[]>([
-    { name: "SGD", color: "rgba(205, 242, 43, 0.5)", x: -1.5, y: 1.5, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [] },
-    { name: "Momentum", color: "rgba(250, 246, 243, 0.65)", x: -1.5, y: 1.5, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [] },
-    { name: "RMSProp", color: "#FAF6F3", x: -1.5, y: 1.5, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [] },
-    { name: "Adam", color: "#CDF22B", x: -1.5, y: 1.5, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [] },
+    { name: "SGD", color: "#e11d48", x: -1.5, y: 1.5, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [] },
+    { name: "Momentum", color: "#d97706", x: -1.5, y: 1.5, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [] },
+    { name: "RMSProp", color: "#6366f1", x: -1.5, y: 1.5, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [] },
+    { name: "Adam", color: "#0071e3", x: -1.5, y: 1.5, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [] },
   ]);
 
   const computeLossAndGrad = useCallback((x: number, y: number) => {
@@ -2408,16 +2211,14 @@ export function OptimizationLossLab() {
       const gy = 20 * (y - x * x);
       return { loss, gx: Math.max(-50, Math.min(50, gx)), gy: Math.max(-50, Math.min(50, gy)) };
     } else if (lossFunc === "saddle") {
-      const loss = x * x - y * y;
-      return { loss, gx: 2 * x, gy: -2 * y };
+      return { loss: x * x - y * y, gx: 2 * x, gy: -2 * y };
     } else if (lossFunc === "beale") {
       const loss = Math.pow(1.5 - x + x * y, 2) + Math.pow(2.25 - x + x * y * y, 2);
       const gx = 2 * (1.5 - x + x * y) * (y - 1) + 2 * (2.25 - x + x * y * y) * (y * y - 1);
       const gy = 2 * (1.5 - x + x * y) * x + 4 * (2.25 - x + x * y * y) * x * y;
       return { loss, gx: Math.max(-40, Math.min(40, gx)), gy: Math.max(-40, Math.min(40, gy)) };
     } else {
-      const loss = 0.5 * x * x + 4 * y * y;
-      return { loss, gx: x, gy: 8 * y };
+      return { loss: 0.5 * x * x + 4 * y * y, gx: x, gy: 8 * y };
     }
   }, [lossFunc]);
 
@@ -2426,10 +2227,10 @@ export function OptimizationLossLab() {
     const startY = lossFunc === "rosenbrock" ? 1.5 : 2;
     setStepCount(0);
     setParticles([
-      { name: "SGD", color: "rgba(205, 242, 43, 0.5)", x: startX, y: startY, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [{ x: startX, y: startY }] },
-      { name: "Momentum", color: "rgba(250, 246, 243, 0.65)", x: startX, y: startY, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [{ x: startX, y: startY }] },
-      { name: "RMSProp", color: "#FAF6F3", x: startX, y: startY, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [{ x: startX, y: startY }] },
-      { name: "Adam", color: "#CDF22B", x: startX, y: startY, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [{ x: startX, y: startY }] },
+      { name: "SGD", color: "#e11d48", x: startX, y: startY, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [{ x: startX, y: startY }] },
+      { name: "Momentum", color: "#d97706", x: startX, y: startY, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [{ x: startX, y: startY }] },
+      { name: "RMSProp", color: "#6366f1", x: startX, y: startY, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [{ x: startX, y: startY }] },
+      { name: "Adam", color: "#0071e3", x: startX, y: startY, vx: 0, vy: 0, sx: 0, sy: 0, m_x: 0, m_y: 0, v_x: 0, v_y: 0, t: 0, path: [{ x: startX, y: startY }] },
     ]);
   }, [lossFunc]);
 
@@ -2475,23 +2276,12 @@ export function OptimizationLossLab() {
           ny -= (learningRate / (Math.sqrt(v_hat_y) + 1e-8)) * m_hat_y;
         }
 
-        nx = Math.max(-3, Math.min(3, nx));
-        ny = Math.max(-3, Math.min(3, ny));
-
         return {
           ...p,
-          x: nx,
-          y: ny,
-          vx: nvx,
-          vy: nvy,
-          sx: nsx,
-          sy: nsy,
-          m_x: nm_x,
-          m_y: nm_y,
-          v_x: nv_x,
-          v_y: nv_y,
-          t,
-          path: [...p.path.slice(-70), { x: nx, y: ny }],
+          x: Math.max(-3, Math.min(3, nx)),
+          y: Math.max(-3, Math.min(3, ny)),
+          vx: nvx, vy: nvy, sx: nsx, sy: nsy, m_x: nm_x, m_y: nm_y, v_x: nv_x, v_y: nv_y, t,
+          path: [...p.path.slice(-70), { x: Math.max(-3, Math.min(3, nx)), y: Math.max(-3, Math.min(3, ny)) }],
         };
       })
     );
@@ -2525,12 +2315,12 @@ export function OptimizationLossLab() {
     const cy = h / 2;
     const scale = Math.min(w, h) / 6.5;
 
-    ctx.fillStyle = "#08090B";
+    ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, w, h);
 
     const levels = [0.1, 0.4, 1.0, 2.5, 5.0, 10.0, 20.0, 40.0];
     levels.forEach((lvl, idx) => {
-      ctx.strokeStyle = `rgba(250, 246, 243, ${0.04 + idx * 0.02})`;
+      ctx.strokeStyle = `rgba(0, 0, 0, ${0.04 + idx * 0.015})`;
       ctx.beginPath();
       for (let angle = 0; angle <= Math.PI * 2; angle += 0.05) {
         const r = Math.sqrt(lvl) * 0.7;
@@ -2545,11 +2335,11 @@ export function OptimizationLossLab() {
 
     const targetX = lossFunc === "rosenbrock" ? 1 : 0;
     const targetY = lossFunc === "rosenbrock" ? 1 : 0;
-    ctx.fillStyle = "#CDF22B";
+    ctx.fillStyle = "#059669";
     ctx.beginPath();
     ctx.arc(cx + targetX * scale, cy - targetY * scale, 6, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = "#08090B";
+    ctx.strokeStyle = "#ffffff";
     ctx.lineWidth = 2;
     ctx.stroke();
 
@@ -2557,8 +2347,6 @@ export function OptimizationLossLab() {
       if (p.path.length < 2) return;
       ctx.strokeStyle = p.color;
       ctx.lineWidth = 2.5;
-      ctx.shadowColor = p.name === "Adam" ? "#CDF22B" : "transparent";
-      ctx.shadowBlur = p.name === "Adam" ? 10 : 0;
       ctx.beginPath();
       p.path.forEach((pt, idx) => {
         const px = cx + pt.x * scale;
@@ -2567,7 +2355,6 @@ export function OptimizationLossLab() {
         else ctx.lineTo(px, py);
       });
       ctx.stroke();
-      ctx.shadowBlur = 0;
 
       const head = p.path[p.path.length - 1];
       ctx.fillStyle = p.color;
@@ -2581,23 +2368,23 @@ export function OptimizationLossLab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-[#08090B] border border-[#1E2227] text-xs">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-[#FAF6F3]/50 font-semibold">Landscape:</span>
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-zinc-50/70 border border-zinc-200/80 text-xs">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-zinc-500 font-medium mr-1">Surface:</span>
           {[
-            { id: "rosenbrock", label: "Rosenbrock Valley" },
-            { id: "saddle", label: "Saddle Point" },
-            { id: "bowl", label: "Ravine Bowl" },
-            { id: "beale", label: "Beale Surface" },
+            { id: "rosenbrock", label: "Rosenbrock" },
+            { id: "saddle", label: "Saddle" },
+            { id: "bowl", label: "Bowl" },
+            { id: "beale", label: "Beale" },
           ].map((l) => (
             <button
               key={l.id}
               onClick={() => setLossFunc(l.id as any)}
               className={cn(
-                "px-2.5 py-1 rounded-xl font-mono text-xs transition-all",
+                "px-2.5 py-1 rounded-full text-xs font-medium transition-all",
                 lossFunc === l.id
-                  ? "bg-[#CDF22B] text-[#08090B] font-bold shadow-[0_0_12px_rgba(205,242,43,0.3)]"
-                  : "bg-[#14171A] border border-[#1E2227] text-[#FAF6F3]/70 hover:text-[#FAF6F3]"
+                  ? "bg-zinc-900 text-white shadow-2xs"
+                  : "bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-100"
               )}
             >
               {l.label}
@@ -2608,46 +2395,42 @@ export function OptimizationLossLab() {
         <div className="flex items-center gap-2 ml-auto">
           <Button
             size="sm"
-            variant="outline"
-            className="h-8 text-xs gap-1.5 font-mono border-[#1E2227] bg-[#CDF22B] hover:bg-[#bde024] text-[#08090B] font-bold shadow-[0_0_12px_rgba(205,242,43,0.3)]"
+            className="h-8 text-xs gap-1.5 font-medium rounded-xl bg-[#0071e3] hover:bg-[#0077ed] text-white"
             onClick={() => setIsRacing(!isRacing)}
           >
             {isRacing ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
-            {isRacing ? "Pause Race" : "Start Race"}
+            {isRacing ? "Pause" : "Start Race"}
           </Button>
-          <Button size="sm" variant="ghost" className="h-8 text-xs gap-1 font-mono text-[#FAF6F3]/70 hover:text-[#FAF6F3] border border-[#1E2227] bg-[#14171A]" onClick={resetRace}>
+          <Button size="sm" variant="outline" className="h-8 text-xs gap-1 rounded-xl border-zinc-200 bg-white" onClick={resetRace}>
             <RotateCcw className="h-3 w-3" /> Reset
           </Button>
         </div>
       </div>
 
-      <div className="relative rounded-3xl border border-[#1E2227] bg-[#08090B] overflow-hidden shadow-2xl">
+      <div className="relative rounded-2xl border border-zinc-200/80 bg-white overflow-hidden shadow-2xs">
         <canvas ref={canvasRef} className="w-full block" />
-        <div className="absolute top-3 left-3 text-[10px] font-mono px-2 py-1 rounded-md bg-[#08090B]/90 border border-[#1E2227] text-[#FAF6F3]/70">
-          Step: {stepCount} • Target: 🎯 (Global Minimum)
+        <div className="absolute top-3 left-3 text-[11px] font-medium px-2.5 py-1 rounded-full bg-white/90 border border-zinc-200 text-zinc-700 backdrop-blur">
+          Step {stepCount} • Target Optimum
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-xs">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 font-mono text-xs">
         {particles.map((p) => {
           const { loss } = computeLossAndGrad(p.x, p.y);
           return (
-            <div
-              key={p.name}
-              className="p-3 rounded-2xl border border-[#1E2227] bg-[#0C0E12] flex flex-col gap-1"
-            >
+            <div key={p.name} className="p-3 rounded-xl border border-zinc-200/80 bg-zinc-50/70 space-y-1">
               <div className="flex items-center justify-between">
-                <span className="font-bold flex items-center gap-1.5" style={{ color: p.name === "SGD" ? "#CDF22B" : p.name === "Momentum" ? "#FAF6F3" : p.color }}>
-                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: p.color }} />
+                <span className="font-sans font-semibold flex items-center gap-1.5 text-zinc-900">
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.color }} />
                   {p.name}
                 </span>
-                <span className="text-[10px] text-[#FAF6F3]/40">t = {p.t}</span>
+                <span className="text-[10px] text-zinc-400">t={p.t}</span>
               </div>
-              <div className="text-[11px] text-[#FAF6F3]/70">
-                Loss: <span className="text-[#FAF6F3] font-bold">{loss.toFixed(4)}</span>
+              <div className="text-xs text-zinc-700 tabular-nums">
+                Loss: <span className="font-semibold text-zinc-900">{loss.toFixed(4)}</span>
               </div>
-              <div className="text-[10px] text-[#FAF6F3]/50 truncate">
-                Pos: ({p.x.toFixed(2)}, {p.y.toFixed(2)})
+              <div className="text-[11px] text-zinc-400 truncate tabular-nums">
+                ({p.x.toFixed(2)}, {p.y.toFixed(2)})
               </div>
             </div>
           );
@@ -2688,13 +2471,7 @@ export function QLearningGridworld() {
     setAgentPos((curr) => {
       const stateKey = `${curr.r},${curr.c}`;
       const qValues = qTableRef.current[stateKey] || [0, 0, 0, 0];
-
-      let action = 0;
-      if (Math.random() < 0.15) {
-        action = Math.floor(Math.random() * 4);
-      } else {
-        action = qValues.indexOf(Math.max(...qValues));
-      }
+      const action = Math.random() < 0.15 ? Math.floor(Math.random() * 4) : qValues.indexOf(Math.max(...qValues));
 
       let nr = curr.r;
       let nc = curr.c;
@@ -2730,28 +2507,27 @@ export function QLearningGridworld() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between text-xs font-mono">
-        <div className="flex items-center gap-3">
-          <span className="text-[#CDF22B] font-bold">Episodes: {episodes}</span>
-          <span className="text-[#FAF6F3]/60">• Cumulative Reward: {totalReward.toFixed(1)}</span>
+      <div className="flex items-center justify-between text-xs p-3 rounded-xl bg-zinc-50/70 border border-zinc-200/80">
+        <div className="flex items-center gap-3 font-mono tabular-nums">
+          <span className="font-semibold text-zinc-900">Episodes: {episodes}</span>
+          <span className="text-zinc-500">Reward: {totalReward.toFixed(1)}</span>
         </div>
         <div className="flex gap-2">
           <Button
             size="sm"
-            variant="outline"
-            className="h-7 text-xs gap-1 font-mono border-[#1E2227] bg-[#CDF22B] hover:bg-[#bde024] text-[#08090B] font-bold shadow-[0_0_12px_rgba(205,242,43,0.3)]"
+            className="h-7 text-xs gap-1 font-medium rounded-lg bg-[#0071e3] hover:bg-[#0077ed] text-white"
             onClick={() => setIsRunning(!isRunning)}
           >
             {isRunning ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
-            {isRunning ? "Pause" : "Auto-Explore"}
+            {isRunning ? "Pause" : "Train Agent"}
           </Button>
-          <Button size="sm" variant="ghost" className="h-7 text-xs font-mono text-[#FAF6F3]/70 hover:text-[#FAF6F3] border border-[#1E2227] bg-[#14171A]" onClick={stepAgent}>
+          <Button size="sm" variant="outline" className="h-7 text-xs font-medium rounded-lg border-zinc-200 bg-white" onClick={stepAgent}>
             Step
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-5 gap-2 p-4 rounded-3xl border border-[#1E2227] bg-[#08090B] max-w-md mx-auto shadow-2xl">
+      <div className="grid grid-cols-5 gap-2 p-4 rounded-2xl border border-zinc-200/80 bg-zinc-50/50 max-w-md mx-auto">
         {Array.from({ length: 25 }, (_, idx) => {
           const r = Math.floor(idx / 5);
           const c = idx % 5;
@@ -2769,43 +2545,43 @@ export function QLearningGridworld() {
             <div
               key={idx}
               className={cn(
-                "h-16 rounded-2xl flex flex-col items-center justify-center font-mono text-xs border border-[#1E2227] transition-all relative overflow-hidden",
-                isGoal && "bg-[#CDF22B]/20 border-[#CDF22B] text-[#CDF22B] font-bold",
-                isTrap && "bg-[#1A1D24] border-[#3A404D] text-[#FAF6F3]/50",
-                !isGoal && !isTrap && "bg-[#14171A]/40"
+                "h-16 rounded-xl flex flex-col items-center justify-center font-mono text-xs border transition-all relative",
+                isGoal && "bg-emerald-50 border-emerald-300 text-emerald-700 font-semibold",
+                isTrap && "bg-rose-50 border-rose-200 text-rose-600",
+                !isGoal && !isTrap && "bg-white border-zinc-200/80"
               )}
-              style={!isGoal && !isTrap ? { backgroundColor: `rgba(205, 242, 43, ${intensity * 0.35})` } : {}}
+              style={!isGoal && !isTrap ? { backgroundColor: `rgba(0, 113, 227, ${intensity * 0.16})` } : {}}
             >
               {isAgent && (
-                <div className="h-6 w-6 rounded-full bg-[#CDF22B] animate-pulse shadow-[0_0_16px_rgba(205,242,43,0.5)] flex items-center justify-center text-[#08090B] font-black text-[10px]">
+                <div className="h-6 w-6 rounded-full bg-zinc-900 text-white flex items-center justify-center font-semibold text-[10px] shadow-xs">
                   AI
                 </div>
               )}
-              {isGoal && <span className="text-lg">🎯</span>}
-              {isTrap && <span className="text-lg">🔥</span>}
+              {isGoal && <span className="rounded bg-emerald-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">GOAL</span>}
+              {isTrap && <span className="text-base">✕</span>}
 
               {!isGoal && !isTrap && !isAgent && (
-                <span className="text-xs font-bold text-[#CDF22B] opacity-90">
+                <span className="text-xs font-semibold text-zinc-700">
                   {actionArrows[bestAction]}
                 </span>
               )}
 
-              <span className="absolute bottom-1 right-1 text-[8px] text-[#FAF6F3]/50 font-mono">
+              <span className="absolute bottom-1 right-1.5 text-[9px] text-zinc-400 tabular-nums">
                 {maxQ.toFixed(1)}
               </span>
             </div>
           );
         })}
       </div>
-      <p className="text-[11px] font-mono text-[#FAF6F3]/50 text-center">
-        Tile vectors indicate greedy action argmax Q(s, a). Neon lime glow represents state return confidence.
+      <p className="text-xs text-zinc-400 text-center">
+        Arrows indicate optimal policy action argmax Q(s, a); blue tint reflects expected return.
       </p>
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* Flagship Master ML Arena Component                                  */
+/* Master ML Arena Component (Apple & Notion Workspace)               */
 /* ------------------------------------------------------------------ */
 
 export function MLArenaTool() {
@@ -2837,44 +2613,47 @@ export function MLArenaTool() {
   const copyCode = () => {
     navigator.clipboard.writeText(activeTopic.pythonCode);
     setCopied(true);
-    toast.success("NumPy from-scratch code copied!");
+    toast.success("Python implementation copied!");
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div className="w-full space-y-6">
-      {/* 🚀 Master Instrument Navigation Bar */}
-      <div className="rounded-[32px] bg-[#08090B] border border-[#1E2227] p-5 sm:p-7 shadow-2xl relative overflow-hidden backdrop-blur-2xl">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#1E2227] pb-5">
-          <div className="flex items-center gap-3.5">
-            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#CDF22B] text-[#08090B] shadow-[0_0_20px_rgba(205,242,43,0.35)]">
-              <Brain className="h-6 w-6 stroke-[2.5]" />
+    <div className="w-full max-w-7xl mx-auto space-y-6 pb-12">
+      {/* Apple / Notion Header & Discipline Navigation */}
+      <div className="rounded-2xl bg-white border border-zinc-200/80 p-6 shadow-[0_1px_3px_rgba(0,0,0,0.025),0_6px_20px_rgba(0,0,0,0.02)] space-y-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-100 pb-5">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-900 text-white shadow-2xs">
+              <Brain className="h-5 w-5" />
             </span>
             <div>
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[#FAF6F3]">
-                Machine Learning Arena
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900">
+                Machine Learning
               </h1>
+              <p className="text-xs text-zinc-500">
+                Interactive algorithms, mathematical derivations, and pure NumPy code.
+              </p>
             </div>
           </div>
 
-          {/* 5 Disciplines Segment Selector */}
-          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#0C0E12] border border-[#1E2227] overflow-x-auto scrollbar-none">
+          {/* Apple Segmented Discipline Switcher */}
+          <div className="inline-flex items-center gap-1 p-1 rounded-full bg-zinc-100/90 border border-zinc-200/60 overflow-x-auto scrollbar-none">
             {[
               { id: "regression", label: "Regression", icon: TrendingUp },
               { id: "classification", label: "Classification", icon: Target },
               { id: "optimization", label: "Optimization", icon: Zap },
               { id: "unsupervised", label: "Unsupervised", icon: Network },
-              { id: "reinforcement", label: "Reinforcement", icon: Gamepad2 },
+              { id: "reinforcement", label: "RL", icon: Gamepad2 },
             ].map((p) => (
               <button
                 key={p.id}
                 type="button"
                 onClick={() => setActiveParadigm(p.id as MLParadigm)}
                 className={cn(
-                  "flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shrink-0 active:scale-95",
+                  "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all shrink-0",
                   activeParadigm === p.id
-                    ? "bg-[#CDF22B] text-[#08090B] shadow-[0_0_15px_rgba(205,242,43,0.3)] font-bold"
-                    : "text-[#FAF6F3]/70 hover:text-[#FAF6F3] hover:bg-[#14171A]"
+                    ? "bg-white text-zinc-900 shadow-2xs font-semibold"
+                    : "text-zinc-600 hover:text-zinc-900"
                 )}
               >
                 <p.icon className="h-3.5 w-3.5" />
@@ -2884,236 +2663,222 @@ export function MLArenaTool() {
           </div>
         </div>
 
-        {/* Tactical Model Pills */}
-        <div className="flex items-center gap-2 pt-4 overflow-x-auto scrollbar-none">
-          <span className="text-xs font-mono font-bold text-[#FAF6F3]/50 uppercase shrink-0 mr-1">
-            Algorithm:
-          </span>
+        {/* Algorithm Selector Pills */}
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
+          <span className="text-xs font-medium text-zinc-400 shrink-0 mr-1">Algorithm:</span>
           {availableTopics.map((topic) => (
             <button
               key={topic.id}
               type="button"
               onClick={() => setSelectedTopicId(topic.id)}
               className={cn(
-                "rounded-xl border px-3.5 py-1.5 text-xs font-semibold transition-all shrink-0 active:scale-95 flex items-center gap-1.5",
+                "rounded-full border px-3.5 py-1 text-xs font-medium transition-all shrink-0",
                 selectedTopicId === topic.id
-                  ? "border-[#CDF22B] bg-[#CDF22B]/15 text-[#CDF22B] font-bold shadow-[0_0_10px_rgba(205,242,43,0.2)]"
-                  : "border-[#1E2227] bg-[#0E1116] hover:bg-[#14171A] text-[#FAF6F3]/60 hover:text-[#FAF6F3] hover:border-[#CDF22B]/30"
+                  ? "border-zinc-900 bg-zinc-900 text-white shadow-2xs"
+                  : "border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-700"
               )}
             >
-              <span>{topic.name}</span>
+              {topic.name}
             </button>
           ))}
         </div>
       </div>
 
-      {/* 🌟 The Dual Master Stage: Interactive Visualizer & Mathematical Rigor */}
+      {/* Dual Stage: Left Canvas Workspace + Right Math Reference */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Stage: 60% Width Responsive Visualizer */}
-        <div className="lg:col-span-7 space-y-4">
-          <div className="rounded-3xl bg-[#08090B] border border-[#1E2227] p-5 sm:p-6 shadow-2xl space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1E2227] pb-3">
-              <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#0C0E12] border border-[#1E2227]">
-                <button
-                  type="button"
-                  onClick={() => setStudioMode("dynamic-canvas")}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all",
-                    studioMode === "dynamic-canvas"
-                      ? "bg-[#CDF22B] text-[#08090B] font-bold shadow-[0_0_15px_rgba(205,242,43,0.3)]"
-                      : "text-[#FAF6F3]/60 hover:text-[#FAF6F3]"
-                  )}
-                >
-                  <Activity className="h-3.5 w-3.5" />
-                  <span>Dynamic Live Canvas</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStudioMode("race")}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all",
-                    studioMode === "race"
-                      ? "bg-[#CDF22B] text-[#08090B] font-bold shadow-[0_0_15px_rgba(205,242,43,0.3)]"
-                      : "text-[#FAF6F3]/60 hover:text-[#FAF6F3]"
-                  )}
-                >
-                  <Trophy className="h-3.5 w-3.5" />
-                  <span>4-Way Optimizer Race</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStudioMode("3d")}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all",
-                    studioMode === "3d"
-                      ? "bg-[#CDF22B] text-[#08090B] font-bold shadow-[0_0_15px_rgba(205,242,43,0.3)]"
-                      : "text-[#FAF6F3]/60 hover:text-[#FAF6F3]"
-                  )}
-                >
-                  <Compass className="h-3.5 w-3.5" />
-                  <span>3D Loss Surface</span>
-                </button>
-              </div>
-
-              <span className="text-xs font-mono px-3 py-1 rounded-full bg-[#CDF22B]/10 border border-[#CDF22B]/30 text-[#CDF22B] font-bold">
-                {activeTopic.name}
-              </span>
+        <div className="lg:col-span-7 rounded-2xl bg-white border border-zinc-200/80 p-5 sm:p-6 shadow-2xs space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 pb-3">
+            <div className="inline-flex items-center gap-1 p-0.5 rounded-full bg-zinc-100 border border-zinc-200/60">
+              <button
+                type="button"
+                onClick={() => setStudioMode("dynamic-canvas")}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all",
+                  studioMode === "dynamic-canvas"
+                    ? "bg-white text-zinc-900 shadow-2xs font-semibold"
+                    : "text-zinc-600 hover:text-zinc-900"
+                )}
+              >
+                <Activity className="h-3.5 w-3.5" />
+                <span>Interactive</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setStudioMode("race")}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all",
+                  studioMode === "race"
+                    ? "bg-white text-zinc-900 shadow-2xs font-semibold"
+                    : "text-zinc-600 hover:text-zinc-900"
+                )}
+              >
+                <Trophy className="h-3.5 w-3.5" />
+                <span>Optimizer Race</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setStudioMode("3d")}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all",
+                  studioMode === "3d"
+                    ? "bg-white text-zinc-900 shadow-2xs font-semibold"
+                    : "text-zinc-600 hover:text-zinc-900"
+                )}
+              >
+                <Compass className="h-3.5 w-3.5" />
+                <span>3D Loss Surface</span>
+              </button>
             </div>
 
-            {studioMode === "dynamic-canvas" && (
-              activeParadigm === "reinforcement" ? (
-                <QLearningGridworld />
-              ) : activeParadigm === "optimization" ? (
-                <GradientDescentLab
-                  topic={activeTopic}
-                  activePipelineStep={activePipelineStep}
-                  onStepChange={setActivePipelineStep}
-                />
-              ) : (
-                <DynamicModelCanvas
-                  topic={activeTopic}
-                  activePipelineStep={activePipelineStep}
-                  onStepChange={setActivePipelineStep}
-                />
-              )
-            )}
+            <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-zinc-100 border border-zinc-200/70 text-zinc-600">
+              {activeTopic.badge}
+            </span>
+          </div>
 
-            {studioMode === "race" && <OptimizationLossLab />}
+          {studioMode === "dynamic-canvas" && (
+            activeParadigm === "reinforcement" ? (
+              <QLearningGridworld />
+            ) : activeParadigm === "optimization" ? (
+              <GradientDescentLab
+                topic={activeTopic}
+                activePipelineStep={activePipelineStep}
+                onStepChange={setActivePipelineStep}
+              />
+            ) : (
+              <DynamicModelCanvas
+                topic={activeTopic}
+                activePipelineStep={activePipelineStep}
+                onStepChange={setActivePipelineStep}
+              />
+            )
+          )}
 
-            {studioMode === "3d" && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-sm font-bold text-[#FAF6F3]">
-                      {activeTopic.lossSurfaceName || "Optimization Loss Surface"}
-                    </h4>
-                    <p className="text-xs font-mono text-[#CDF22B] mt-0.5">
-                      z = {activeTopic.lossSurface3d || "x^2 + y^2"}
-                    </p>
-                  </div>
-                  <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-[#CDF22B]/10 border border-[#CDF22B]/30 text-[#CDF22B]">
-                    DIRECTIONAL SHADERS
-                  </span>
-                </div>
-                <div className="rounded-2xl overflow-hidden border border-[#1E2227] bg-[#08090B] shadow-inner">
-                  <Plot3D expr={activeTopic.lossSurface3d || "x^2 + y^2"} height={390} />
-                </div>
-                <div className="flex items-center justify-between text-[11px] text-[#FAF6F3]/50 font-mono">
-                  <span>• DRAG TO ORBIT • SCROLL TO SCALE • INSPECT CONVEXITY</span>
-                  <span className="text-[#CDF22B] font-semibold">60 FPS WEBGL SHADERS</span>
+          {studioMode === "race" && <OptimizationLossLab />}
+
+          {studioMode === "3d" && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-semibold text-zinc-900">
+                    {activeTopic.lossSurfaceName || "Loss Surface"}
+                  </h4>
+                  <p className="text-xs font-mono text-zinc-500 mt-0.5">
+                    z = {activeTopic.lossSurface3d || "x^2 + y^2"}
+                  </p>
                 </div>
               </div>
-            )}
-          </div>
+              <div className="rounded-xl overflow-hidden border border-zinc-200/80 bg-white shadow-2xs">
+                <Plot3D expr={activeTopic.lossSurface3d || "x^2 + y^2"} height={390} />
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Right Stage: 40% Width Mathematical Knowledge Base */}
-        <div className="lg:col-span-5 space-y-4">
-          <div className="rounded-3xl bg-[#08090B] border border-[#1E2227] p-5 sm:p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-[#1E2227] pb-3">
-              <div className="flex items-center gap-1 p-1 rounded-2xl bg-[#0C0E12] border border-[#1E2227]">
-                {[
-                  { id: "math", label: "Derivations", icon: BookOpen },
-                  { id: "code", label: "NumPy Code", icon: Code2 },
-                  { id: "insights", label: "Theory", icon: Atom },
-                ].map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => setInfoTab(t.id as any)}
-                    className={cn(
-                      "flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all",
-                      infoTab === t.id
-                        ? "bg-[#CDF22B] text-[#08090B] font-bold shadow-[0_0_12px_rgba(205,242,43,0.3)]"
-                        : "text-[#FAF6F3]/60 hover:text-[#FAF6F3]"
-                    )}
-                  >
-                    <t.icon className="h-3.5 w-3.5" />
-                    <span>{t.label}</span>
-                  </button>
-                ))}
-              </div>
-
-              {infoTab === "code" && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={copyCode}
-                  className="h-7 text-xs gap-1.5 font-mono rounded-xl border-[#1E2227] bg-[#14171A] text-[#FAF6F3] hover:border-[#CDF22B]/40 hover:text-[#CDF22B]"
+        {/* Right Stage: Mathematical Reference */}
+        <div className="lg:col-span-5 rounded-2xl bg-white border border-zinc-200/80 p-5 sm:p-6 shadow-2xs space-y-4">
+          <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+            <div className="inline-flex items-center gap-1 p-0.5 rounded-full bg-zinc-100 border border-zinc-200/60">
+              {[
+                { id: "math", label: "Math", icon: BookOpen },
+                { id: "code", label: "Python", icon: Code2 },
+                { id: "insights", label: "Theory", icon: Atom },
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setInfoTab(t.id as any)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all",
+                    infoTab === t.id
+                      ? "bg-white text-zinc-900 shadow-2xs font-semibold"
+                      : "text-zinc-600 hover:text-zinc-900"
+                  )}
                 >
-                  {copied ? <Check className="h-3 w-3 text-[#CDF22B]" /> : <Copy className="h-3 w-3" />}
-                  <span>{copied ? "Copied" : "Copy"}</span>
-                </Button>
-              )}
+                  <t.icon className="h-3.5 w-3.5" />
+                  <span>{t.label}</span>
+                </button>
+              ))}
             </div>
 
-            {infoTab === "math" && (
-              <div className="space-y-4 text-left">
-                <div className="space-y-1.5">
-                  <span className="text-xs font-bold text-[#FAF6F3] flex items-center gap-1.5">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-[#CDF22B]" /> 1. Objective Loss Formulation:
-                  </span>
-                  <div className="p-3.5 rounded-2xl bg-[#040506] border border-[#1E2227] overflow-x-auto text-sm text-[#FAF6F3]">
-                    <MathText tex={activeTopic.math.objective} display />
-                  </div>
-                  <p className="text-xs text-[#FAF6F3]/75 leading-relaxed">{activeTopic.math.objectiveExpl}</p>
-                </div>
-
-                {activeTopic.math.gradient && (
-                  <div className="space-y-1.5">
-                    <span className="text-xs font-bold text-[#FAF6F3] flex items-center gap-1.5">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-[#CDF22B]" /> 2. Analytical Gradient Vector:
-                    </span>
-                    <div className="p-3.5 rounded-2xl bg-[#040506] border border-[#1E2227] overflow-x-auto text-sm text-[#FAF6F3]">
-                      <MathText tex={activeTopic.math.gradient} display />
-                    </div>
-                    <p className="text-xs text-[#FAF6F3]/75 leading-relaxed">{activeTopic.math.gradientExpl}</p>
-                  </div>
-                )}
-
-                {activeTopic.math.closedForm && (
-                  <div className="space-y-1.5">
-                    <span className="text-xs font-bold text-[#FAF6F3] flex items-center gap-1.5">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-[#CDF22B]" /> 3. Closed-Form / Analytical Optimum:
-                    </span>
-                    <div className="p-3.5 rounded-2xl bg-[#040506] border border-[#1E2227] overflow-x-auto text-sm text-[#FAF6F3]">
-                      <MathText tex={activeTopic.math.closedForm} display />
-                    </div>
-                    <p className="text-xs text-[#FAF6F3]/75 leading-relaxed">{activeTopic.math.closedFormExpl}</p>
-                  </div>
-                )}
-              </div>
-            )}
-
             {infoTab === "code" && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-xs text-[#FAF6F3]/60 font-mono">
-                  <span>Pure NumPy • Vectorized</span>
-                  <span className="text-[#CDF22B] font-bold">No Black Box sklearn</span>
-                </div>
-                <pre className="p-4 rounded-2xl border border-[#1E2227] bg-[#040506] font-mono text-xs overflow-x-auto text-[#CDF22B] leading-relaxed max-h-[460px] shadow-inner text-left">
-                  <code>{activeTopic.pythonCode}</code>
-                </pre>
-              </div>
-            )}
-
-            {infoTab === "insights" && (
-              <div className="space-y-3 text-left">
-                <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-[#FAF6F3]/50">
-                  Mathematical Guarantees &amp; Assumptions:
-                </h4>
-                <ul className="space-y-2.5">
-                  {activeTopic.math.keyPoints.map((pt, idx) => (
-                    <li key={idx} className="flex items-start gap-2.5 text-xs text-[#FAF6F3]/80 leading-relaxed">
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-lg bg-[#CDF22B]/15 text-[#CDF22B] font-mono text-[10px] font-bold border border-[#CDF22B]/30">
-                        {idx + 1}
-                      </span>
-                      <span>{pt}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={copyCode}
+                className="h-7 text-xs gap-1.5 rounded-lg border-zinc-200 bg-white text-zinc-700"
+              >
+                {copied ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />}
+                <span>{copied ? "Copied" : "Copy"}</span>
+              </Button>
             )}
           </div>
+
+          {infoTab === "math" && (
+            <div className="space-y-4 text-left">
+              <div className="space-y-1.5">
+                <span className="text-xs font-semibold text-zinc-900 flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-[#0071e3]" /> Objective Formulation
+                </span>
+                <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-200/80 overflow-x-auto text-sm text-zinc-900">
+                  <MathText tex={activeTopic.math.objective} display />
+                </div>
+                <p className="text-xs text-zinc-500 leading-relaxed">{activeTopic.math.objectiveExpl}</p>
+              </div>
+
+              {activeTopic.math.gradient && (
+                <div className="space-y-1.5">
+                  <span className="text-xs font-semibold text-zinc-900 flex items-center gap-1.5">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-[#0071e3]" /> Gradient Vector
+                  </span>
+                  <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-200/80 overflow-x-auto text-sm text-zinc-900">
+                    <MathText tex={activeTopic.math.gradient} display />
+                  </div>
+                  <p className="text-xs text-zinc-500 leading-relaxed">{activeTopic.math.gradientExpl}</p>
+                </div>
+              )}
+
+              {activeTopic.math.closedForm && (
+                <div className="space-y-1.5">
+                  <span className="text-xs font-semibold text-zinc-900 flex items-center gap-1.5">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-[#0071e3]" /> Analytical Solution
+                  </span>
+                  <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-200/80 overflow-x-auto text-sm text-zinc-900">
+                    <MathText tex={activeTopic.math.closedForm} display />
+                  </div>
+                  <p className="text-xs text-zinc-500 leading-relaxed">{activeTopic.math.closedFormExpl}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {infoTab === "code" && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs text-zinc-400">
+                <span>NumPy implementation</span>
+                <span className="font-medium text-zinc-600">From scratch</span>
+              </div>
+              <pre className="p-4 rounded-xl border border-zinc-200/80 bg-zinc-50 font-mono text-xs overflow-x-auto text-zinc-800 leading-relaxed max-h-[460px] text-left">
+                <code>{activeTopic.pythonCode}</code>
+              </pre>
+            </div>
+          )}
+
+          {infoTab === "insights" && (
+            <div className="space-y-3 text-left">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                Properties &amp; Assumptions
+              </h4>
+              <ul className="space-y-2.5">
+                {activeTopic.math.keyPoints.map((pt, idx) => (
+                  <li key={idx} className="flex items-start gap-2.5 text-xs text-zinc-600 leading-relaxed">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-100 border border-zinc-200 text-zinc-700 font-mono text-[10px] font-semibold">
+                      {idx + 1}
+                    </span>
+                    <span>{pt}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
     </div>

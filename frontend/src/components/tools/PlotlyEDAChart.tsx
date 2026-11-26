@@ -80,22 +80,22 @@ export const PLOTLY_2D_CHARTS: { id: PlotlyChartType; label: string; group: stri
   { id: "histogram", label: "Histogram", group: "Distribution" },
   { id: "box", label: "Box Plot", group: "Distribution" },
   { id: "violin", label: "Violin Plot", group: "Distribution" },
-  { id: "kde", label: "KDE Curve", group: "Distribution" },
-  { id: "qq", label: "Q-Q Normality", group: "Distribution" },
-  { id: "scatter", label: "Scatter + OLS", group: "Relationship" },
+  { id: "kde", label: "Density Curve (KDE)", group: "Distribution" },
+  { id: "qq", label: "Normality Q-Q Plot", group: "Distribution" },
+  { id: "scatter", label: "Scatter & Trend", group: "Relationship" },
   { id: "bubble", label: "Bubble Chart", group: "Relationship" },
-  { id: "density_contour", label: "Density Contour", group: "Relationship" },
+  { id: "density_contour", label: "Contour Density", group: "Relationship" },
   { id: "correlation_heatmap", label: "Correlation Matrix", group: "Relationship" },
-  { id: "pairplot", label: "Pair Plot (SPLOM)", group: "Multi-Dim" },
-  { id: "parcoords", label: "Parallel Coords", group: "Multi-Dim" },
-  { id: "heatmap", label: "2D Heatmap", group: "Multi-Dim" },
-  { id: "bar", label: "Bar / Grouped", group: "Categorical" },
+  { id: "pairplot", label: "Pair Plot", group: "Multivariate" },
+  { id: "parcoords", label: "Parallel Coordinates", group: "Multivariate" },
+  { id: "heatmap", label: "2D Heatmap", group: "Multivariate" },
+  { id: "bar", label: "Bar Chart", group: "Categorical" },
   { id: "line", label: "Line Chart", group: "Trend" },
   { id: "pie", label: "Pie Chart", group: "Categorical" },
   { id: "donut", label: "Donut Chart", group: "Categorical" },
   { id: "treemap", label: "Treemap", group: "Hierarchy" },
   { id: "sunburst", label: "Sunburst", group: "Hierarchy" },
-  { id: "missing", label: "Missingness Bar", group: "Quality" },
+  { id: "missing", label: "Missing Values", group: "Quality" },
 ];
 
 export interface PlotlyChartConfig {
@@ -1490,73 +1490,73 @@ export function PlotlyEDAChart({
 
   if (!eligibility.eligible) {
     return (
-      <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-8 text-center space-y-2">
-        <AlertCircle className="h-8 w-8 text-amber-600 mx-auto" />
-        <p className="font-bold text-sm text-foreground">Visualization Unavailable for Current Dataset Structure</p>
-        <p className="text-xs text-muted-foreground max-w-md mx-auto">{eligibility.reason}</p>
+      <div className="rounded-2xl border border-zinc-200/80 bg-zinc-50/70 p-10 text-center space-y-2">
+        <AlertCircle className="h-7 w-7 text-zinc-400 mx-auto" />
+        <p className="font-semibold text-sm text-zinc-900">Chart unavailable for this dataset</p>
+        <p className="text-xs text-zinc-500 max-w-md mx-auto">{eligibility.reason}</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      {/* Toolbar */}
+      {/* Clean Apple Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2 text-xs text-zinc-500">
           {spec?.is3D ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/10 text-indigo-700 px-2.5 py-0.5 font-semibold border border-indigo-500/20">
-              Interactive 3D WebGL • Drag to Rotate • Scroll to Zoom
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 text-zinc-700 px-2.5 py-0.5 font-medium border border-zinc-200/70">
+              Interactive 3D · Drag to rotate · Scroll to zoom
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 text-emerald-700 px-2.5 py-0.5 font-semibold border border-emerald-500/20">
-              Interactive Plotly Canvas • Hover & Click Points
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 text-zinc-700 px-2.5 py-0.5 font-medium border border-zinc-200/70">
+              Hover to inspect · Click any point to view record
             </span>
           )}
         </div>
 
         <div className="flex items-center gap-1.5">
           {spec?.is3D && (
-            <Button size="sm" variant="outline" onClick={handleResetCamera} className="h-8 gap-1.5 rounded-xl text-xs">
+            <Button size="sm" variant="outline" onClick={handleResetCamera} className="h-8 gap-1.5 rounded-lg border-zinc-200 text-xs font-medium text-zinc-700 hover:bg-zinc-100">
               <RotateCcw className="h-3.5 w-3.5" /> Reset Camera
             </Button>
           )}
-          <Button size="sm" variant="outline" onClick={handleDownloadPng} className="h-8 gap-1.5 rounded-xl text-xs">
-            <Download className="h-3.5 w-3.5" /> PNG
+          <Button size="sm" variant="outline" onClick={handleDownloadPng} className="h-8 gap-1.5 rounded-lg border-zinc-200 text-xs font-medium text-zinc-700 hover:bg-zinc-100">
+            <Download className="h-3.5 w-3.5" /> Export PNG
           </Button>
-          <Button size="sm" variant="outline" onClick={() => setFullscreenOpen(true)} className="h-8 gap-1.5 rounded-xl text-xs">
+          <Button size="sm" variant="outline" onClick={() => setFullscreenOpen(true)} className="h-8 gap-1.5 rounded-lg border-zinc-200 text-xs font-medium text-zinc-700 hover:bg-zinc-100">
             <Maximize2 className="h-3.5 w-3.5" /> Fullscreen
           </Button>
         </div>
       </div>
 
       {spec?.warning && (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-800 flex items-center gap-2">
+        <div className="rounded-xl border border-amber-200/80 bg-amber-50/70 px-4 py-2 text-xs text-amber-800 flex items-center gap-2">
           <AlertCircle className="h-4 w-4 shrink-0 text-amber-600" />
           <span>{spec.warning}</span>
         </div>
       )}
 
-      {/* Plot Canvas */}
-      <div className="rounded-2xl border bg-white/90 overflow-hidden shadow-2xs relative" style={{ minHeight: height }}>
+      {/* Clean White Plot Surface */}
+      <div className="rounded-xl border border-zinc-200/70 bg-white overflow-hidden relative" style={{ minHeight: height }}>
         {!plotlyReady && (
-          <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
-            Loading Plotly engine...
+          <div className="absolute inset-0 flex items-center justify-center text-xs text-zinc-400">
+            Preparing chart…
           </div>
         )}
         <div ref={plotDivRef} className="w-full" />
       </div>
 
-      {/* Clicked Record Inspector */}
+      {/* Clicked Record Inspector (Notion Card) */}
       {clickedRecord && (
-        <div className="rounded-2xl border border-sky-500/30 bg-sky-500/5 p-4 space-y-2">
+        <div className="rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-4 space-y-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-sky-800 flex items-center gap-1.5">
-              <TableProperties className="h-3.5 w-3.5" /> Selected Record #{clickedRecord.index + 1} Details
+            <span className="text-xs font-semibold text-zinc-800 flex items-center gap-1.5">
+              <TableProperties className="h-3.5 w-3.5 text-zinc-500" /> Row #{clickedRecord.index + 1}
             </span>
             <button
               type="button"
               onClick={() => setClickedRecord(null)}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-zinc-400 hover:text-zinc-800"
               aria-label="Close record preview"
             >
               <X className="h-4 w-4" />
@@ -1564,10 +1564,10 @@ export function PlotlyEDAChart({
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2">
             {Object.entries(clickedRecord.row).map(([k, v]) => (
-              <div key={k} className="rounded-lg border bg-white px-2.5 py-1.5 text-xs">
-                <span className="block text-[10px] text-muted-foreground truncate">{k}</span>
-                <span className="font-mono font-bold text-foreground truncate block">
-                  {v === null || v === undefined ? "NULL" : String(v)}
+              <div key={k} className="rounded-lg border border-zinc-200/70 bg-white px-2.5 py-1.5 text-xs">
+                <span className="block text-[10px] text-zinc-500 truncate">{k}</span>
+                <span className="font-mono font-medium text-zinc-900 truncate block">
+                  {v === null || v === undefined ? "—" : String(v)}
                 </span>
               </div>
             ))}
@@ -1577,23 +1577,23 @@ export function PlotlyEDAChart({
 
       {/* Fullscreen Dialog */}
       <Dialog open={fullscreenOpen} onOpenChange={setFullscreenOpen}>
-        <DialogContent className="max-w-[95vw] w-[95vw] h-[90vh] flex flex-col p-4 sm:p-6">
-          <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-2 border-b">
-            <DialogTitle className="text-sm font-bold flex items-center gap-2">
-              <Camera className="h-4 w-4 text-emerald-600" /> Fullscreen Interactive Explorer — {config.chartType.toUpperCase()}
+        <DialogContent className="max-w-[95vw] w-[95vw] h-[90vh] flex flex-col p-4 sm:p-6 bg-white">
+          <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-3 border-b border-zinc-200">
+            <DialogTitle className="text-sm font-semibold text-zinc-900 flex items-center gap-2">
+              <Camera className="h-4 w-4 text-zinc-500" /> Chart Explorer
             </DialogTitle>
             <div className="flex items-center gap-2 pr-6">
               {spec?.is3D && (
-                <Button size="sm" variant="outline" onClick={handleResetCamera} className="h-8 gap-1 text-xs">
+                <Button size="sm" variant="outline" onClick={handleResetCamera} className="h-8 gap-1 text-xs rounded-lg border-zinc-200">
                   <RotateCcw className="h-3.5 w-3.5" /> Reset Camera
                 </Button>
               )}
-              <Button size="sm" variant="outline" onClick={() => setFullscreenOpen(false)} className="h-8 gap-1 text-xs">
-                <Minimize2 className="h-3.5 w-3.5" /> Exit
+              <Button size="sm" variant="outline" onClick={() => setFullscreenOpen(false)} className="h-8 gap-1 text-xs rounded-lg border-zinc-200">
+                <Minimize2 className="h-3.5 w-3.5" /> Close
               </Button>
             </div>
           </DialogHeader>
-          <div className="flex-1 w-full bg-white rounded-xl border overflow-hidden">
+          <div className="flex-1 w-full bg-white rounded-xl border border-zinc-200 overflow-hidden">
             <div ref={fullDivRef} className="w-full h-full" />
           </div>
         </DialogContent>

@@ -51,13 +51,12 @@ export function EDAPipelineSimulator({
 
   if (rawNumbers.length === 0 || rawStats.count === 0) {
     return (
-      <div className="rounded-3xl border bg-card p-8 text-center text-sm text-muted-foreground">
-        Select a numerical column with valid values to animate the 5-stage EDA pipeline.
+      <div className="rounded-2xl border border-zinc-200/80 bg-white p-10 text-center text-sm text-zinc-500">
+        Select a numeric column with valid entries to simulate the data cleaning pipeline.
       </div>
     );
   }
 
-  // Sample down cleanly to <= 120 markers for crisp SVG animation on massive CSVs
   const step = rawNumbers.length > 120 ? rawNumbers.length / 120 : 1;
   const displayPoints: (number | null)[] = [];
   if (step === 1) {
@@ -70,30 +69,29 @@ export function EDAPipelineSimulator({
 
   return (
     <div className="space-y-6">
-      {/* Interactive Player Controls */}
-      <div className="rounded-3xl border border-emerald-500/30 bg-card p-6 shadow-xs space-y-4">
+      {/* Apple Transport Controls Header */}
+      <div className="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-2xs space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-1.5">
-              <Zap className="h-3.5 w-3.5" /> Interactive EDA Pipeline Animator
-            </span>
-            <h3 className="text-lg font-black text-foreground">
-              Watch Data Transform Live Across 5 Statistical Stages
+          <div className="space-y-1">
+            <h3 className="text-base font-semibold text-zinc-900 flex items-center gap-2">
+              <Zap className="h-4 w-4 text-zinc-500" /> Cleaning Pipeline Simulator
             </h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Column: <strong className="text-foreground">{columnName}</strong> ({datasetName})
+            <p className="text-xs text-zinc-500">
+              Visualizing transformations on <strong className="text-zinc-900">{columnName}</strong> ({datasetName})
             </p>
           </div>
 
           <div className="flex items-center gap-2">
             <Button
               size="sm"
-              variant={isPlaying ? "destructive" : "default"}
               onClick={() => setIsPlaying(!isPlaying)}
-              className="gap-2 rounded-xl font-bold shadow-xs"
+              className={cn(
+                "gap-1.5 rounded-xl font-medium h-8 px-3.5 text-xs",
+                isPlaying ? "bg-rose-600 hover:bg-rose-700 text-white" : "bg-zinc-900 hover:bg-zinc-800 text-white"
+              )}
             >
-              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-              {isPlaying ? "Pause Simulation" : "Play Full Pipeline"}
+              {isPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+              {isPlaying ? "Pause" : "Play Pipeline"}
             </Button>
 
             <Button
@@ -103,21 +101,21 @@ export function EDAPipelineSimulator({
                 setIsPlaying(false);
                 setAnimStage(0);
               }}
-              title="Reset to Stage 1 (Raw Data)"
-              className="rounded-xl h-9 w-9"
+              title="Reset to Stage 1"
+              className="rounded-xl border-zinc-200 h-8 w-8 text-zinc-600"
             >
-              <RotateCcw className="h-4 w-4" />
+              <RotateCcw className="h-3.5 w-3.5" />
             </Button>
 
-            <div className="flex items-center gap-1 bg-muted p-1 rounded-xl text-xs font-bold">
+            <div className="flex items-center gap-0.5 bg-zinc-100 p-0.5 rounded-full border border-zinc-200/60 text-xs font-medium">
               {[0.5, 1.0, 2.0].map((s) => (
                 <button
                   key={s}
                   type="button"
                   onClick={() => setAnimSpeed(s)}
                   className={cn(
-                    "px-2 py-0.5 rounded-lg transition-all",
-                    animSpeed === s ? "bg-background text-foreground shadow-2xs" : "text-muted-foreground"
+                    "px-2.5 py-0.5 rounded-full transition-all",
+                    animSpeed === s ? "bg-white text-zinc-900 shadow-2xs font-semibold" : "text-zinc-500 hover:text-zinc-900"
                   )}
                 >
                   {s}x
@@ -127,13 +125,14 @@ export function EDAPipelineSimulator({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2">
+        {/* 5 Clean Stepper Pills */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
           {[
-            { stage: 0, title: "1. Raw Scan", subtitle: "Detect Nulls & Anomaly" },
-            { stage: 1, title: "2. IQR Calipers", subtitle: "1.5×IQR Fence Expansion" },
-            { stage: 2, title: "3. Live Impute", subtitle: "Median Fill Drops In" },
-            { stage: 3, title: "4. Outlier Clamping", subtitle: "Winsorize to Fences" },
-            { stage: 4, title: "5. Normalization", subtitle: "Compress to Unit Scale" },
+            { stage: 0, title: "1. Raw Scan", subtitle: "Identify nulls & outliers" },
+            { stage: 1, title: "2. IQR Bounds", subtitle: "Compute 1.5×IQR caps" },
+            { stage: 2, title: "3. Imputation", subtitle: "Fill nulls with median" },
+            { stage: 3, title: "4. Clamping", subtitle: "Cap extreme outliers" },
+            { stage: 4, title: "5. Scaling", subtitle: "Normalize to [0, 1]" },
           ].map((s) => (
             <button
               key={s.stage}
@@ -143,41 +142,43 @@ export function EDAPipelineSimulator({
                 setAnimStage(s.stage);
               }}
               className={cn(
-                "p-3 rounded-2xl border text-left transition-all",
+                "p-3 rounded-xl border text-left transition-all",
                 animStage === s.stage
-                  ? "border-emerald-500 bg-emerald-500/10 text-emerald-800 shadow-xs ring-2 ring-emerald-500/20"
-                  : "border-border/60 bg-muted/20 text-muted-foreground hover:bg-muted/40"
+                  ? "border-zinc-900 bg-zinc-900 text-white shadow-2xs"
+                  : "border-zinc-200/80 bg-zinc-50/60 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
               )}
             >
-              <span className="block text-xs font-extrabold">{s.title}</span>
-              <span className="block text-[10px] text-muted-foreground mt-0.5 truncate">{s.subtitle}</span>
+              <span className="block text-xs font-semibold">{s.title}</span>
+              <span className={cn("block text-[11px] mt-0.5 truncate", animStage === s.stage ? "text-zinc-300" : "text-zinc-400")}>
+                {s.subtitle}
+              </span>
             </button>
           ))}
         </div>
       </div>
 
       {/* Animated SVG Canvas */}
-      <div className="rounded-3xl border bg-card p-6 shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b pb-3">
-          <span className="text-xs font-bold text-foreground flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-700 font-mono font-bold text-xs">
+      <div className="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-2xs space-y-4">
+        <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+          <span className="text-xs font-semibold text-zinc-900 flex items-center gap-2">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-900 text-white font-mono text-[11px]">
               {animStage + 1}
             </span>
-            {animStage === 0 && "Stage 1: Scanning Raw Observations for Nulls and Anomalies"}
-            {animStage === 1 && "Stage 2: Expanding IQR Caliper Fences (Q1 - 1.5×IQR to Q3 + 1.5×IQR)"}
-            {animStage === 2 && `Stage 3: Imputing ${rawStats.missingCount} Missing Value Slots at Median (${rawStats.median})`}
-            {animStage === 3 && `Stage 4: Winsorizing & Clamping ${rawStats.outlierCount} Extreme Outliers to Fence Caps`}
-            {animStage === 4 && "Stage 5: Normalizing and Scaling Features to Unit Bounds"}
+            {animStage === 0 && "Scanning raw values for missing entries and extremes"}
+            {animStage === 1 && "Computing interquartile range (Q1 to Q3) and fence bounds"}
+            {animStage === 2 && `Imputing ${rawStats.missingCount} missing entries using Median (${rawStats.median})`}
+            {animStage === 3 && `Clamping ${rawStats.outlierCount} outlier values to boundary caps`}
+            {animStage === 4 && "Scaling distribution into normalized [0, 1] unit bounds"}
           </span>
 
-          <span className="text-xs font-mono font-bold text-muted-foreground">
-            {rawNumbers.length.toLocaleString()} total rows
+          <span className="text-xs font-mono text-zinc-400 tabular-nums">
+            {rawNumbers.length.toLocaleString()} rows
           </span>
         </div>
 
-        <div className="h-72 w-full flex items-center justify-center relative overflow-hidden bg-muted/10 rounded-2xl border border-dashed border-border/80 p-4">
+        <div className="h-72 w-full flex items-center justify-center relative overflow-hidden bg-zinc-50/50 rounded-xl border border-zinc-200/70 p-4">
           <svg viewBox="0 0 700 240" className="w-full h-full max-w-3xl overflow-visible">
-            <line x1="50" y1="140" x2="650" y2="140" stroke="#cbd5e1" strokeWidth="2" />
+            <line x1="50" y1="140" x2="650" y2="140" stroke="#e4e4e7" strokeWidth="2" />
             {(() => {
               const s = rawStats;
               const min = Math.min(s.min, s.lowerBound);
@@ -201,20 +202,20 @@ export function EDAPipelineSimulator({
                         width={animStage === 4 ? 300 : Math.max(4, q3X - q1X)}
                         height="100"
                         rx="10"
-                        fill="#10b981"
-                        fillOpacity="0.18"
-                        stroke="#059669"
-                        strokeWidth="2.5"
+                        fill="#0071e3"
+                        fillOpacity="0.12"
+                        stroke="#0071e3"
+                        strokeWidth="2"
                       />
                       <line
                         x1={animStage === 4 ? 350 : medX}
                         y1="60"
                         x2={animStage === 4 ? 350 : medX}
                         y2="180"
-                        stroke="#0f172a"
-                        strokeWidth="3.5"
+                        stroke="#18181b"
+                        strokeWidth="3"
                       />
-                      <text x={animStage === 4 ? 350 : medX} y="52" fontSize="11" textAnchor="middle" fill="#0f172a" fontWeight="800">
+                      <text x={animStage === 4 ? 350 : medX} y="52" fontSize="11" textAnchor="middle" fill="#18181b" fontWeight="600">
                         Median: {s.median}
                       </text>
                       <line
@@ -222,8 +223,8 @@ export function EDAPipelineSimulator({
                         y1="120"
                         x2={animStage === 4 ? 200 : q1X}
                         y2="120"
-                        stroke="#0f172a"
-                        strokeWidth="2"
+                        stroke="#71717a"
+                        strokeWidth="1.5"
                         strokeDasharray="4 4"
                       />
                       <line
@@ -231,16 +232,16 @@ export function EDAPipelineSimulator({
                         y1="120"
                         x2={animStage === 4 ? 600 : highFenceX}
                         y2="120"
-                        stroke="#0f172a"
-                        strokeWidth="2"
+                        stroke="#71717a"
+                        strokeWidth="1.5"
                         strokeDasharray="4 4"
                       />
-                      <line x1={animStage === 4 ? 100 : lowFenceX} y1="95" x2={animStage === 4 ? 100 : lowFenceX} y2="145" stroke="#0f172a" strokeWidth="2.5" />
-                      <line x1={animStage === 4 ? 600 : highFenceX} y1="95" x2={animStage === 4 ? 600 : highFenceX} y2="145" stroke="#0f172a" strokeWidth="2.5" />
-                      <text x={animStage === 4 ? 100 : lowFenceX} y="85" fontSize="9" textAnchor="middle" fill="#64748b" fontWeight="bold">
+                      <line x1={animStage === 4 ? 100 : lowFenceX} y1="95" x2={animStage === 4 ? 100 : lowFenceX} y2="145" stroke="#18181b" strokeWidth="2" />
+                      <line x1={animStage === 4 ? 600 : highFenceX} y1="95" x2={animStage === 4 ? 600 : highFenceX} y2="145" stroke="#18181b" strokeWidth="2" />
+                      <text x={animStage === 4 ? 100 : lowFenceX} y="85" fontSize="9" textAnchor="middle" fill="#71717a" fontWeight="500">
                         Lower: {s.lowerBound}
                       </text>
-                      <text x={animStage === 4 ? 600 : highFenceX} y="85" fontSize="9" textAnchor="middle" fill="#64748b" fontWeight="bold">
+                      <text x={animStage === 4 ? 600 : highFenceX} y="85" fontSize="9" textAnchor="middle" fill="#71717a" fontWeight="500">
                         Upper: {s.upperBound}
                       </text>
                     </g>
@@ -262,8 +263,8 @@ export function EDAPipelineSimulator({
                     if (isNull && animStage < 2) {
                       return (
                         <g key={idx} className="transition-all duration-700">
-                          <circle cx={toX(s.median)} cy={posY} r="5" fill="none" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="2 2" />
-                          <text x={toX(s.median)} y={posY - 8} fontSize="8" textAnchor="middle" fill="#ef4444" fontWeight="bold">
+                          <circle cx={toX(s.median)} cy={posY} r="5" fill="none" stroke="#e11d48" strokeWidth="1.5" strokeDasharray="2 2" />
+                          <text x={toX(s.median)} y={posY - 8} fontSize="8" textAnchor="middle" fill="#e11d48" fontWeight="600">
                             null
                           </text>
                         </g>
@@ -272,21 +273,18 @@ export function EDAPipelineSimulator({
 
                     return (
                       <g key={idx} className="transition-all duration-700 ease-out">
-                        {isOutlier && animStage < 3 && (
-                          <circle cx={targetX} cy={posY} r="9" fill="none" stroke="#ef4444" strokeWidth="1.5" className="animate-ping opacity-60" />
-                        )}
                         <circle
                           cx={targetX}
                           cy={posY}
-                          r={isOutlier ? "6" : isNull ? "5.5" : "4.5"}
+                          r={isOutlier ? "5.5" : isNull ? "5" : "4"}
                           fill={
                             isNull
-                              ? "#10b981"
+                              ? "#059669"
                               : isOutlier && animStage < 3
-                              ? "#ef4444"
+                              ? "#e11d48"
                               : isOutlier && animStage >= 3
-                              ? "#f59e0b"
-                              : "#0284c7"
+                              ? "#d97706"
+                              : "#0071e3"
                           }
                           stroke="#ffffff"
                           strokeWidth="1.5"
@@ -297,10 +295,10 @@ export function EDAPipelineSimulator({
                             y={posY - 12}
                             fontSize="9"
                             textAnchor="middle"
-                            fill={isNull ? "#059669" : isOutlier && animStage < 3 ? "#ef4444" : "#64748b"}
-                            fontWeight="bold"
+                            fill={isNull ? "#059669" : isOutlier && animStage < 3 ? "#e11d48" : "#71717a"}
+                            fontWeight="600"
                           >
-                            {isNull && animStage >= 2 ? `+${s.median}` : isOutlier && animStage >= 3 ? `clamped` : val}
+                            {isNull && animStage >= 2 ? `+${s.median}` : isOutlier && animStage >= 3 ? `capped` : val}
                           </text>
                         )}
                       </g>
@@ -309,15 +307,15 @@ export function EDAPipelineSimulator({
 
                   {animStage === 4 && (
                     <g>
-                      <line x1="100" y1="200" x2="600" y2="200" stroke="#059669" strokeWidth="2.5" />
-                      <text x="100" y="218" fontSize="10" textAnchor="middle" fill="#059669" fontWeight="bold">
-                        0.0 (Min / Z=-3)
+                      <line x1="100" y1="200" x2="600" y2="200" stroke="#0071e3" strokeWidth="2" />
+                      <text x="100" y="218" fontSize="10" textAnchor="middle" fill="#0071e3" fontWeight="600">
+                        0.0 (Min)
                       </text>
-                      <text x="350" y="218" fontSize="10" textAnchor="middle" fill="#059669" fontWeight="bold">
-                        0.5 (Center / Z=0)
+                      <text x="350" y="218" fontSize="10" textAnchor="middle" fill="#0071e3" fontWeight="600">
+                        0.5 (Center)
                       </text>
-                      <text x="600" y="218" fontSize="10" textAnchor="middle" fill="#059669" fontWeight="bold">
-                        1.0 (Max / Z=+3)
+                      <text x="600" y="218" fontSize="10" textAnchor="middle" fill="#0071e3" fontWeight="600">
+                        1.0 (Max)
                       </text>
                     </g>
                   )}
@@ -327,25 +325,25 @@ export function EDAPipelineSimulator({
           </svg>
         </div>
 
-        <div className="p-4 rounded-2xl bg-muted/30 border space-y-1.5">
-          <span className="text-xs font-bold text-foreground">
-            {animStage === 0 && "1. Raw Scanning & Null Diagnostics"}
-            {animStage === 1 && "2. 1.5×IQR Interquartile Fence Construction"}
-            {animStage === 2 && "3. Median Imputation for Numerical Robustness"}
-            {animStage === 3 && "4. Winsorization / Outlier Clamping"}
-            {animStage === 4 && "5. Scale Normalization (Z-Score or MinMax)"}
+        <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200/70 space-y-1">
+          <span className="text-xs font-semibold text-zinc-900">
+            {animStage === 0 && "1. Scan & Detect"}
+            {animStage === 1 && "2. Interquartile Fence Construction"}
+            {animStage === 2 && "3. Median Imputation"}
+            {animStage === 3 && "4. Outlier Clamping (Winsorization)"}
+            {animStage === 4 && "5. Unit Scaling"}
           </span>
-          <p className="text-xs text-muted-foreground leading-relaxed">
+          <p className="text-xs text-zinc-500 leading-relaxed">
             {animStage === 0 &&
-              `Scanning every record in ${columnName}: detected ${rawStats.missingCount} null value(s) and skewness of ${rawStats.skewness}.`}
+              `Scanned ${columnName}: detected ${rawStats.missingCount} missing entries and skewness of ${rawStats.skewness}.`}
             {animStage === 1 &&
-              `Q1 = ${rawStats.q1}, Q3 = ${rawStats.q3}, IQR = ${rawStats.iqr}. Fences placed at [${rawStats.lowerBound}, ${rawStats.upperBound}].`}
+              `Q1 = ${rawStats.q1}, Q3 = ${rawStats.q3}, IQR = ${rawStats.iqr}. Fences set at [${rawStats.lowerBound}, ${rawStats.upperBound}].`}
             {animStage === 2 &&
-              `Missing values are filled with Median (${rawStats.median}), preserving central tendency without outlier distortion.`}
+              `Missing observations are replaced with Median (${rawStats.median}), preserving central tendency without outlier distortion.`}
             {animStage === 3 &&
-              `Detected ${rawStats.outlierCount} outlier(s) clipped cleanly onto Tukey fence caps rather than losing observations.`}
+              `${rawStats.outlierCount} extreme values are clamped to boundary fences rather than discarding valid rows.`}
             {animStage === 4 &&
-              `Feature magnitudes rescale uniformly into unit intervals for unbiased ML distance calculations and faster optimization convergence.`}
+              `All values are linearly compressed into unit bounds [0, 1] for consistent feature magnitudes.`}
           </p>
         </div>
       </div>
