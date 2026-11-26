@@ -65,7 +65,7 @@ server.log
 
 # Mathlab / runtime assets
 *.traineddata
-upload/
+/upload/
 db/*.db
 db/*.db-journal
 .yolo_config/
