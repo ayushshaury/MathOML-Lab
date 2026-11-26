@@ -42,8 +42,10 @@
 }
 
 :root {
-  --font-geist-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", "Segoe UI", Roboto, sans-serif;
-  --font-geist-mono: "SF Mono", "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  --font-geist-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", sans-serif;
+  --font-geist-display: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable Display", sans-serif;
+  --font-serif-editorial: "Instrument Serif", "New York", Georgia, "Times New Roman", serif;
+  --font-geist-mono: "JetBrains Mono", "SF Mono", "Cascadia Code", ui-monospace, monospace;
   --radius: 0.75rem;
 
   /* Authentic Notion & Apple Light Tokens */
@@ -107,26 +109,130 @@
   }
 }
 
-/* Notion & Apple Glass Surfaces */
+/* Notion & Apple Glass + Clay Surfaces */
 .glass-panel {
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(0, 0, 0, 0.07);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 8px 24px -4px rgba(0, 0, 0, 0.04);
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 1px 2px rgba(0, 0, 0, 0.03), 0 8px 24px -4px rgba(0, 0, 0, 0.04);
+}
+
+.apple-glass-shell {
+  backdrop-filter: blur(32px) saturate(190%);
+  -webkit-backdrop-filter: blur(32px) saturate(190%);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.84) 0%, rgba(255, 255, 255, 0.66) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.88);
+  box-shadow:
+    inset 0 1.5px 1px rgba(255, 255, 255, 0.96),
+    inset 0 -1px 1px rgba(15, 23, 42, 0.02),
+    0 2px 6px rgba(0, 0, 0, 0.025),
+    0 22px 50px -12px rgba(15, 23, 42, 0.09);
+}
+
+.apple-glass-card {
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.74) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 1),
+    0 1px 3px rgba(0, 0, 0, 0.03),
+    0 10px 28px -8px rgba(15, 23, 42, 0.065);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+}
+
+.apple-glass-card:hover {
+  border-color: rgba(255, 255, 255, 1);
+  box-shadow:
+    inset 0 1.5px 1px rgba(255, 255, 255, 1),
+    0 6px 16px rgba(0, 0, 0, 0.04),
+    0 22px 44px -10px rgba(0, 113, 227, 0.11);
+  transform: translateY(-2px);
+}
+
+.apple-clay-surface {
+  background: linear-gradient(180deg, #ffffff 0%, #f5f5f8 100%);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  box-shadow:
+    inset 0 2px 3px rgba(255, 255, 255, 1),
+    inset 0 -3px 6px rgba(15, 23, 42, 0.045),
+    0 6px 16px -4px rgba(15, 23, 42, 0.07),
+    0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease;
+}
+
+.apple-clay-surface:hover {
+  box-shadow:
+    inset 0 2px 3px rgba(255, 255, 255, 1),
+    inset 0 -3px 6px rgba(15, 23, 42, 0.04),
+    0 10px 22px -4px rgba(15, 23, 42, 0.09),
+    0 2px 5px rgba(0, 0, 0, 0.04);
+  transform: translateY(-1px);
+}
+
+.apple-clay-dark {
+  background: linear-gradient(145deg, #323236 0%, #161618 100%);
+  box-shadow:
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.28),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.48),
+    0 8px 18px -4px rgba(15, 23, 42, 0.28),
+    0 2px 4px rgba(0, 0, 0, 0.12);
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease;
+}
+
+.apple-clay-dark:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.32),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.5),
+    0 12px 24px -4px rgba(15, 23, 42, 0.34);
+}
+
+.apple-clay-blue {
+  background: linear-gradient(145deg, #389eff 0%, #0066cc 100%);
+  box-shadow:
+    inset 0 2px 2.5px rgba(255, 255, 255, 0.45),
+    inset 0 -3px 6px rgba(0, 48, 107, 0.3),
+    0 8px 18px -4px rgba(0, 113, 227, 0.36);
+}
+
+.apple-clay-indigo {
+  background: linear-gradient(145deg, #7c7af8 0%, #4f46e5 100%);
+  box-shadow:
+    inset 0 2px 2.5px rgba(255, 255, 255, 0.42),
+    inset 0 -3px 6px rgba(49, 46, 129, 0.32),
+    0 8px 18px -4px rgba(79, 70, 229, 0.32);
+}
+
+.apple-clay-emerald {
+  background: linear-gradient(145deg, #34d399 0%, #059669 100%);
+  box-shadow:
+    inset 0 2px 2.5px rgba(255, 255, 255, 0.42),
+    inset 0 -3px 6px rgba(6, 78, 59, 0.28),
+    0 8px 18px -4px rgba(5, 150, 105, 0.3);
+}
+
+.apple-clay-amber {
+  background: linear-gradient(145deg, #fbbf24 0%, #d97706 100%);
+  box-shadow:
+    inset 0 2px 2.5px rgba(255, 255, 255, 0.48),
+    inset 0 -3px 6px rgba(120, 53, 15, 0.25),
+    0 8px 18px -4px rgba(217, 119, 6, 0.3);
 }
 
 .glass-pill {
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 1), 0 2px 6px rgba(0, 0, 0, 0.04);
   transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-pill:hover {
   background: #ffffff;
-  border-color: rgba(0, 0, 0, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 1), 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
 .apple-surface {
@@ -136,16 +242,43 @@
 }
 
 .apple-card {
-  background: #ffffff;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 250, 252, 0.92) 100%);
   border: 1px solid rgba(0, 0, 0, 0.07);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02), 0 4px 12px -2px rgba(0, 0, 0, 0.025);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 1px 2px rgba(0, 0, 0, 0.02),
+    0 6px 18px -4px rgba(15, 23, 42, 0.035);
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
 }
 
 .apple-card:hover {
-  border-color: rgba(0, 0, 0, 0.14);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04), 0 12px 28px -4px rgba(0, 0, 0, 0.06);
-  transform: translateY(-1px);
+  border-color: rgba(0, 0, 0, 0.13);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 4px 12px rgba(0, 0, 0, 0.04),
+    0 14px 32px -6px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1.5px);
+}
+
+.brand-wordmark {
+  font-family: var(--font-geist-display), "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: -0.04em;
+  font-feature-settings: "ss01", "cv02", "cv11";
+}
+
+.font-editorial {
+  font-family: var(--font-serif-editorial), "Instrument Serif", Georgia, serif;
+  letter-spacing: -0.02em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .apple-glass-card,
+  .apple-clay-surface,
+  .apple-clay-dark,
+  .apple-card {
+    transition: none !important;
+    transform: none !important;
+  }
 }
 
 /* Custom thin macOS scrollbars */

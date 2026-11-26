@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 import {
   Sigma, Search, Home, ArrowRight,
   Equal, Shuffle, Layers, TrendingUp, SquareStack, MoveRight, GitBranch, Infinity as InfinityIcon,
@@ -12,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMathLab } from "@/lib/store";
-import { CATEGORIES, TOOLS, searchTools, toolsByCategory, getTool, type Category } from "@/lib/tools";
+import { CATEGORIES, EXAMPLES, TOOLS, searchTools, toolsByCategory, getTool, type Category } from "@/lib/tools";
 import {
   CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
 } from "@/components/ui/command";
@@ -24,6 +25,29 @@ import { solveEquation } from "@/lib/math/equations";
 import { math, preprocess, fmt } from "@/lib/math/core";
 import { StepsView } from "@/components/math/Steps";
 import { cn } from "@/lib/utils";
+
+const APPLE_EASE = [0.22, 1, 0.36, 1] as const;
+
+function MathOMLWordmark({ size = "nav" }: { size?: "hero" | "nav" }) {
+  if (size === "hero") {
+    return (
+      <span className="brand-wordmark inline-flex items-baseline text-3xl sm:text-[40px] leading-none tracking-[-0.045em] select-none">
+        <span className="font-extrabold text-[#1d1d1f]">Math</span>
+        <span className="font-editorial italic font-normal text-[1.1em] bg-gradient-to-br from-[#0071e3] via-[#2563eb] to-[#4f46e5] bg-clip-text text-transparent pl-0.5 pr-1">
+          OML
+        </span>
+      </span>
+    );
+  }
+  return (
+    <span className="brand-wordmark inline-flex items-baseline text-[14.5px] leading-none tracking-[-0.03em] select-none">
+      <span className="font-bold text-[#1d1d1f]">Math</span>
+      <span className="font-editorial italic font-normal text-[1.08em] text-[#0071e3] pl-[1px] pr-0.5">
+        OML
+      </span>
+    </span>
+  );
+}
 
 /* ------------------------------------------------------------------ */
 /* Icon Mapping                                                        */
@@ -126,7 +150,7 @@ function SearchPalette() {
       />
       <CommandList className="max-h-[60vh] p-2">
         <CommandEmpty className="py-8 text-center text-xs text-zinc-500">
-          {query ? `No tools match “${query}”.` : "Type to search all 26 tools."}
+          {query ? `No results for “${query}”.` : "Search calculators, solvers, graphing, or EDA."}
         </CommandEmpty>
         {[...grouped.entries()].map(([catId, tools]) => {
           const cat = CATEGORIES.find((c) => c.id === catId);
@@ -208,10 +232,10 @@ function WorkspaceSidebar({
           onClick={() => navigate("home")}
           className="flex items-center gap-2 hover:bg-black/[0.04] rounded-lg px-2 py-1 transition-colors"
         >
-          <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[#1d1d1f] text-white shadow-2xs">
+          <span className="apple-clay-dark flex h-6 w-6 items-center justify-center rounded-md text-white">
             <Sigma className="h-3.5 w-3.5" />
           </span>
-          <span className="font-semibold text-sm tracking-tight text-[#1d1d1f]">MathOML</span>
+          <MathOMLWordmark size="nav" />
         </button>
 
         <button
@@ -357,9 +381,11 @@ function TopBar({
   const { view, goHome, setSearchOpen } = useMathLab();
   const activeTool = view !== "home" ? getTool(view) : undefined;
   const activeCategory = activeTool ? CATEGORIES.find((c) => c.id === activeTool.category) : undefined;
+  const { scrollYProgress } = useScroll();
+  const scrollScaleX = useSpring(scrollYProgress, { stiffness: 160, damping: 28, restDelta: 0.001 });
 
   return (
-    <header className="sticky top-0 z-30 h-12 w-full border-b border-black/[0.06] bg-white/85 backdrop-blur-xl flex items-center justify-between px-4 sm:px-6 shrink-0">
+    <header className="sticky top-0 z-30 h-12 w-full border-b border-black/[0.06] bg-white/70 backdrop-blur-2xl flex items-center justify-between px-4 sm:px-6 shrink-0">
       <div className="flex items-center gap-2 min-w-0">
         {/* Desktop Collapse/Expand Toggle */}
         {!sidebarOpen && (
@@ -385,12 +411,9 @@ function TopBar({
         <div className="flex items-center gap-1.5 text-xs text-zinc-500 truncate">
           <button
             onClick={goHome}
-            className={cn(
-              "hover:bg-zinc-100 px-1.5 py-0.5 rounded-md transition-colors",
-              view === "home" ? "font-semibold text-zinc-900" : "text-zinc-500 hover:text-zinc-900"
-            )}
+            className="hover:bg-black/[0.05] px-2 py-1 rounded-lg transition-colors inline-flex items-center"
           >
-            Home
+            <MathOMLWordmark size="nav" />
           </button>
           {activeCategory && (
             <>
@@ -411,7 +434,7 @@ function TopBar({
       <div className="flex items-center gap-2 shrink-0">
         <button
           onClick={() => setSearchOpen(true)}
-          className="hidden sm:flex items-center gap-2 rounded-full border border-zinc-200/80 bg-zinc-50 hover:bg-zinc-100 px-3 py-1 text-xs text-zinc-500 hover:text-zinc-800 transition-colors"
+          className="glass-pill hidden sm:flex items-center gap-2 rounded-full px-3 py-1 text-xs text-zinc-500 hover:text-zinc-800"
         >
           <Search className="h-3 w-3" />
           <span>Search</span>
@@ -428,12 +451,19 @@ function TopBar({
           <Github className="h-4 w-4" />
         </a>
       </div>
+
+      {view === "home" && (
+        <motion.div
+          style={{ scaleX: scrollScaleX, transformOrigin: "0% 50%" }}
+          className="pointer-events-none absolute bottom-0 left-0 right-0 h-[1.5px] bg-gradient-to-r from-[#0071e3] via-[#3b82f6] to-[#4f46e5]"
+        />
+      )}
     </header>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* Interactive Preview Window                                         */
+/* Interactive Preview Window (Frosted Glass macOS Chrome)            */
 /* ------------------------------------------------------------------ */
 
 function HeroPlayground({ onOpenTool }: { onOpenTool: (id: string) => void }) {
@@ -470,34 +500,48 @@ function HeroPlayground({ onOpenTool }: { onOpenTool: (id: string) => void }) {
   }, [problemType]);
 
   return (
-    <div className="w-full rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_4px_rgba(0,0,0,0.025),0_8px_24px_rgba(0,0,0,0.03)] overflow-hidden text-left">
-      {/* Toolbar Header */}
-      <div className="flex flex-wrap items-center justify-between border-b border-zinc-200/70 bg-zinc-50/70 px-4 sm:px-5 py-2.5 gap-3">
-        <span className="text-xs font-semibold text-zinc-700">Interactive Scratchpad</span>
+    <div className="apple-glass-card w-full rounded-[24px] overflow-hidden text-left">
+      {/* Frosted macOS Toolbar Chrome */}
+      <div className="flex flex-wrap items-center justify-between border-b border-black/[0.06] bg-white/60 backdrop-blur-md px-3.5 sm:px-4 py-2.5 gap-2">
+        <div className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-zinc-300/90 inline-block shadow-inner" />
+          <span className="h-2.5 w-2.5 rounded-full bg-zinc-300/90 inline-block shadow-inner" />
+          <span className="h-2.5 w-2.5 rounded-full bg-zinc-300/90 inline-block shadow-inner" />
+        </div>
 
-        {/* Segmented Control */}
-        <div className="flex items-center gap-0.5 p-0.5 rounded-full bg-zinc-200/60 border border-zinc-200/70">
+        {/* Claymorphic Segmented Switcher */}
+        <div className="flex items-center gap-1 p-1 rounded-full bg-zinc-200/55 border border-white/80 shadow-inner">
           {[
             { id: "3d", label: "3D Surface", icon: Mountain },
             { id: "2d", label: "2D Graph", icon: LineChart },
             { id: "solver", label: "Steps", icon: Equal },
             { id: "calc", label: "Calculate", icon: Calculator },
-          ].map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setTab(t.id as any)}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all",
-                tab === t.id
-                  ? "bg-white text-zinc-900 shadow-2xs font-semibold"
-                  : "text-zinc-600 hover:text-zinc-900"
-              )}
-            >
-              <t.icon className="h-3 w-3" />
-              <span>{t.label}</span>
-            </button>
-          ))}
+          ].map((t) => {
+            const active = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTab(t.id as "3d" | "2d" | "solver" | "calc")}
+                className={cn(
+                  "relative flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors cursor-pointer",
+                  active ? "text-zinc-900 font-semibold" : "text-zinc-600 hover:text-zinc-900"
+                )}
+              >
+                {active && (
+                  <motion.span
+                    layoutId="hero-stage-pill"
+                    transition={{ type: "spring", stiffness: 420, damping: 32 }}
+                    className="apple-clay-surface absolute inset-0 rounded-full"
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-1">
+                  <t.icon className="h-3 w-3" />
+                  <span>{t.label}</span>
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         <Button
@@ -506,24 +550,21 @@ function HeroPlayground({ onOpenTool }: { onOpenTool: (id: string) => void }) {
           onClick={() => onOpenTool(
             tab === "3d" ? "graph-3d" : tab === "2d" ? "graph-2d" : tab === "solver" ? "equation-solver" : "calculator"
           )}
-          className="text-xs gap-1 font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/50 rounded-lg h-7 px-2.5"
+          className="text-xs gap-1 font-medium text-[#0071e3] hover:text-[#0077ed] hover:bg-sky-50/70 rounded-full h-7 px-2.5"
         >
-          {tab === "3d" ? "Open 3D Plotter" : tab === "2d" ? "Open 2D Grapher" : tab === "solver" ? "Open Solver" : "Open Calculator"}{" "}
-          <ArrowRight className="h-3 w-3" />
+          Open <ArrowRight className="h-3 w-3" />
         </Button>
       </div>
 
       {/* Tab 1: 3D Surface */}
       {tab === "3d" && (
-        <div className="p-4 sm:p-5 space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2.5">
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-              <span className="text-xs font-medium text-zinc-400 shrink-0">Presets:</span>
+        <div className="p-3.5 sm:p-4 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
               {[
                 { name: "Sombrero", expr: "(1 - (x^2 + y^2)/4) * exp(-(x^2 + y^2)/4)" },
                 { name: "Ripple", expr: "sin(sqrt(x^2 + y^2)) / (sqrt(x^2 + y^2) + 0.1)" },
                 { name: "Rosenbrock", expr: "log(1 + (1 - x)^2 + 10*(y - x^2)^2) / 3" },
-                { name: "Ackley", expr: "-10*exp(-0.2*sqrt(0.5*(x^2 + y^2))) - 0.5*(cos(2*pi*x) + cos(2*pi*y)) + 10" },
                 { name: "Saddle", expr: "x^3 - 3*x*y^2" },
               ].map((p) => (
                 <button
@@ -531,33 +572,32 @@ function HeroPlayground({ onOpenTool }: { onOpenTool: (id: string) => void }) {
                   type="button"
                   onClick={() => setExpr3d(p.expr)}
                   className={cn(
-                    "rounded-full border px-3 py-1 text-xs font-medium transition-all shrink-0",
+                    "rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-all shrink-0",
                     expr3d === p.expr
-                      ? "border-zinc-900 bg-zinc-900 text-white shadow-2xs"
-                      : "border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-700"
+                      ? "apple-clay-dark text-white"
+                      : "glass-pill text-zinc-700"
                   )}
                 >
                   {p.name}
                 </button>
               ))}
             </div>
-            <div className="rounded-lg bg-zinc-50 border border-zinc-200/70 px-2.5 py-1 text-xs font-mono text-zinc-700">
+            <div className="rounded-lg bg-white/80 border border-black/[0.06] px-2.5 py-0.5 text-[11px] font-mono text-zinc-600 truncate max-w-full shadow-2xs">
               <span className="text-zinc-400">z =</span> {expr3d}
             </div>
           </div>
 
-          <div className="rounded-xl overflow-hidden border border-zinc-200/80 bg-white">
-            <Plot3D expr={expr3d} height={340} />
+          <div className="rounded-2xl overflow-hidden border border-black/[0.07] bg-white shadow-inner">
+            <Plot3D expr={expr3d} height={310} />
           </div>
         </div>
       )}
 
       {/* Tab 2: 2D Graph */}
       {tab === "2d" && (
-        <div className="p-4 sm:p-5 space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2.5">
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-              <span className="text-xs font-medium text-zinc-400 shrink-0">Presets:</span>
+        <div className="p-3.5 sm:p-4 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
               {[
                 { name: "Harmonic", expr: "sin(x) + cos(2*x)/2" },
                 { name: "Cubic", expr: "x^3 - 3*x" },
@@ -569,32 +609,31 @@ function HeroPlayground({ onOpenTool }: { onOpenTool: (id: string) => void }) {
                   type="button"
                   onClick={() => setExpr2d(p.expr)}
                   className={cn(
-                    "rounded-full border px-3 py-1 text-xs font-medium transition-all shrink-0",
+                    "rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-all shrink-0",
                     expr2d === p.expr
-                      ? "border-zinc-900 bg-zinc-900 text-white shadow-2xs"
-                      : "border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-700"
+                      ? "apple-clay-dark text-white"
+                      : "glass-pill text-zinc-700"
                   )}
                 >
                   {p.name}
                 </button>
               ))}
             </div>
-            <div className="rounded-lg bg-zinc-50 border border-zinc-200/70 px-2.5 py-1 text-xs font-mono text-zinc-700">
+            <div className="rounded-lg bg-white/80 border border-black/[0.06] px-2.5 py-0.5 text-[11px] font-mono text-zinc-600 shadow-2xs">
               <span className="text-zinc-400">f(x) =</span> {expr2d}
             </div>
           </div>
 
-          <div className="rounded-xl overflow-hidden border border-zinc-200/80 bg-white">
-            <Plot2D spec={spec2d} height={340} />
+          <div className="rounded-2xl overflow-hidden border border-black/[0.07] bg-white shadow-inner">
+            <Plot2D spec={spec2d} height={310} />
           </div>
         </div>
       )}
 
       {/* Tab 3: Derivation Steps */}
       {tab === "solver" && (
-        <div className="p-4 sm:p-5 space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-medium text-zinc-400">Example:</span>
+        <div className="p-3.5 sm:p-4 space-y-3">
+          <div className="flex flex-wrap items-center gap-1.5">
             {[
               { type: "derivative" as const, label: "d/dx [x³ · sin(x)]" },
               { type: "integral" as const, label: "∫ (x² + 3x) dx" },
@@ -605,10 +644,10 @@ function HeroPlayground({ onOpenTool }: { onOpenTool: (id: string) => void }) {
                 type="button"
                 onClick={() => setProblemType(p.type)}
                 className={cn(
-                  "rounded-full border px-3 py-1 text-xs font-mono transition-all",
+                  "rounded-full px-2.5 py-0.5 text-[11px] font-mono transition-all",
                   problemType === p.type
-                    ? "border-zinc-900 bg-zinc-900 text-white shadow-2xs"
-                    : "border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-700"
+                    ? "apple-clay-dark text-white"
+                    : "glass-pill text-zinc-700"
                 )}
               >
                 {p.label}
@@ -617,7 +656,7 @@ function HeroPlayground({ onOpenTool }: { onOpenTool: (id: string) => void }) {
           </div>
 
           {liveSolution && (
-            <div className="rounded-xl border border-zinc-200/70 bg-zinc-50/40 p-4 max-h-[340px] overflow-y-auto">
+            <div className="rounded-2xl border border-black/[0.06] bg-white/85 p-3.5 h-[310px] overflow-y-auto shadow-inner">
               <StepsView solution={liveSolution} />
             </div>
           )}
@@ -626,32 +665,34 @@ function HeroPlayground({ onOpenTool }: { onOpenTool: (id: string) => void }) {
 
       {/* Tab 4: Quick Calculator */}
       {tab === "calc" && (
-        <div className="p-4 sm:p-5 space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-zinc-500">Expression Evaluation</label>
-            <Input
-              value={quickInput}
-              onChange={(e) => setQuickInput(e.target.value)}
-              placeholder="e.g. sqrt(144) * 5 + sin(pi/6)"
-              className="font-mono text-base bg-white rounded-xl border-zinc-200 h-11"
-            />
-          </div>
+        <div className="p-3.5 sm:p-4 space-y-4 h-[370px] flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-zinc-500">Expression</label>
+              <Input
+                value={quickInput}
+                onChange={(e) => setQuickInput(e.target.value)}
+                placeholder="e.g. sqrt(144) * 5 + sin(pi/6)"
+                className="font-mono text-sm bg-white/90 rounded-xl border-zinc-200/80 h-10 shadow-inner"
+              />
+            </div>
 
-          <div className="rounded-xl border border-zinc-200 bg-zinc-50/70 p-5 space-y-1">
-            <div className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Result</div>
-            <div className="text-2xl sm:text-3xl font-mono font-bold text-zinc-900 tabular-nums">
-              {quickResult || "0"}
+            <div className="apple-clay-surface rounded-2xl p-4 space-y-1">
+              <div className="text-[11px] font-medium text-zinc-400 uppercase tracking-wider">Result</div>
+              <div className="text-2xl font-mono font-bold text-zinc-900 tabular-nums">
+                {quickResult || "0"}
+              </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-xs font-medium text-zinc-400 mr-1">Try:</span>
-            {["sin(pi/3)", "sqrt(256) / 4", "2^10 - 1000", "log(100, 10)", "cos(pi/4)^2 + sin(pi/4)^2"].map((f) => (
+          <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-black/[0.06]">
+            <span className="text-[11px] font-medium text-zinc-400 mr-1">Examples:</span>
+            {["sin(pi/3)", "sqrt(256) / 4", "2^10 - 1000", "log(100, 10)"].map((f) => (
               <button
                 key={f}
                 type="button"
                 onClick={() => setQuickInput(f)}
-                className="rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 px-2.5 py-1 text-xs font-mono text-zinc-600 transition-colors"
+                className="glass-pill rounded-lg px-2 py-1 text-[11px] font-mono text-zinc-700"
               >
                 {f}
               </button>
@@ -664,7 +705,7 @@ function HeroPlayground({ onOpenTool }: { onOpenTool: (id: string) => void }) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Quick Search Bar                                                   */
+/* Quick Spotlight Search Bar (Frosted Glass)                         */
 /* ------------------------------------------------------------------ */
 
 function HeroSearch({ onSearch }: { onSearch: (q: string) => void }) {
@@ -674,7 +715,7 @@ function HeroSearch({ onSearch }: { onSearch: (q: string) => void }) {
   return (
     <div className="relative w-full">
       <form
-        className="flex items-center gap-2 rounded-xl border border-zinc-200/90 bg-white shadow-2xs px-3.5 py-1 focus-within:border-zinc-400 focus-within:ring-2 focus-within:ring-[#0071e3]/15 transition-all"
+        className="glass-panel flex items-center gap-2 rounded-2xl px-3.5 py-1.5 focus-within:ring-2 focus-within:ring-[#0071e3]/20 transition-all"
         onSubmit={(e) => {
           e.preventDefault();
           if (results.length) onSearch(results[0].id);
@@ -685,24 +726,24 @@ function HeroSearch({ onSearch }: { onSearch: (q: string) => void }) {
         <Input
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder="Search EDA, machine learning, derivatives, matrices, OCR..."
-          className="border-0 shadow-none focus-visible:ring-0 h-9 text-sm bg-transparent placeholder:text-zinc-400 text-zinc-900"
+          placeholder="Search EDA, machine learning, calculus, matrices, or OCR..."
+          className="border-0 shadow-none focus-visible:ring-0 h-8 text-xs sm:text-sm bg-transparent placeholder:text-zinc-400 text-zinc-900 px-1"
           aria-label="Search workspace"
         />
         <Button
           type="submit"
           size="sm"
-          className="shrink-0 gap-1 rounded-lg font-medium bg-[#1d1d1f] hover:bg-zinc-800 text-white h-7 px-3 text-xs"
+          className="apple-clay-dark shrink-0 gap-1 rounded-xl font-medium text-white h-7.5 px-3 text-xs border-0"
         >
-          Open <ArrowRight className="h-3 w-3" />
+          Go <ArrowRight className="h-3 w-3" />
         </Button>
       </form>
 
       {value && (
-        <div className="absolute z-30 mt-2 w-full rounded-xl border border-zinc-200 bg-white shadow-xl overflow-hidden text-left">
+        <div className="apple-glass-card absolute z-30 mt-2 w-full rounded-2xl overflow-hidden text-left shadow-xl">
           {results.length === 0 ? (
-            <p className="p-4 text-xs text-zinc-500">
-              Press Enter to open Equation Solver.
+            <p className="p-3.5 text-xs text-zinc-500">
+              Press Enter to evaluate in Equation Solver.
             </p>
           ) : (
             results.map((t) => {
@@ -710,17 +751,17 @@ function HeroSearch({ onSearch }: { onSearch: (q: string) => void }) {
               return (
                 <button
                   key={t.id}
-                  className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-zinc-50 transition-colors border-b border-zinc-100 last:border-0"
+                  className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left hover:bg-black/[0.04] transition-colors border-b border-black/[0.05] last:border-0"
                   onClick={() => onSearch(t.id)}
                 >
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700 shrink-0">
+                  <div className="apple-clay-surface flex h-7 w-7 items-center justify-center rounded-lg text-zinc-700 shrink-0">
                     <CatIcon name={t.icon} className="h-3.5 w-3.5" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-zinc-900 truncate">{t.name}</p>
                     <p className="text-[11px] text-zinc-500 truncate">{t.description}</p>
                   </div>
-                  <span className="ml-auto text-[10px] font-medium text-zinc-400 shrink-0 border border-zinc-200 rounded px-1.5 py-0.5">
+                  <span className="ml-auto text-[10px] font-medium text-zinc-400 shrink-0 border border-black/[0.08] bg-white/70 rounded-full px-2 py-0.5">
                     {cat?.name}
                   </span>
                 </button>
@@ -734,176 +775,693 @@ function HeroSearch({ onSearch }: { onSearch: (q: string) => void }) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Compact Notion Tool Card                                           */
+/* Directory Tool Card (Clay + Glass)                                 */
 /* ------------------------------------------------------------------ */
 
-function ToolCard({ toolId, onOpen }: { toolId: string; onOpen: (id: string) => void }) {
+function ToolCard({
+  toolId,
+  onOpen,
+  showCategoryBadge = false,
+}: {
+  toolId: string;
+  onOpen: (id: string) => void;
+  showCategoryBadge?: boolean;
+}) {
   const tool = TOOLS.find((t) => t.id === toolId)!;
+  const cat = CATEGORIES.find((c) => c.id === tool.category);
+  const exampleRaw = EXAMPLES[tool.id]?.[0];
+  const exampleText = exampleRaw ? exampleRaw.replace(/\n/g, " ; ") : null;
 
   return (
     <button
       onClick={() => onOpen(tool.id)}
-      className="group flex items-start gap-3 rounded-xl border border-zinc-200/80 bg-white p-3.5 text-left hover:border-zinc-300 hover:shadow-xs transition-all"
+      className="group apple-glass-card flex flex-col justify-between rounded-2xl p-4 text-left"
     >
-      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700 group-hover:bg-[#1d1d1f] group-hover:text-white transition-colors shrink-0 mt-0.5">
-        <CatIcon name={tool.icon} className="h-4 w-4" />
-      </span>
-
-      <div className="min-w-0 flex-1">
+      <div className="space-y-2.5 w-full">
         <div className="flex items-center justify-between gap-2">
-          <p className="font-semibold text-sm text-zinc-900 truncate">{tool.name}</p>
-          <ArrowRight className="h-3.5 w-3.5 text-zinc-300 group-hover:text-zinc-700 group-hover:translate-x-0.5 transition-all shrink-0" />
+          <span className="apple-clay-surface flex h-9 w-9 items-center justify-center rounded-xl text-zinc-700 group-hover:text-[#0071e3] transition-colors shrink-0">
+            <CatIcon name={tool.icon} className="h-4 w-4" />
+          </span>
+          {showCategoryBadge ? (
+            <span className="glass-pill rounded-full px-2.5 py-0.5 text-[10px] font-medium text-zinc-500 truncate">
+              {cat?.name}
+            </span>
+          ) : (
+            <ArrowRight className="h-3.5 w-3.5 text-zinc-300 group-hover:text-zinc-800 group-hover:translate-x-0.5 transition-all shrink-0" />
+          )}
         </div>
-        <p className="text-xs text-zinc-500 mt-0.5 leading-snug line-clamp-1">{tool.description}</p>
+
+        <div className="space-y-1">
+          <p className="font-semibold text-sm text-zinc-900 leading-snug">{tool.name}</p>
+          <p className="text-xs text-zinc-500 leading-relaxed line-clamp-2">{tool.description}</p>
+        </div>
       </div>
+
+      {exampleText && (
+        <div className="mt-3 pt-2.5 border-t border-black/[0.05] w-full flex items-center justify-between gap-2">
+          <code className="text-[11px] font-mono text-zinc-600 bg-white/80 border border-black/[0.06] rounded-lg px-2 py-0.5 truncate max-w-[200px]">
+            {exampleText}
+          </code>
+          <span className="text-[11px] font-medium text-zinc-400 group-hover:text-[#0071e3] transition-colors shrink-0">
+            Open
+          </span>
+        </div>
+      )}
     </button>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* Home View                                                          */
+/* Home View (Apple Claymorphism & Frosted Glass + Notion Restraint)  */
 /* ------------------------------------------------------------------ */
 
 function HomeView() {
   const { openTool } = useMathLab();
   const [selectedCat, setSelectedCat] = useState<string>("all");
+  const [directoryFilter, setDirectoryFilter] = useState("");
+
+  const heroRef = useRef<HTMLDivElement | null>(null);
+  const { scrollYProgress: heroScroll } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+  const smoothHero = useSpring(heroScroll, { stiffness: 120, damping: 24, restDelta: 0.001 });
+  const heroScale = useTransform(smoothHero, [0, 1], [1, 0.945]);
+  const heroOpacity = useTransform(smoothHero, [0, 0.85, 1], [1, 0.72, 0.4]);
+  const heroY = useTransform(smoothHero, [0, 1], [0, -24]);
+  const heroLeftY = useTransform(smoothHero, [0, 1], [0, -28]);
+  const heroRightY = useTransform(smoothHero, [0, 1], [0, 26]);
+  const bentoRevealY = useTransform(smoothHero, [0, 0.85], [24, 0]);
 
   const filteredCategories = useMemo(() => {
     if (selectedCat === "all") return CATEGORIES;
     return CATEGORIES.filter((c) => c.id === selectedCat);
   }, [selectedCat]);
 
+  const filterNormalized = directoryFilter.trim().toLowerCase();
+
   return (
-    <div className="space-y-10 pb-12 max-w-5xl mx-auto">
-      {/* Header & Search */}
-      <section className="pt-2 sm:pt-4 space-y-5">
-        <div className="space-y-1.5">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1d1d1f]">
-            MathOML
-          </h1>
-          <p className="text-sm text-zinc-500 max-w-2xl">
-            Exploratory data analysis, interactive machine learning, 2D/3D graphing, and step-by-step symbolic mathematics.
-          </p>
-        </div>
+    <div className="space-y-14 pb-16 max-w-6xl mx-auto">
+      {/* ============================================================ */}
+      {/* ARCHITECTURAL GLASS HERO WITH APPLE SCROLL CHOREOGRAPHY      */}
+      {/* ============================================================ */}
+      <div ref={heroRef} className="relative">
+        {/* Soft Diffused Atmospheric Shapes Behind Frosted Glass Shell */}
+        <div
+          className="pointer-events-none -top-10 -left-10 absolute h-72 w-72 rounded-full opacity-75 blur-3xl"
+          style={{ background: "radial-gradient(circle, rgba(0, 113, 227, 0.22) 0%, transparent 70%)" }}
+        />
+        <div
+          className="pointer-events-none top-1/3 right-12 absolute h-80 w-80 rounded-full opacity-65 blur-3xl"
+          style={{ background: "radial-gradient(circle, rgba(99, 102, 241, 0.18) 0%, transparent 70%)" }}
+        />
+        <div
+          className="pointer-events-none -bottom-10 left-1/3 absolute h-64 w-64 rounded-full opacity-55 blur-3xl"
+          style={{ background: "radial-gradient(circle, rgba(16, 185, 129, 0.14) 0%, transparent 70%)" }}
+        />
 
-        <HeroSearch onSearch={(id) => openTool(id)} />
-      </section>
+        <motion.section
+          style={{ scale: heroScale, opacity: heroOpacity, y: heroY, willChange: "transform, opacity" }}
+          className="apple-glass-shell relative overflow-hidden rounded-[32px] p-6 sm:p-8 lg:p-11 origin-top"
+        >
+          {/* Subtle Precision Dot Matrix */}
+          <div
+            className="pointer-events-none absolute inset-0 opacity-50"
+            style={{
+              backgroundImage: "radial-gradient(rgba(24, 24, 27, 0.09) 1px, transparent 1px)",
+              backgroundSize: "20px 20px",
+              maskImage: "radial-gradient(ellipse at 65% 35%, black 35%, transparent 82%)",
+              WebkitMaskImage: "radial-gradient(ellipse at 65% 35%, black 35%, transparent 82%)",
+            }}
+          />
 
-      {/* Primary Workspaces */}
-      <section className="space-y-3">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-          Primary Workspaces
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            {
-              id: "eda-studio",
-              title: "EDA Studio",
-              desc: "Upload CSV files, inspect statistics, render 2D/3D Plotly charts, clean data, and export PDFs.",
-              icon: BarChart3,
-              accent: "bg-sky-50 text-[#0071e3] border-sky-100",
-            },
-            {
-              id: "ml-arena",
-              title: "Machine Learning",
-              desc: "Regression, SVM, KNN, optimizers, K-Means, PCA, and Q-Learning simulations.",
-              icon: Brain,
-              accent: "bg-indigo-50 text-indigo-600 border-indigo-100",
-            },
-            {
-              id: "graph-3d",
-              title: "3D & 2D Graphing",
-              desc: "Multivariable surface plotting, parameter sliders, contour maps, and implicit curves.",
-              icon: Mountain,
-              accent: "bg-emerald-50 text-emerald-700 border-emerald-100",
-            },
-            {
-              id: "image-to-equation",
-              title: "Image to Equation",
-              desc: "Extract handwritten or printed expressions and matrices from photos.",
-              icon: ScanLine,
-              accent: "bg-amber-50 text-amber-700 border-amber-100",
-            },
-          ].map((card) => (
-            <button
-              key={card.id}
-              onClick={() => openTool(card.id)}
-              className="group rounded-2xl border border-zinc-200/80 bg-white p-5 text-left apple-card flex flex-col justify-between"
-            >
-              <div className="space-y-3">
-                <span className={cn("flex h-9 w-9 items-center justify-center rounded-xl border", card.accent)}>
-                  <card.icon className="h-4.5 w-4.5" />
-                </span>
-                <div>
-                  <h3 className="text-sm font-semibold text-zinc-900">{card.title}</h3>
-                  <p className="text-xs text-zinc-500 mt-1 leading-relaxed">{card.desc}</p>
-                </div>
-              </div>
-              <div className="mt-4 pt-3 border-t border-zinc-100 flex items-center justify-between text-xs font-medium text-zinc-500 group-hover:text-zinc-900 transition-colors">
-                <span>Open</span>
-                <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
-              </div>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* Interactive Scratchpad */}
-      <section>
-        <HeroPlayground onOpenTool={(id) => openTool(id)} />
-      </section>
-
-      {/* Categorized Tools Directory */}
-      <section className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-200/70 pb-3">
-          <h2 className="text-base font-bold tracking-tight text-zinc-900">All Tools</h2>
-
-          <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
-            <button
-              type="button"
-              onClick={() => setSelectedCat("all")}
-              className={cn(
-                "rounded-full px-3 py-1 text-xs font-medium transition-all shrink-0",
-                selectedCat === "all"
-                  ? "bg-zinc-900 text-white shadow-2xs"
-                  : "bg-zinc-100 text-zinc-600 hover:text-zinc-900"
-              )}
-            >
-              All ({TOOLS.length})
-            </button>
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setSelectedCat(cat.id)}
-                className={cn(
-                  "rounded-full px-3 py-1 text-xs font-medium transition-all shrink-0",
-                  selectedCat === cat.id
-                    ? "bg-zinc-900 text-white shadow-2xs"
-                    : "bg-zinc-100 text-zinc-600 hover:text-zinc-900"
-                )}
+          <div className="relative z-10 grid grid-cols-1 xl:grid-cols-12 gap-8 lg:gap-10 items-center">
+            {/* Left Hero Column: MathOML Brand, Luxury Headline & Actions */}
+            <motion.div style={{ y: heroLeftY }} className="xl:col-span-5 space-y-6">
+              {/* MathOML Display Brand Lockup */}
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: APPLE_EASE }}
+                className="flex items-center gap-3.5"
               >
-                {cat.name}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          {filteredCategories.map((cat: Category) => {
-            const tools = toolsByCategory(cat.id);
-            return (
-              <div key={cat.id} className="space-y-2.5">
-                <div className="flex items-center gap-2">
-                  <CatIcon name={cat.icon} className="h-3.5 w-3.5 text-zinc-400" />
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">{cat.name}</h3>
+                <div className="apple-clay-dark flex h-12 w-12 items-center justify-center rounded-2xl text-white shrink-0">
+                  <Sigma className="h-6 w-6" />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {tools.map((t) => (
-                    <ToolCard key={t.id} toolId={t.id} onOpen={openTool} />
+                <div>
+                  <MathOMLWordmark size="hero" />
+                  <p className="text-xs font-medium text-zinc-500 mt-1 tracking-tight">
+                    Mathematics · Data Analysis · Machine Learning
+                  </p>
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.68, delay: 0.08, ease: APPLE_EASE }}
+                className="space-y-3"
+              >
+                <h1 className="brand-wordmark text-3xl sm:text-[34px] lg:text-[38px] font-bold tracking-[-0.035em] leading-[1.12] text-[#1d1d1f]">
+                  Explore data,{" "}
+                  <span className="font-editorial italic font-normal text-[1.14em] text-[#0071e3] pr-0.5">
+                    visualize surfaces,
+                  </span>{" "}
+                  and solve math.
+                </h1>
+                <p className="text-sm text-zinc-600 leading-relaxed">
+                  Inspect CSV files with 2D and 3D Plotly charts, run machine learning algorithms, plot functions, and compute calculus step by step.
+                </p>
+              </motion.div>
+
+              {/* Claymorphic Action Buttons */}
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.68, delay: 0.16, ease: APPLE_EASE }}
+                className="flex flex-wrap items-center gap-2.5"
+              >
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  type="button"
+                  onClick={() => openTool("eda-studio")}
+                  className="apple-clay-dark inline-flex items-center gap-1.5 rounded-xl px-4.5 h-10 text-xs font-semibold text-white cursor-pointer"
+                >
+                  Open EDA Studio <ArrowRight className="h-3.5 w-3.5" />
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  type="button"
+                  onClick={() => openTool("ml-arena")}
+                  className="apple-clay-surface inline-flex items-center rounded-xl px-4 h-10 text-xs font-semibold text-zinc-900 cursor-pointer"
+                >
+                  Machine Learning
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  type="button"
+                  onClick={() => openTool("graph-3d")}
+                  className="glass-pill inline-flex items-center rounded-xl px-3.5 h-10 text-xs font-medium text-[#0071e3] cursor-pointer"
+                >
+                  3D Surfaces →
+                </motion.button>
+              </motion.div>
+
+              {/* Frosted Search + Quick Links */}
+              <motion.div
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.68, delay: 0.24, ease: APPLE_EASE }}
+                className="space-y-2.5 pt-1"
+              >
+                <HeroSearch onSearch={(id) => openTool(id)} />
+                <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                  <span className="text-zinc-400 font-medium mr-0.5">Popular:</span>
+                  {[
+                    { id: "derivative", label: "Derivatives" },
+                    { id: "eigen", label: "Eigenvalues" },
+                    { id: "image-to-equation", label: "Photo OCR" },
+                    { id: "ode-solver", label: "ODE Solver" },
+                  ].map((q) => (
+                    <button
+                      key={q.id}
+                      type="button"
+                      onClick={() => openTool(q.id)}
+                      className="glass-pill rounded-full px-2.5 py-0.5 text-zinc-600 hover:text-zinc-900 font-medium cursor-pointer"
+                    >
+                      {q.label}
+                    </button>
                   ))}
                 </div>
+              </motion.div>
+            </motion.div>
+
+            {/* Right Hero Column: Interactive Frosted Window with Keynote Glide */}
+            <motion.div
+              style={{ y: heroRightY }}
+              initial={{ opacity: 0, y: 24, scale: 0.975 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.78, delay: 0.12, ease: APPLE_EASE }}
+              className="xl:col-span-7"
+            >
+              <HeroPlayground onOpenTool={(id) => openTool(id)} />
+            </motion.div>
+          </div>
+        </motion.section>
+      </div>
+
+      {/* ============================================================ */}
+      {/* BENTO WORKSPACES SHOWCASE (SCROLL TRANSITION INTO MAIN PAGE) */}
+      {/* ============================================================ */}
+      <motion.section style={{ y: bentoRevealY }} className="relative space-y-5">
+        <div
+          className="pointer-events-none absolute top-12 left-1/4 h-72 w-72 rounded-full opacity-45 blur-3xl"
+          style={{ background: "radial-gradient(circle, rgba(0, 113, 227, 0.14) 0%, transparent 72%)" }}
+        />
+        <div
+          className="pointer-events-none bottom-4 right-1/4 h-72 w-72 rounded-full opacity-40 blur-3xl"
+          style={{ background: "radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, transparent 72%)" }}
+        />
+
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.25 }}
+          transition={{ duration: 0.65, ease: APPLE_EASE }}
+          className="relative z-10 flex flex-col sm:flex-row sm:items-end justify-between gap-2"
+        >
+          <div>
+            <h2 className="brand-wordmark text-xl font-bold tracking-[-0.025em] text-zinc-900">
+              Featured{" "}
+              <span className="font-editorial italic font-normal text-[1.12em] text-[#0071e3]">
+                Workspaces
+              </span>
+            </h2>
+            <p className="text-xs text-zinc-500 mt-0.5">
+              Tools for data analysis, machine learning, graphing, and equation recognition.
+            </p>
+          </div>
+        </motion.div>
+
+        {/* Row 1: Two Flagship Glass Cards with Clay App Icons */}
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* EDA Studio Bento */}
+          <motion.div
+            initial={{ opacity: 0, y: 36, scale: 0.975 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true, amount: 0.12 }}
+            transition={{ duration: 0.65, ease: APPLE_EASE }}
+            className="h-full"
+          >
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => openTool("eda-studio")}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  openTool("eda-studio");
+                }
+              }}
+              className="group apple-glass-card h-full cursor-pointer rounded-[24px] p-6 flex flex-col justify-between gap-5"
+            >
+              <div className="space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <span className="apple-clay-blue flex h-11 w-11 items-center justify-center rounded-2xl text-white">
+                    <BarChart3 className="h-5 w-5" />
+                  </span>
+                  <span className="glass-pill rounded-full px-3 py-1 text-[11px] font-medium text-zinc-600">
+                    CSV · Statistics · 3D Plotly · PDF
+                  </span>
+                </div>
+                <div>
+                  <h3 className="brand-wordmark text-base font-bold text-zinc-900">EDA Studio</h3>
+                  <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
+                    Upload CSV files for automatic schema profiling, outlier and correlation detection, 2D and 3D Plotly visualizations, data cleaning with undo/redo, and PDF reports.
+                  </p>
+                </div>
               </div>
+
+              {/* Inner Clay Schematic: Distribution & Correlation */}
+              <div className="apple-clay-surface rounded-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-mono font-medium text-zinc-600">dataset_profile.csv</span>
+                  <div className="flex items-center gap-1.5 font-mono">
+                    <span className="rounded-md bg-white border border-black/[0.07] px-2 py-0.5 text-zinc-700 shadow-2xs">
+                      r = 0.84
+                    </span>
+                    <span className="rounded-md bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 text-emerald-700">
+                      0% Missing
+                    </span>
+                  </div>
+                </div>
+                <svg viewBox="0 0 320 58" className="w-full h-14 overflow-visible" aria-hidden="true">
+                  {[18, 32, 46, 52, 40, 29, 20, 14, 10, 22, 35, 16].map((h, i) => (
+                    <rect
+                      key={i}
+                      x={i * 26 + 4}
+                      y={56 - h}
+                      width="18"
+                      height={h}
+                      rx="4"
+                      className={i >= 2 && i <= 4 ? "fill-[#0071e3]/85" : "fill-[#0071e3]/25"}
+                    />
+                  ))}
+                  <path
+                    d="M 10 44 C 45 28, 78 6, 106 8 C 145 12, 185 48, 220 42 C 255 36, 285 22, 310 46"
+                    fill="none"
+                    stroke="#1d1d1f"
+                    strokeWidth="1.75"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </div>
+
+              <div className="flex items-center justify-between text-xs font-semibold text-zinc-900">
+                <span className="flex items-center gap-1">
+                  Open EDA Studio <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                </span>
+                <span className="text-[11px] font-normal text-zinc-400">Clean Data · Export CSV &amp; PDF</span>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Machine Learning Bento */}
+          <motion.div
+            initial={{ opacity: 0, y: 36, scale: 0.975 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true, amount: 0.12 }}
+            transition={{ duration: 0.65, delay: 0.08, ease: APPLE_EASE }}
+            className="h-full"
+          >
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => openTool("ml-arena")}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  openTool("ml-arena");
+                }
+              }}
+              className="group apple-glass-card h-full cursor-pointer rounded-[24px] p-6 flex flex-col justify-between gap-5"
+            >
+              <div className="space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <span className="apple-clay-indigo flex h-11 w-11 items-center justify-center rounded-2xl text-white">
+                    <Brain className="h-5 w-5" />
+                  </span>
+                  <span className="glass-pill rounded-full px-3 py-1 text-[11px] font-medium text-zinc-600">
+                    Supervised · Unsupervised · RL
+                  </span>
+                </div>
+                <div>
+                  <h3 className="brand-wordmark text-base font-bold text-zinc-900">Machine Learning</h3>
+                  <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
+                    Experiment interactively with Linear &amp; Logistic Regression, SVM margins, KNN, Gradient Descent, Adam Optimizer comparisons, K-Means, PCA, and Q-Learning.
+                  </p>
+                </div>
+              </div>
+
+              {/* Inner Clay Schematic: Decision Boundary & Clusters */}
+              <div className="apple-clay-surface rounded-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-mono font-medium text-zinc-600">wᵀx + b = 0</span>
+                  <div className="flex items-center gap-1.5 font-mono">
+                    <span className="rounded-md bg-white border border-black/[0.07] px-2 py-0.5 text-zinc-700 shadow-2xs">
+                      R² = 0.96
+                    </span>
+                    <span className="rounded-md bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 text-indigo-700">
+                      Adam · SGD
+                    </span>
+                  </div>
+                </div>
+                <svg viewBox="0 0 320 58" className="w-full h-14 overflow-visible" aria-hidden="true">
+                  <line x1="16" y1="50" x2="304" y2="8" stroke="#1d1d1f" strokeWidth="1.75" strokeDasharray="4 3" />
+                  {[
+                    [34, 24], [58, 16], [84, 20], [108, 12], [138, 18], [164, 10],
+                  ].map(([cx, cy], idx) => (
+                    <circle key={`a-${idx}`} cx={cx} cy={cy} r="4.2" className="fill-[#0071e3]" />
+                  ))}
+                  {[
+                    [174, 42], [202, 48], [228, 36], [254, 44], [280, 32], [296, 46],
+                  ].map(([cx, cy], idx) => (
+                    <circle key={`b-${idx}`} cx={cx} cy={cy} r="4.2" className="fill-indigo-500" />
+                  ))}
+                </svg>
+              </div>
+
+              <div className="flex items-center justify-between text-xs font-semibold text-zinc-900">
+                <span className="flex items-center gap-1">
+                  Open Machine Learning <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                </span>
+                <span className="text-[11px] font-normal text-zinc-400">3D Loss · NumPy Code</span>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Row 2: Three Glass Feature Cards with Clay Icons */}
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Graphing 2D & 3D */}
+          <motion.div
+            initial={{ opacity: 0, y: 28, scale: 0.98 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true, amount: 0.12 }}
+            transition={{ duration: 0.6, ease: APPLE_EASE }}
+            className="h-full"
+          >
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => openTool("graph-3d")}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  openTool("graph-3d");
+                }
+              }}
+              className="group apple-glass-card h-full cursor-pointer rounded-[22px] p-5 text-left flex flex-col justify-between gap-4"
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="apple-clay-emerald flex h-10 w-10 items-center justify-center rounded-xl text-white">
+                    <Mountain className="h-4.5 w-4.5" />
+                  </span>
+                  <span className="glass-pill rounded-full px-2.5 py-0.5 text-[11px] font-mono text-zinc-500">
+                    z = f(x, y)
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-zinc-900">2D &amp; 3D Graphing</h3>
+                  <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
+                    Plot 3D multivariable surfaces with orbital rotation, parameter animation sliders, roots, and tangent lines.
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-black/[0.06] flex items-center justify-between text-xs">
+                <span className="font-semibold text-zinc-900 flex items-center gap-1">
+                  Open 3D <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openTool("graph-2d");
+                  }}
+                  className="text-xs font-medium text-[#0071e3] hover:underline"
+                >
+                  Open 2D Grapher
+                </button>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Image to Equation OCR */}
+          <motion.div
+            initial={{ opacity: 0, y: 28, scale: 0.98 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true, amount: 0.12 }}
+            transition={{ duration: 0.6, delay: 0.08, ease: APPLE_EASE }}
+            className="h-full"
+          >
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => openTool("image-to-equation")}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  openTool("image-to-equation");
+                }
+              }}
+              className="group apple-glass-card h-full cursor-pointer rounded-[22px] p-5 text-left flex flex-col justify-between gap-4"
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="apple-clay-amber flex h-10 w-10 items-center justify-center rounded-xl text-white">
+                    <ScanLine className="h-4.5 w-4.5" />
+                  </span>
+                  <span className="glass-pill rounded-full px-2.5 py-0.5 text-[10px] font-mono text-zinc-600">
+                    ∫ x² dx → x³/3
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-zinc-900">Image to Equation</h3>
+                  <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
+                    Extract printed or handwritten equations and matrices from images and solve them step by step.
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-black/[0.06] flex items-center justify-between text-xs font-semibold text-zinc-900">
+                <span className="flex items-center gap-1">
+                  Scan Image <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
+                </span>
+                <span className="text-[11px] font-normal text-zinc-400">Photo OCR · Matrices</span>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Symbolic Calculus & Linear Algebra */}
+          <motion.div
+            initial={{ opacity: 0, y: 28, scale: 0.98 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true, amount: 0.12 }}
+            transition={{ duration: 0.6, delay: 0.16, ease: APPLE_EASE }}
+            className="h-full"
+          >
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => openTool("derivative")}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  openTool("derivative");
+                }
+              }}
+              className="group apple-glass-card h-full cursor-pointer rounded-[22px] p-5 text-left flex flex-col justify-between gap-4"
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="apple-clay-dark flex h-10 w-10 items-center justify-center rounded-xl text-white">
+                    <Sigma className="h-4.5 w-4.5" />
+                  </span>
+                  <span className="glass-pill rounded-full px-2.5 py-0.5 text-[10px] font-mono text-zinc-600">
+                    Av = λv
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-zinc-900">Calculus &amp; Linear Algebra</h3>
+                  <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
+                    Step-by-step derivatives, integrals, Taylor series, ODEs, Gaussian elimination, and eigenvalues.
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-black/[0.06] flex items-center justify-between text-xs">
+                <span className="font-semibold text-zinc-900 flex items-center gap-1">
+                  Calculus <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openTool("eigen");
+                  }}
+                  className="text-xs font-medium text-[#0071e3] hover:underline"
+                >
+                  Open Matrices
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </motion.section>
+
+      {/* ============================================================ */}
+      {/* CATEGORIZED TOOLS DIRECTORY WITH EXAMPLES                    */}
+      {/* ============================================================ */}
+      <section className="space-y-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.25 }}
+          transition={{ duration: 0.6, ease: APPLE_EASE }}
+          className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-black/[0.07] pb-3.5"
+        >
+          <div className="flex items-center gap-2.5">
+            <h2 className="brand-wordmark text-xl font-bold tracking-[-0.025em] text-zinc-900">
+              All{" "}
+              <span className="font-editorial italic font-normal text-[1.12em] text-[#0071e3]">
+                Tools
+              </span>
+            </h2>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
+            <div className="flex items-center gap-1 p-1 rounded-full bg-zinc-200/50 border border-white/80 shadow-inner overflow-x-auto scrollbar-none">
+              {[
+                { id: "all", name: "All" },
+                ...CATEGORIES.map((c) => ({ id: c.id, name: c.name })),
+              ].map((cat) => {
+                const active = selectedCat === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setSelectedCat(cat.id)}
+                    className={cn(
+                      "relative rounded-full px-3 py-1 text-xs font-medium transition-colors shrink-0 cursor-pointer",
+                      active ? "text-zinc-900 font-semibold" : "text-zinc-600 hover:text-zinc-900"
+                    )}
+                  >
+                    {active && (
+                      <motion.span
+                        layoutId="directory-cat-pill"
+                        transition={{ type: "spring", stiffness: 420, damping: 32 }}
+                        className="apple-clay-surface absolute inset-0 rounded-full"
+                      />
+                    )}
+                    <span className="relative z-10">{cat.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="relative sm:w-48 shrink-0">
+              <Search className="h-3.5 w-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Input
+                value={directoryFilter}
+                onChange={(e) => setDirectoryFilter(e.target.value)}
+                placeholder="Filter list..."
+                className="h-8 pl-8 text-xs rounded-full border-white/90 bg-white/80 backdrop-blur-md shadow-2xs"
+              />
+            </div>
+          </div>
+        </motion.div>
+
+        <div className="space-y-8">
+          {filteredCategories.map((cat: Category) => {
+            const tools = toolsByCategory(cat.id).filter((t) => {
+              if (!filterNormalized) return true;
+              return (
+                t.name.toLowerCase().includes(filterNormalized) ||
+                t.description.toLowerCase().includes(filterNormalized) ||
+                t.keywords.some((k) => k.includes(filterNormalized))
+              );
+            });
+            if (tools.length === 0) return null;
+
+            return (
+              <motion.div
+                key={cat.id}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.08 }}
+                transition={{ duration: 0.58, ease: APPLE_EASE }}
+                className="space-y-3"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CatIcon name={cat.icon} className="h-3.5 w-3.5 text-zinc-400" />
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">{cat.name}</h3>
+                  </div>
+                  <span className="text-[11px] text-zinc-400">{cat.description}</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                  {tools.map((t) => (
+                    <ToolCard
+                      key={t.id}
+                      toolId={t.id}
+                      onOpen={openTool}
+                      showCategoryBadge={selectedCat === "all" && !!filterNormalized}
+                    />
+                  ))}
+                </div>
+              </motion.div>
             );
           })}
         </div>
@@ -939,7 +1497,7 @@ export default function Page() {
   }, [view]);
 
   return (
-    <div className="flex min-h-screen w-full bg-[#fbfbfa]">
+    <div className="flex min-h-screen w-full bg-transparent">
       {/* Desktop Sticky Collapsible Notion Sidebar */}
       <div className="hidden lg:block sticky top-0 h-screen shrink-0">
         <WorkspaceSidebar
@@ -975,8 +1533,8 @@ export default function Page() {
           {view === "home" ? <HomeView /> : Tool ? <Tool key={`${view}-${viewNonce}`} /> : <HomeView />}
         </main>
 
-        <footer className="mt-auto border-t border-black/[0.05] bg-white/60">
-          <div className="max-w-5xl mx-auto px-4 sm:px-8 py-5 flex flex-col sm:flex-row items-center gap-3 justify-between text-xs text-zinc-400">
+        <footer className="mt-auto border-t border-black/[0.06] bg-white/65 backdrop-blur-xl">
+          <div className="max-w-6xl mx-auto px-4 sm:px-8 py-5 flex flex-col sm:flex-row items-center gap-3 justify-between text-xs text-zinc-400">
             <div className="flex items-center gap-2">
               <span className="font-medium text-zinc-700">MathOML</span>
               <span>— Mathematics, Data Analysis &amp; Machine Learning</span>

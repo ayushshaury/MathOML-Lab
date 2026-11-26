@@ -38,6 +38,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#fbfbfa] text-[#1d1d1f] min-h-screen selection:bg-[#0071e3]/15 selection:text-[#0071e3]`}>
         <InteractiveBackground />
         <div className="relative z-10 flex min-h-screen flex-col">
