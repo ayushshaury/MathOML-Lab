@@ -1,92 +1,39 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
   <defs>
-    <!-- Background Radial Glow -->
-    <radialGradient id="bgGlow" cx="50%" cy="40%" r="60%">
-      <stop offset="0%" stop-color="#111B27"/>
-      <stop offset="70%" stop-color="#080A0F"/>
-      <stop offset="100%" stop-color="#050608"/>
-    </radialGradient>
-
-    <!-- Linear Border Gradient -->
-    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#2DD4BF" stop-opacity="0.6"/>
-      <stop offset="50%" stop-color="#3B82F6" stop-opacity="0.2"/>
-      <stop offset="100%" stop-color="#CDF22B" stop-opacity="0.4"/>
+    <linearGradient id="squircleBg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2c2c2e"/>
+      <stop offset="55%" stop-color="#18181b"/>
+      <stop offset="100%" stop-color="#09090b"/>
     </linearGradient>
-
-    <!-- Master Math & ML Gradient (Cyan -> Emerald -> Neon Lime) -->
-    <linearGradient id="mathmlGrad" x1="120" y1="120" x2="392" y2="392" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#00F5FF"/>
-      <stop offset="48%" stop-color="#10B981"/>
-      <stop offset="100%" stop-color="#CDF22B"/>
+    <linearGradient id="rimLight" x1="64" y1="32" x2="448" y2="480" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.32"/>
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#0071e3" stop-opacity="0.35"/>
     </linearGradient>
-
-    <!-- Secondary Accent Gradient -->
-    <linearGradient id="orbitalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#38BDF8"/>
-      <stop offset="50%" stop-color="#10B981"/>
-      <stop offset="100%" stop-color="#CDF22B"/>
+    <linearGradient id="sigmaWhite" x1="150" y1="120" x2="360" y2="392" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#d4d4d8"/>
     </linearGradient>
-
-    <!-- Soft Glow Filter -->
-    <filter id="laserGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="12" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
+    <linearGradient id="accentBlue" x1="220" y1="220" x2="380" y2="392" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#0071e3"/>
+      <stop offset="100%" stop-color="#4f46e5"/>
+    </linearGradient>
   </defs>
 
-  <!-- Squircle Chassis Background -->
-  <rect x="24" y="24" width="464" height="464" rx="108" fill="url(#bgGlow)" stroke="url(#borderGrad)" stroke-width="4"/>
+  <!-- Crisp Apple Squircle Chassis -->
+  <rect x="20" y="20" width="472" height="472" rx="116" fill="url(#squircleBg)"/>
+  <rect x="24" y="24" width="464" height="464" rx="112" stroke="url(#rimLight)" stroke-width="6"/>
 
-  <!-- Subtle Tactical Polar / Cartesian Matrix Grid (Opacity 0.1) -->
-  <g opacity="0.08" stroke="#FAF6F3" stroke-width="1.5" stroke-dasharray="4 6">
-    <line x1="256" y1="64" x2="256" y2="448"/>
-    <line x1="64" y1="256" x2="448" y2="256"/>
-    <circle cx="256" cy="256" r="140" fill="none"/>
-    <circle cx="256" cy="256" r="70" fill="none"/>
-  </g>
+  <!-- Subtle Inner Studio Depth Circle -->
+  <circle cx="256" cy="256" r="154" fill="#ffffff" fill-opacity="0.03" stroke="#ffffff" stroke-opacity="0.07" stroke-width="2"/>
 
-  <!-- Orbital Loss Manifold Ring (Tilted Geometry) -->
-  <g transform="rotate(-28 256 256)">
-    <ellipse cx="256" cy="256" rx="172" ry="58"
-             fill="none"
-             stroke="url(#orbitalGrad)"
-             stroke-width="7"
-             stroke-dasharray="12 16"
-             opacity="0.45"/>
-  </g>
+  <!-- Precision 3D-Faceted Sigma Emblem (Sharp at 16px and 512px) -->
+  <!-- Top & Diagonal Upper Facet -->
+  <path d="M362 128H154C146 128 142 137 148 143L258 256L148 369C142 375 146 384 154 384H362V330H234L312 256L234 182H362V128Z" fill="url(#sigmaWhite)"/>
 
-  <!-- Master Emblem: Bold Precision Mathematical Sigma (Σ) & Convergence Core -->
-  <g filter="url(#laserGlow)">
-    <!-- Sigma Body -->
-    <path d="M 364 144
-             L 164 144
-             L 164 196
-             L 264 256
-             L 164 316
-             L 164 368
-             L 364 368
-             L 364 322
-             L 242 322
-             L 304 284
-             C 314 278, 318 268, 314 256
-             C 310 244, 304 238, 294 232
-             L 242 190
-             L 364 190
-             Z"
-          fill="url(#mathmlGrad)"/>
-
-    <!-- Central Neural Synthesis Node (Mathematical Focus / Singularity) -->
-    <circle cx="256" cy="256" r="13" fill="#FAF6F3"/>
-    <circle cx="256" cy="256" r="22" fill="none" stroke="#CDF22B" stroke-width="3.5" opacity="0.8"/>
-  </g>
-
-  <!-- Precision Satellite Nodes (Calculus, Tensor, Neural Topology) -->
-  <circle cx="364" cy="144" r="8" fill="#00F5FF" stroke="#080A0F" stroke-width="2.5"/>
-  <circle cx="364" cy="368" r="8" fill="#CDF22B" stroke="#080A0F" stroke-width="2.5"/>
-  <circle cx="164" cy="144" r="8" fill="#38BDF8" stroke="#080A0F" stroke-width="2.5"/>
-  <circle cx="164" cy="368" r="8" fill="#10B981" stroke="#080A0F" stroke-width="2.5"/>
+  <!-- 3D Blue Accent Wedge & Convergence Node -->
+  <path d="M234 330H362V384H154C146 384 142 375 148 369L234 281V330Z" fill="url(#accentBlue)"/>
+  <circle cx="348" cy="256" r="24" fill="url(#accentBlue)"/>
+  <circle cx="348" cy="256" r="9" fill="#ffffff"/>
 </svg>

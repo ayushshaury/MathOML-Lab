@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { motion, useScroll, useSpring, useTransform } from "framer-motion";
+import { motion, useMotionValue, useScroll, useSpring, useTransform } from "framer-motion";
 import {
   Sigma, Search, Home, ArrowRight,
   Equal, Shuffle, Layers, TrendingUp, SquareStack, MoveRight, GitBranch, Infinity as InfinityIcon,
@@ -833,6 +833,295 @@ function ToolCard({
 }
 
 /* ------------------------------------------------------------------ */
+/* 3D Spatial Logo & Interactive Animation Stage                      */
+/* ------------------------------------------------------------------ */
+
+const SPATIAL_LOGOS = [
+  {
+    id: "eda-studio",
+    label: "EDA Studio",
+    tag: "Data & 3D Plotly",
+    gradient: "linear-gradient(145deg, #38bdf8 0%, #0071e3 55%, #1d4ed8 100%)",
+    glow: "rgba(0, 113, 227, 0.35)",
+    floatDelay: 0,
+    zDepth: 44,
+    svg: (
+      <svg viewBox="0 0 48 48" className="h-8 w-8 drop-shadow-md" fill="none">
+        <path d="M24 6L40 15V33L24 42L8 33V15L24 6Z" fill="white" fillOpacity="0.18" stroke="white" strokeWidth="1.6" strokeLinejoin="round" />
+        <path d="M24 24L40 15M24 24L8 15M24 24V42" stroke="white" strokeWidth="1.6" strokeLinecap="round" />
+        <rect x="14" y="21" width="5" height="11" rx="1.5" fill="white" fillOpacity="0.92" transform="skewY(26)" />
+        <rect x="22" y="15" width="5" height="15" rx="1.5" fill="white" transform="skewY(-26)" />
+      </svg>
+    ),
+  },
+  {
+    id: "graph-3d",
+    label: "3D Surfaces",
+    tag: "WebGL Manifolds",
+    gradient: "linear-gradient(145deg, #22d3ee 0%, #0284c7 60%, #0369a1 100%)",
+    glow: "rgba(14, 165, 233, 0.35)",
+    floatDelay: 0.4,
+    zDepth: 52,
+    svg: (
+      <svg viewBox="0 0 48 48" className="h-8 w-8 drop-shadow-md" fill="none">
+        <circle cx="24" cy="24" r="15" fill="white" fillOpacity="0.14" stroke="white" strokeWidth="1.75" />
+        <ellipse cx="24" cy="24" rx="15" ry="6" stroke="white" strokeWidth="1.5" strokeOpacity="0.85" />
+        <ellipse cx="24" cy="24" rx="6" ry="15" stroke="white" strokeWidth="1.5" strokeOpacity="0.85" />
+        <circle cx="24" cy="24" r="3" fill="white" />
+      </svg>
+    ),
+  },
+  {
+    id: "ml-arena",
+    label: "Machine Learning",
+    tag: "Neural & Q-Learning",
+    gradient: "linear-gradient(145deg, #818cf8 0%, #4f46e5 55%, #3730a3 100%)",
+    glow: "rgba(99, 102, 241, 0.38)",
+    floatDelay: 0.8,
+    zDepth: 48,
+    svg: (
+      <svg viewBox="0 0 48 48" className="h-8 w-8 drop-shadow-md" fill="none">
+        <path d="M13 15L24 9L35 15M13 33L24 39L35 33M13 15V33M35 15V33M13 15L35 33M35 15L13 33" stroke="white" strokeOpacity="0.7" strokeWidth="1.5" />
+        <circle cx="24" cy="9" r="3.2" fill="white" />
+        <circle cx="13" cy="15" r="3.2" fill="white" />
+        <circle cx="35" cy="15" r="3.2" fill="white" />
+        <circle cx="24" cy="24" r="4" fill="white" />
+        <circle cx="13" cy="33" r="3.2" fill="white" />
+        <circle cx="35" cy="33" r="3.2" fill="white" />
+        <circle cx="24" cy="39" r="3.2" fill="white" />
+      </svg>
+    ),
+  },
+  {
+    id: "image-to-equation",
+    label: "Equation OCR",
+    tag: "Matrix & Formula",
+    gradient: "linear-gradient(145deg, #34d399 0%, #059669 60%, #047857 100%)",
+    glow: "rgba(16, 185, 129, 0.35)",
+    floatDelay: 1.2,
+    zDepth: 40,
+    svg: (
+      <svg viewBox="0 0 48 48" className="h-8 w-8 drop-shadow-md" fill="none">
+        <path d="M15 9H11C9.9 9 9 9.9 9 11V15M33 9H37C38.1 9 39 9.9 39 11V15M15 39H11C9.9 39 9 38.1 9 37V33M33 39H37C38.1 39 39 38.1 39 37V33" stroke="white" strokeWidth="2.2" strokeLinecap="round" />
+        <path d="M17 19H31M17 24H26M17 29H29" stroke="white" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="31" cy="29" r="2.2" fill="white" />
+      </svg>
+    ),
+  },
+  {
+    id: "derivative",
+    label: "Calculus CAS",
+    tag: "Symbolic Steps",
+    gradient: "linear-gradient(145deg, #fbbf24 0%, #d97706 60%, #b45309 100%)",
+    glow: "rgba(245, 158, 11, 0.35)",
+    floatDelay: 1.6,
+    zDepth: 50,
+    svg: (
+      <svg viewBox="0 0 48 48" className="h-8 w-8 drop-shadow-md" fill="none">
+        <path d="M31 12C27.5 12 26 14.5 25 19L22 30C21 34.5 19.5 36 16 36" stroke="white" strokeWidth="2.8" strokeLinecap="round" />
+        <path d="M17 22H30" stroke="white" strokeOpacity="0.8" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="31" cy="12" r="2.5" fill="white" />
+        <circle cx="16" cy="36" r="2.5" fill="white" />
+      </svg>
+    ),
+  },
+  {
+    id: "eigen",
+    label: "Linear Algebra",
+    tag: "Tensors & Eigen",
+    gradient: "linear-gradient(145deg, #fb7185 0%, #e11d48 60%, #be123c 100%)",
+    glow: "rgba(244, 63, 94, 0.35)",
+    floatDelay: 2.0,
+    zDepth: 46,
+    svg: (
+      <svg viewBox="0 0 48 48" className="h-8 w-8 drop-shadow-md" fill="none">
+        <path d="M14 11H11V37H14M34 11H37V37H34" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+        <rect x="16" y="16" width="6" height="6" rx="1.5" fill="white" />
+        <rect x="26" y="16" width="6" height="6" rx="1.5" fill="white" fillOpacity="0.65" />
+        <rect x="16" y="26" width="6" height="6" rx="1.5" fill="white" fillOpacity="0.65" />
+        <rect x="26" y="26" width="6" height="6" rx="1.5" fill="white" />
+      </svg>
+    ),
+  },
+];
+
+function SpatialLogoShowcase({ onOpenTool }: { onOpenTool: (id: string) => void }) {
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-8, 8]), { stiffness: 140, damping: 20 });
+  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [7, -7]), { stiffness: 140, damping: 20 });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = stageRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    mouseX.set((e.clientX - rect.left) / rect.width - 0.5);
+    mouseY.set((e.clientY - rect.top) / rect.height - 0.5);
+  };
+
+  const handleMouseLeave = () => {
+    mouseX.set(0);
+    mouseY.set(0);
+  };
+
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 28 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ duration: 0.75, ease: APPLE_EASE }}
+      className="relative z-10"
+      style={{ perspective: 1300 }}
+    >
+      <motion.div
+        ref={stageRef}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+        className="apple-glass-shell relative overflow-hidden rounded-[32px] px-5 py-8 sm:px-8 sm:py-10"
+      >
+        {/* Ambient Volumetric Backdrop Lights */}
+        <div
+          className="pointer-events-none absolute -top-20 left-1/4 h-64 w-64 rounded-full opacity-45 blur-3xl"
+          style={{ background: "radial-gradient(circle, rgba(0, 113, 227, 0.24) 0%, transparent 70%)" }}
+        />
+        <div
+          className="pointer-events-none -bottom-20 right-1/4 h-64 w-64 rounded-full opacity-40 blur-3xl"
+          style={{ background: "radial-gradient(circle, rgba(99, 102, 241, 0.22) 0%, transparent 70%)" }}
+        />
+
+        {/* Rotating 3D Orbital Ring Plane Behind Logos */}
+        <div
+          className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-50"
+          style={{ transform: "translateZ(-20px) rotateX(68deg)" }}
+        >
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 34, repeat: Infinity, ease: "linear" }}
+            className="h-[440px] w-[440px] sm:h-[580px] sm:w-[580px] rounded-full border border-dashed border-[#0071e3]/25"
+          />
+          <motion.div
+            animate={{ rotate: -360 }}
+            transition={{ duration: 24, repeat: Infinity, ease: "linear" }}
+            className="absolute h-[290px] w-[290px] sm:h-[380px] sm:w-[380px] rounded-full border border-indigo-400/20"
+          />
+        </div>
+
+        {/* Central 3D Core Crest + Surrounding 3D Floating App Logos */}
+        <div
+          className="relative z-10 flex flex-col items-center gap-7"
+          style={{ transformStyle: "preserve-3d" }}
+        >
+          {/* Levitating 3D Master MathOML Emblem */}
+          <motion.div
+            animate={{ y: [-5, 5, -5] }}
+            transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
+            style={{ transform: "translateZ(48px)", transformStyle: "preserve-3d" }}
+            className="flex flex-col items-center text-center gap-3"
+          >
+            <div className="relative group">
+              <div
+                className="absolute -inset-3 rounded-[28px] opacity-55 blur-xl transition-opacity duration-500 group-hover:opacity-85"
+                style={{ background: "linear-gradient(135deg, #0071e3 0%, #4f46e5 100%)" }}
+              />
+              <div
+                className="relative flex h-16 w-16 sm:h-18 sm:w-18 items-center justify-center rounded-[22px] shadow-2xl border border-white/25"
+                style={{
+                  background: "linear-gradient(145deg, #2c2c2e 0%, #18181b 55%, #09090b 100%)",
+                  boxShadow:
+                    "0 20px 38px -10px rgba(0, 0, 0, 0.35), inset 0 2px 3px rgba(255, 255, 255, 0.28), inset 0 -4px 8px rgba(0, 0, 0, 0.5)",
+                }}
+              >
+                <svg viewBox="0 0 64 64" className="h-10 w-10" fill="none">
+                  <path
+                    d="M45 16H19C18 16 17.5 17.1 18.2 17.9L32 32L18.2 46.1C17.5 46.9 18 48 19 48H45V41.5H29L38.8 32L29 22.5H45V16Z"
+                    fill="white"
+                  />
+                  <path
+                    d="M29 41.5H45V48H19C18 48 17.5 46.9 18.2 46.1L29 35.2V41.5Z"
+                    fill="#38bdf8"
+                  />
+                  <circle cx="43.5" cy="32" r="3.2" fill="#0071e3" />
+                </svg>
+              </div>
+            </div>
+
+            <div className="space-y-0.5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#0071e3]">
+                Spatial Computing Suite
+              </p>
+              <h2 className="brand-wordmark text-lg sm:text-xl font-bold tracking-[-0.025em] text-zinc-900">
+                Six Engines.{" "}
+                <span className="font-editorial italic font-normal text-[1.15em] text-[#0071e3]">
+                  One Studio.
+                </span>
+              </h2>
+            </div>
+          </motion.div>
+
+          {/* 3D Floating Tactile Logo Dock */}
+          <div
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5 w-full max-w-4xl"
+            style={{ transformStyle: "preserve-3d" }}
+          >
+            {SPATIAL_LOGOS.map((item) => (
+              <motion.button
+                key={item.id}
+                type="button"
+                onClick={() => onOpenTool(item.id)}
+                animate={{ y: [-4, 4, -4] }}
+                transition={{
+                  duration: 4.2,
+                  delay: item.floatDelay,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+                whileHover={{
+                  scale: 1.07,
+                  y: -8,
+                  transition: { type: "spring", stiffness: 360, damping: 20 },
+                }}
+                whileTap={{ scale: 0.96 }}
+                style={{ transform: `translateZ(${item.zDepth}px)`, transformStyle: "preserve-3d" }}
+                className="group relative flex flex-col items-center gap-2.5 rounded-3xl bg-white/65 hover:bg-white/90 backdrop-blur-xl border border-white/85 p-3.5 shadow-[0_14px_30px_-12px_rgba(15,23,42,0.14)] hover:shadow-[0_22px_40px_-12px_rgba(0,113,227,0.22)] transition-colors cursor-pointer"
+              >
+                {/* 3D Squircle App Logo */}
+                <div className="relative">
+                  <div
+                    className="absolute -inset-1.5 rounded-2xl opacity-0 group-hover:opacity-75 blur-lg transition-opacity duration-300"
+                    style={{ background: item.glow }}
+                  />
+                  <div
+                    className="relative flex h-14 w-14 items-center justify-center rounded-[18px] transition-transform duration-300 group-hover:rotate-3"
+                    style={{
+                      background: item.gradient,
+                      boxShadow:
+                        `0 14px 24px -8px ${item.glow}, inset 0 2px 3px rgba(255,255,255,0.45), inset 0 -4px 8px rgba(0,0,0,0.22)`,
+                    }}
+                  >
+                    {item.svg}
+                  </div>
+                </div>
+
+                {/* Minimal Label */}
+                <div className="text-center">
+                  <p className="text-xs font-semibold text-zinc-900 group-hover:text-[#0071e3] transition-colors leading-tight">
+                    {item.label}
+                  </p>
+                  <p className="text-[10px] text-zinc-400 mt-0.5 leading-tight">
+                    {item.tag}
+                  </p>
+                </div>
+              </motion.button>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+    </motion.section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* Home View (Apple Claymorphism & Frosted Glass + Notion Restraint)  */
 /* ------------------------------------------------------------------ */
 
@@ -907,7 +1196,17 @@ function HomeView() {
                 className="flex items-center gap-3.5"
               >
                 <div className="apple-clay-dark flex h-12 w-12 items-center justify-center rounded-2xl text-white shrink-0">
-                  <Sigma className="h-6 w-6" />
+                  <svg viewBox="0 0 64 64" className="h-7 w-7" fill="none">
+                    <path
+                      d="M45 16H19C18 16 17.5 17.1 18.2 17.9L32 32L18.2 46.1C17.5 46.9 18 48 19 48H45V41.5H29L38.8 32L29 22.5H45V16Z"
+                      fill="white"
+                    />
+                    <path
+                      d="M29 41.5H45V48H19C18 48 17.5 46.9 18.2 46.1L29 35.2V41.5Z"
+                      fill="#38bdf8"
+                    />
+                    <circle cx="43.5" cy="32" r="3.2" fill="#0071e3" />
+                  </svg>
                 </div>
                 <div>
                   <MathOMLWordmark size="hero" />
@@ -1012,130 +1311,9 @@ function HomeView() {
       </div>
 
       {/* ============================================================ */}
-      {/* 3D TACTILE METRIC STATS & CAPABILITY STRIP (FILL POST-HERO) */}
+      {/* 3D SPATIAL LOGO & INTERACTIVE ANIMATION SHOWCASE             */}
       {/* ============================================================ */}
-      <motion.section
-        initial={{ opacity: 0, y: 28 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.2 }}
-        transition={{ duration: 0.7, ease: APPLE_EASE }}
-        className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
-      >
-        {[
-          {
-            title: "Automated EDA Studio",
-            subtitle: "3D Plotly & Cleaning Pipeline",
-            desc: "29 statistical charts, 9 3D WebGL plots, live transformations and executive PDF reporting.",
-            toolId: "eda-studio",
-            badge: "Interactive",
-            badgeColor: "text-blue-600 bg-blue-50/80 border-blue-200/70",
-            icon: FileSpreadsheet,
-            meshStyle: "from-blue-500/20 via-sky-400/10 to-indigo-500/5",
-            accentGradient: "linear-gradient(135deg, #0071e3 0%, #2563eb 100%)",
-            clayPill: "apple-clay-blue text-white",
-            stat: "29 Plots",
-            statDetail: "2D & 3D WebGL",
-          },
-          {
-            title: "Reinforcement & ML",
-            subtitle: "Live Algorithmic Simulations",
-            desc: "Train Q-Learning agents in real time with dynamic Q-table heatmaps, SVM, PCA & K-Means.",
-            toolId: "ml-arena",
-            badge: "Simulation",
-            badgeColor: "text-indigo-600 bg-indigo-50/80 border-indigo-200/70",
-            icon: Brain,
-            meshStyle: "from-indigo-500/20 via-violet-400/10 to-purple-500/5",
-            accentGradient: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
-            clayPill: "apple-clay-indigo text-white",
-            stat: "Q-Learning",
-            statDetail: "Realtime Policy",
-          },
-          {
-            title: "Photometric Equation OCR",
-            subtitle: "Neural Vision & Matrix Parser",
-            desc: "Segment worksheets, extract multi-row matrices into LaTeX, and solve determinants instantly.",
-            toolId: "image-to-equation",
-            badge: "Dual-Engine",
-            badgeColor: "text-emerald-600 bg-emerald-50/80 border-emerald-200/70",
-            icon: ScanLine,
-            meshStyle: "from-emerald-500/20 via-teal-400/10 to-cyan-500/5",
-            accentGradient: "linear-gradient(135deg, #059669 0%, #10b981 100%)",
-            clayPill: "apple-clay-emerald text-white",
-            stat: "LaTeX OCR",
-            statDetail: "Matrix Detection",
-          },
-          {
-            title: "Computer Algebra System",
-            subtitle: "Analytical Symbolic Solvers",
-            desc: "Step-by-step differentiation, definite & indefinite integration, Taylor series and ODEs.",
-            toolId: "derivative",
-            badge: "Exact Math",
-            badgeColor: "text-amber-600 bg-amber-50/80 border-amber-200/70",
-            icon: Sigma,
-            meshStyle: "from-amber-500/20 via-orange-400/10 to-rose-500/5",
-            accentGradient: "linear-gradient(135deg, #d97706 0%, #f59e0b 100%)",
-            clayPill: "apple-clay-amber text-white",
-            stat: "CAS Steps",
-            statDetail: "Symbolic Engine",
-          },
-        ].map((item, idx) => (
-          <motion.div
-            key={item.title}
-            whileHover={{ y: -4, transition: { duration: 0.2, ease: "easeOut" } }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => openTool(item.toolId)}
-            className="group relative cursor-pointer apple-glass-card rounded-[22px] p-4.5 overflow-hidden flex flex-col justify-between"
-          >
-            {/* Ambient Multi-layer Clay Glow */}
-            <div
-              className={cn(
-                "pointer-events-none absolute -top-8 -right-8 h-28 w-28 rounded-full bg-gradient-to-br opacity-60 blur-2xl group-hover:opacity-90 group-hover:scale-125 transition-all duration-500",
-                item.meshStyle
-              )}
-            />
-
-            <div className="relative z-10 space-y-3">
-              {/* Header with 3D Tactile Icon & Pill */}
-              <div className="flex items-center justify-between">
-                <div
-                  className="relative flex h-10 w-10 items-center justify-center rounded-2xl shadow-md text-white transition-transform group-hover:scale-105 duration-200"
-                  style={{ background: item.accentGradient }}
-                >
-                  <item.icon className="h-5 w-5 drop-shadow-sm" />
-                  <span className="absolute inset-0 rounded-2xl border border-white/30" />
-                </div>
-                <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full border", item.badgeColor)}>
-                  {item.badge}
-                </span>
-              </div>
-
-              {/* Title & Description */}
-              <div className="space-y-1">
-                <div className="flex items-center justify-between gap-1">
-                  <h3 className="brand-wordmark text-[13.5px] font-bold text-zinc-900 group-hover:text-[#0071e3] transition-colors">
-                    {item.title}
-                  </h3>
-                  <ArrowRight className="h-3 w-3 text-zinc-300 group-hover:text-zinc-900 group-hover:translate-x-0.5 transition-all shrink-0" />
-                </div>
-                <p className="text-[11px] font-medium text-zinc-500">{item.subtitle}</p>
-                <p className="text-[11px] text-zinc-500/90 leading-relaxed pt-0.5 line-clamp-2">
-                  {item.desc}
-                </p>
-              </div>
-            </div>
-
-            {/* Bottom 3D Pill Stat Ribbon */}
-            <div className="relative z-10 mt-3 pt-2.5 border-t border-black/[0.05] flex items-center justify-between">
-              <span className="font-mono text-xs font-semibold text-zinc-800">
-                {item.stat}
-              </span>
-              <span className="text-[10px] font-medium text-zinc-400 group-hover:text-zinc-700 transition-colors">
-                {item.statDetail}
-              </span>
-            </div>
-          </motion.div>
-        ))}
-      </motion.section>
+      <SpatialLogoShowcase onOpenTool={(id) => openTool(id)} />
 
       {/* ============================================================ */}
       {/* BENTO WORKSPACES SHOWCASE (SCROLL TRANSITION INTO MAIN PAGE) */}
