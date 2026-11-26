@@ -26,9 +26,6 @@ MathOML is an interactive mathematical computing, machine learning simulation, a
   - [Prerequisites](#prerequisites)
   - [Installation & Local Setup](#installation--local-setup)
   - [Monorepo Command Reference](#monorepo-command-reference)
-- [Production Deployment](#-production-deployment)
-  - [Frontend on Vercel](#frontend-on-vercel)
-  - [Backend on Render](#backend-on-render)
 - [Technology Stack](#-technology-stack)
 - [License](#-license)
 
@@ -275,7 +272,6 @@ mathlab-project/
 │   ├── package.json              # Frontend dependencies (React 19, Plotly, jsPDF, KaTeX)
 │   └── next.config.ts            # Next.js build and Webpack configuration
 │
-├── DEPLOYMENT.md                 # Production deployment documentation
 ├── render.yaml                   # Render Blueprint configuration for backend
 ├── package.json                  # Root monorepo workspace scripts
 └── README.md                     # Project documentation
@@ -348,36 +344,6 @@ All root scripts coordinate both directories:
 | `npm run backend:build` | Compiles backend TypeScript to production JavaScript (`dist/`) |
 | `npm run backend:start` | Runs the compiled backend server (`node dist/server.js`) |
 | `npm run install:all` | Executes `npm install` in both `frontend/` and `backend/` |
-
----
-
-## ☁️ Production Deployment
-
-### Frontend on Vercel
-
-1. Import the repository in the [Vercel Dashboard](https://vercel.com).
-2. Set the **Root Directory** to `frontend`.
-3. Set the **Framework Preset** to `Next.js`.
-4. Configure Build Command: `next build --webpack` (or default `npm run build`).
-5. Set Environment Variables:
-   ```env
-   NEXT_PUBLIC_OCR_API_URL=https://mathoml-backend.onrender.com
-   ```
-6. Deploy the project.
-
-### Backend on Render
-
-MathOML includes a [`render.yaml`](./render.yaml) blueprint for 1-click deployment:
-
-1. In the [Render Dashboard](https://dashboard.render.com), click **New +** and select **Blueprint**.
-2. Connect your repository. Render automatically reads `render.yaml`.
-3. Set Environment Variables:
-   - `PORT`: `10000`
-   - `NODE_ENV`: `production`
-   - `ALLOWED_ORIGIN`: `https://your-frontend-app.vercel.app` (or `*`)
-4. Click **Apply** to deploy the service.
-
-For manual setup instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 ---
 

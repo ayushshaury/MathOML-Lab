@@ -71,3 +71,7 @@ db/*.db-journal
 .yolo_config/
 .models/
 
+# Deployment docs
+DEPLOYMENT.md
+
+
