@@ -8,7 +8,7 @@ import {
   Equal, Shuffle, Layers, TrendingUp, SquareStack, MoveRight, GitBranch, Infinity as InfinityIcon,
   ListOrdered, Grid3x3, SquareDashed, Waves, Compass, Triangle, Shapes, BarChart3, Dice5,
   LineChart, Mountain, Calculator, ScanLine, Github, Brain, ChevronRight, ChevronDown,
-  PanelLeft, PanelLeftClose, X, FlaskConical, Clock
+  PanelLeft, PanelLeftClose, X, FlaskConical, Clock, Sparkles, Cpu, Box, FileSpreadsheet, Activity
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -391,10 +391,11 @@ function TopBar({
         {!sidebarOpen && (
           <button
             onClick={onToggleSidebar}
-            className="hidden lg:flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
-            title="Show sidebar (⌘\)"
+            className="hidden lg:flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100/90 border border-black/[0.06] bg-white/70 shadow-2xs transition-all text-xs font-medium"
+            title="Open workspace sidebar (⌘\)"
           >
-            <PanelLeft className="h-4 w-4" />
+            <PanelLeft className="h-3.5 w-3.5" />
+            <span className="hidden xl:inline text-[11px] font-normal text-zinc-400">Sidebar</span>
           </button>
         )}
 
@@ -1011,6 +1012,132 @@ function HomeView() {
       </div>
 
       {/* ============================================================ */}
+      {/* 3D TACTILE METRIC STATS & CAPABILITY STRIP (FILL POST-HERO) */}
+      {/* ============================================================ */}
+      <motion.section
+        initial={{ opacity: 0, y: 28 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.7, ease: APPLE_EASE }}
+        className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+      >
+        {[
+          {
+            title: "Automated EDA Studio",
+            subtitle: "3D Plotly & Cleaning Pipeline",
+            desc: "29 statistical charts, 9 3D WebGL plots, live transformations and executive PDF reporting.",
+            toolId: "eda-studio",
+            badge: "Interactive",
+            badgeColor: "text-blue-600 bg-blue-50/80 border-blue-200/70",
+            icon: FileSpreadsheet,
+            meshStyle: "from-blue-500/20 via-sky-400/10 to-indigo-500/5",
+            accentGradient: "linear-gradient(135deg, #0071e3 0%, #2563eb 100%)",
+            clayPill: "apple-clay-blue text-white",
+            stat: "29 Plots",
+            statDetail: "2D & 3D WebGL",
+          },
+          {
+            title: "Reinforcement & ML",
+            subtitle: "Live Algorithmic Simulations",
+            desc: "Train Q-Learning agents in real time with dynamic Q-table heatmaps, SVM, PCA & K-Means.",
+            toolId: "ml-arena",
+            badge: "Simulation",
+            badgeColor: "text-indigo-600 bg-indigo-50/80 border-indigo-200/70",
+            icon: Brain,
+            meshStyle: "from-indigo-500/20 via-violet-400/10 to-purple-500/5",
+            accentGradient: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+            clayPill: "apple-clay-indigo text-white",
+            stat: "Q-Learning",
+            statDetail: "Realtime Policy",
+          },
+          {
+            title: "Photometric Equation OCR",
+            subtitle: "Neural Vision & Matrix Parser",
+            desc: "Segment worksheets, extract multi-row matrices into LaTeX, and solve determinants instantly.",
+            toolId: "image-to-equation",
+            badge: "Dual-Engine",
+            badgeColor: "text-emerald-600 bg-emerald-50/80 border-emerald-200/70",
+            icon: ScanLine,
+            meshStyle: "from-emerald-500/20 via-teal-400/10 to-cyan-500/5",
+            accentGradient: "linear-gradient(135deg, #059669 0%, #10b981 100%)",
+            clayPill: "apple-clay-emerald text-white",
+            stat: "LaTeX OCR",
+            statDetail: "Matrix Detection",
+          },
+          {
+            title: "Computer Algebra System",
+            subtitle: "Analytical Symbolic Solvers",
+            desc: "Step-by-step differentiation, definite & indefinite integration, Taylor series and ODEs.",
+            toolId: "derivative",
+            badge: "Exact Math",
+            badgeColor: "text-amber-600 bg-amber-50/80 border-amber-200/70",
+            icon: Sigma,
+            meshStyle: "from-amber-500/20 via-orange-400/10 to-rose-500/5",
+            accentGradient: "linear-gradient(135deg, #d97706 0%, #f59e0b 100%)",
+            clayPill: "apple-clay-amber text-white",
+            stat: "CAS Steps",
+            statDetail: "Symbolic Engine",
+          },
+        ].map((item, idx) => (
+          <motion.div
+            key={item.title}
+            whileHover={{ y: -4, transition: { duration: 0.2, ease: "easeOut" } }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => openTool(item.toolId)}
+            className="group relative cursor-pointer apple-glass-card rounded-[22px] p-4.5 overflow-hidden flex flex-col justify-between"
+          >
+            {/* Ambient Multi-layer Clay Glow */}
+            <div
+              className={cn(
+                "pointer-events-none absolute -top-8 -right-8 h-28 w-28 rounded-full bg-gradient-to-br opacity-60 blur-2xl group-hover:opacity-90 group-hover:scale-125 transition-all duration-500",
+                item.meshStyle
+              )}
+            />
+
+            <div className="relative z-10 space-y-3">
+              {/* Header with 3D Tactile Icon & Pill */}
+              <div className="flex items-center justify-between">
+                <div
+                  className="relative flex h-10 w-10 items-center justify-center rounded-2xl shadow-md text-white transition-transform group-hover:scale-105 duration-200"
+                  style={{ background: item.accentGradient }}
+                >
+                  <item.icon className="h-5 w-5 drop-shadow-sm" />
+                  <span className="absolute inset-0 rounded-2xl border border-white/30" />
+                </div>
+                <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full border", item.badgeColor)}>
+                  {item.badge}
+                </span>
+              </div>
+
+              {/* Title & Description */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between gap-1">
+                  <h3 className="brand-wordmark text-[13.5px] font-bold text-zinc-900 group-hover:text-[#0071e3] transition-colors">
+                    {item.title}
+                  </h3>
+                  <ArrowRight className="h-3 w-3 text-zinc-300 group-hover:text-zinc-900 group-hover:translate-x-0.5 transition-all shrink-0" />
+                </div>
+                <p className="text-[11px] font-medium text-zinc-500">{item.subtitle}</p>
+                <p className="text-[11px] text-zinc-500/90 leading-relaxed pt-0.5 line-clamp-2">
+                  {item.desc}
+                </p>
+              </div>
+            </div>
+
+            {/* Bottom 3D Pill Stat Ribbon */}
+            <div className="relative z-10 mt-3 pt-2.5 border-t border-black/[0.05] flex items-center justify-between">
+              <span className="font-mono text-xs font-semibold text-zinc-800">
+                {item.stat}
+              </span>
+              <span className="text-[10px] font-medium text-zinc-400 group-hover:text-zinc-700 transition-colors">
+                {item.statDetail}
+              </span>
+            </div>
+          </motion.div>
+        ))}
+      </motion.section>
+
+      {/* ============================================================ */}
       {/* BENTO WORKSPACES SHOWCASE (SCROLL TRANSITION INTO MAIN PAGE) */}
       {/* ============================================================ */}
       <motion.section style={{ y: bentoRevealY }} className="relative space-y-5">
@@ -1476,7 +1603,7 @@ function HomeView() {
 
 export default function Page() {
   const { view, viewNonce } = useMathLab();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const Tool = TOOL_COMPONENTS[view];
 
